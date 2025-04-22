@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter Livraison Chantier</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-4">
+    <h1>Ajouter Livraison pour Chantier</h1>
+    <form action="/chantier/ajouter" method="POST">
+      <div class="mb-3">
+        <label for="chantierId" class="form-label">Chantier</label>
+        <select name="chantierId" id="chantierId" class="form-select" required>
+          <select name="vehiculeId" class="form-control" required>
+            <option value="">-- Choisir un véhicule --</option>
+            <% vehicles.forEach(function(v) { %>
+              <option value="<%= v.id %>">
+                <%= v.plaque %> - <%= v.description || '' %>
+              </option>
+            <% }); %>
+          </select>
+          
+      </div>
+      <!-- Informations facultatives sur la livraison -->
+      <div class="mb-3">
+        <label for="fournisseur" class="form-label">Fournisseur</label>
+        <input type="text" name="fournisseur" id="fournisseur" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label for="dateLivraison" class="form-label">Date de livraison</label>
+        <input type="date" name="dateLivraison" id="dateLivraison" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label for="reference" class="form-label">Référence</label>
+        <input type="text" name="reference" id="reference" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label for="receptionneur" class="form-label">Réceptionné par</label>
+        <input type="text" name="receptionneur" id="receptionneur" class="form-control" required>
+      </div>
+      <hr>
+      <h2>Articles Livrés</h2>
+      <p>Pour chaque article, cochez et indiquez la quantité à livrer vers ce chantier.</p>
+      <% materiels.forEach(function(materiel, index){ %>
+        <div class="row mb-2">
+          <div class="col-md-6">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="items[<%= index %>][materielId]" value="<%= materiel.id %>" id="materiel-<%= materiel.id %>">
+              <label class="form-check-label" for="materiel-<%= materiel.id %>">
+                <%= materiel.nom %> (Disponible: <%= materiel.quantite %>)
+              </label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <input type="number" name="items[<%= index %>][quantite]" class="form-control" placeholder="Quantité" min="0">
+          </div>
+        </div>
+      <% }); %>
+      <button type="submit" class="btn btn-primary">Valider Livraison Chantier</button>
+    </form>
+    <a href="/chantier" class="btn btn-secondary mt-3">Retour au Dashboard Chantier</a>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

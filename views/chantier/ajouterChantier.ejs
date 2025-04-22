@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter un Chantier</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container mt-4">
+    <h1>Ajouter un nouveau Chantier</h1>
+    <form action="/chantier/ajouter-chantier" method="POST">
+      <div class="mb-3">
+        <label for="nom" class="form-label">Nom du chantier</label>
+        <input type="text" id="nom" name="nom" class="form-control" placeholder="Nom du chantier" required>
+      </div>
+      <div class="mb-3">
+        <label for="localisation" class="form-label">Localisation</label>
+        <input type="text" id="localisation" name="localisation" class="form-control" placeholder="Localisation" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Ajouter le chantier</button>
+    </form>
+    <a href="/chantier" class="btn btn-secondary mt-3">Retour au Dashboard Chantier</a>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

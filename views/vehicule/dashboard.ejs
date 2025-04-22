@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Stock Véhicules</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">Stock Véhicules</span>
+      <button id="toggleMode" class="btn btn-secondary">Mode sombre</button>
+    </div>
+  </nav>
+
+  <div class="container mt-3">
+    <form class="row g-3 mb-3" method="GET" action="/vehicule">
+      <div class="col-md-3">
+        <input type="text" class="form-control" name="plaque" placeholder="Plaque du véhicule" value="<%= query.plaque || '' %>">
+      </div>
+      <div class="col-md-3">
+        <input type="text" class="form-control" name="nom" placeholder="Nom du matériel" value="<%= query.nom || '' %>">
+      </div>
+      <div class="col-md-2">
+        <input type="number" step="0.01" class="form-control" name="minPrix" placeholder="Prix min" value="<%= query.minPrix || '' %>">
+      </div>
+      <div class="col-md-2">
+        <input type="number" step="0.01" class="form-control" name="maxPrix" placeholder="Prix max" value="<%= query.maxPrix || '' %>">
+      </div>
+      <div class="col-md-1">
+        <input type="number" class="form-control" name="minQuantite" placeholder="Qte min" value="<%= query.minQuantite || '' %>">
+      </div>
+      <div class="col-md-1">
+        <input type="number" class="form-control" name="maxQuantite" placeholder="Qte max" value="<%= query.maxQuantite || '' %>">
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-info">Rechercher</button>
+      </div>
+    </form>
+
+    <div class="mb-3">
+      <a href="/vehicule/ajouter" class="btn btn-primary">Ajouter au stock véhicule</a>
+      <a href="/vehicule/ajouter-vehicule" class="btn btn-warning">Ajouter un véhicule</a>
+      <a href="/vehicule/historique" class="btn btn-warning">Consulter historique</a>
+      <a href="/auth/logout" class="btn btn-secondary">Déconnexion</a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Référence</th>
+            <th>Quantité</th>
+            <th>Catégorie</th>
+            <th>Véhicule (Plaque)</th>
+            <th>Description</th>
+            <th>Prix</th>
+            <th>Photos</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% materiels.forEach(function(m) { %>
+            <tr>
+              <td><%= m.nom %></td>
+              <td><%= m.reference %></td>
+              <td>
+                <%= m.quantite %>
+                <% if (m.quantite < 5) { %>
+                  <span class="badge bg-danger">Stock faible</span>
+                <% } %>
+              </td>
+              <td><%= m.categorie %></td>
+              <td>
+                <% if (m.vehicule) { %>
+                  <%= m.vehicule.plaque %>
+                <% } else { %>
+                  Aucun
+                <% } %>
+              </td>
+              <td><%= m.description %></td>
+              <td><%= m.prix %> €</td>
+              <td>
+                <% if (m.photos && m.photos.length > 0) { %>
+                  <% m.photos.forEach(function(photo) { %>
+                    <a href="/<%= photo.chemin %>" target="_blank">
+                      <img src="/<%= photo.chemin %>" alt="Photo" style="width: 50px; height: auto; margin-right: 5px;">
+                    </a>
+                  <% }); %>
+                <% } else { %>
+                  Aucun
+                <% } %>
+              </td>
+              <td>
+                <!-- Boutons cliquables : pointer vers les routes /modifier/:id et /supprimer/:id -->
+                <a href="/vehicule/modifier/<%= m.id %>" class="btn btn-warning btn-sm">Modifier</a>
+                <form action="/vehicule/supprimer/<%= m.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce matériel ?');">
+                  <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <a href="/materiel" class="btn btn-secondary mt-3">Retour au Dashboard Dépôt</a>
+  </div>
+
+  <script src="/js/bootstrap.bundle.min.js"></script>
+  <script nonce="<%= nonce %>">
+    const toggleBtn = document.getElementById('toggleMode');
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('mode-sombre');
+    });
+  </script>
+</body>
+</html>

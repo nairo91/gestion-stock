@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Scanner un code-barres / QR</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h1>Scanner un code-barres / QR</h1>
+    <p>Placez le code devant la caméra.</p>
+
+    <!-- Élément vidéo pour la capture -->
+    <div id="video-container" style="max-width: 500px;">
+      <video id="video" width="100%" height="auto"></video>
+    </div>
+
+    <div class="mt-3">
+      <button id="stopBtn" class="btn btn-danger">Arrêter le scan</button>
+    </div>
+
+    <!-- On affiche le résultat brut du scan ici -->
+    <div id="result" class="alert alert-info mt-3" style="display:none;"></div>
+  </div>
+
+  <!-- Script ZXing (CDN) -->
+  <script src="https://unpkg.com/@zxing/browser@latest"></script>
+  <!-- Notre script de gestion du scan -->
+  <script src="/js/scanner.js"></script>
+</body>
+</html>

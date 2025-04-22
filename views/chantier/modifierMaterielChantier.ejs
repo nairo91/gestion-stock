@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Modifier l'enregistrement du chantier</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-3">
+    <h2>Modifier l'enregistrement pour <%= mc.materiel.nom %> dans le chantier <%= mc.chantier.nom %></h2>
+    <form action="/chantier/materielChantier/modifier/<%= mc.id %>" method="POST">
+      <div class="mb-3">
+        <label for="quantite" class="form-label">Quantité actuelle : <strong><%= mc.quantite %></strong></label>
+      </div>
+      <div class="mb-3">
+        <label for="quantite">Nouvelle quantité</label>
+        <input type="number" name="quantite" id="quantite" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success">Enregistrer</button>
+      <a href="/chantier" class="btn btn-secondary">Retour</a>
+    </form>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

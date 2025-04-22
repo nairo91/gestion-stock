@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Modifier la Quantité</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Icônes Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      background: #f0f2f5;
+      color: #333;
+    }
+    .card-custom {
+      margin: 2rem auto;
+      max-width: 500px;
+      border: none;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      background: #fff;
+    }
+    .card-header-custom {
+      background: linear-gradient(45deg, #0984e3, #74b9ff);
+      color: #fff;
+      padding: 1.25rem 1.5rem;
+      border-top-left-radius: 0.75rem;
+      border-top-right-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-body-custom {
+      padding: 1.5rem;
+    }
+    .btn-add {
+      background-color: #2ecc71;
+      border: none;
+      color: #fff;
+    }
+    .btn-add:hover {
+      background-color: #27ae60;
+    }
+    .btn-remove {
+      background-color: #e74c3c;
+      border: none;
+      color: #fff;
+    }
+    .btn-remove:hover {
+      background-color: #c0392b;
+    }
+    .card-footer-custom {
+      background-color: #f8f9fa;
+      padding: 1rem 1.5rem;
+      text-align: right;
+      border-bottom-left-radius: 0.75rem;
+      border-bottom-right-radius: 0.75rem;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container">
+    <div class="card card-custom">
+      <div class="card-header card-header-custom">
+        <i class="bi bi-pencil-square"></i>
+        <h2>Modifier la Quantité</h2>
+      </div>
+      <div class="card-body card-body-custom">
+        <p class="mb-2">
+          Pour le matériel : <strong><%= materiel.nom %></strong>
+        </p>
+        <p class="mb-4">
+          Quantité actuelle :
+          <span class="badge bg-info text-dark"><%= materiel.quantite %></span>
+        </p>
+        <form action="/materiel/modifier/<%= materiel.id %>" method="POST" class="row g-3">
+          <div class="col-12">
+            <label for="amount" class="form-label fw-bold">Combien ?</label>
+            <input type="number" name="amount" id="amount" class="form-control" value="1" min="1" required>
+            <small class="text-muted">Saisissez la quantité à ajouter ou retirer.</small>
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" name="action" value="add" class="btn btn-add flex-fill">
+              <i class="bi bi-plus-circle me-1"></i> Ajouter
+            </button>
+            <button type="submit" name="action" value="remove" class="btn btn-remove flex-fill">
+              <i class="bi bi-dash-circle me-1"></i> Retirer
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer card-footer-custom">
+        <a href="/materiel" class="btn btn-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Retour au Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

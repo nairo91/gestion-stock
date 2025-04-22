@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Historique - Stock Véhicules</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Si vous souhaitez utiliser les icônes Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <!-- Votre fichier de style perso, s'il existe -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <style>
+    /* Exemple de palette plus “pastel” / colorée */
+    
+    /* Barre de navigation et header de la card */
+    .navbar,
+    .card-header {
+      background-color: #6c5ce7; /* un violet pastel */
+      color: #fff;
+    }
+    
+    /* Titre dans la navbar */
+    .navbar-brand {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* Le conteneur principal */
+    .container {
+      margin-top: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    /* La card principale */
+    .card {
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .card-header {
+      border-bottom: none;
+    }
+    
+    /* Table custom */
+    .table-historique thead th {
+      background-color: #6c5ce7; /* violet */
+      color: #fff;
+      border: none;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .table-historique tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+    
+    /* Badges d’action, dans un style plus pastel */
+    .badge-action {
+      font-size: 0.85rem;
+      padding: 0.35em 0.6em;
+      border-radius: 0.5rem;
+      text-transform: uppercase;
+    }
+    .badge-create {
+      background-color: #55efc4; /* vert pastel */
+      color: #2d3436;
+    }
+    .badge-update {
+      background-color: #ffeaa7; /* jaune pastel */
+      color: #2d3436;
+    }
+    .badge-delete {
+      background-color: #ff7675; /* rouge pastel */
+      color: #fff;
+    }
+    .badge-vehicule-create {
+      background-color: #74b9ff; /* bleu pastel */
+      color: #fff;
+    }
+    
+    /* Mode sombre */
+    body.mode-sombre {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    body.mode-sombre .navbar,
+    body.mode-sombre .card-header,
+    body.mode-sombre .table-historique thead th {
+      background-color: #2d3436 !important; /* un gris très foncé */
+    }
+    body.mode-sombre .table-historique tbody tr:hover {
+      background-color: #3a3a3a;
+    }
+    body.mode-sombre .badge-create,
+    body.mode-sombre .badge-update,
+    body.mode-sombre .badge-delete,
+    body.mode-sombre .badge-vehicule-create {
+      filter: brightness(0.9);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Barre de navigation -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-truck"></i> Historique - Stock Véhicules
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggle">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarToggle">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <button id="toggleMode" class="btn btn-outline-light btn-sm me-2">
+              <i class="bi bi-moon-stars-fill"></i> Mode sombre
+            </button>
+          </li>
+          <li class="nav-item">
+            <a href="/vehicule" class="btn btn-light btn-sm">
+              <i class="bi bi-arrow-left"></i> Retour
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Contenu principal -->
+  <div class="container">
+    <div class="card">
+      <div class="card-header d-flex align-items-center">
+        <h2 class="h5 mb-0">
+          <i class="bi bi-clock-history me-2"></i>Historique des opérations sur le stock véhicule
+        </h2>
+      </div>
+      
+      <div class="card-body">
+        <% if (historiques && historiques.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-historique align-middle table-borderless">
+              <thead>
+                <tr>
+                  <th>Matériel / Véhicule</th>
+                  <th>Ancienne Qte</th>
+                  <th>Nouvelle Qte</th>
+                  <th>Action</th>
+                  <th>Effectué par</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% historiques.forEach(function(h) { %>
+                  <tr>
+                    <td>
+                      <% if (h.materiel) { %>
+                        <%= h.materiel.nom %>
+                      <% } else { %>
+                        <%= h.materielNom ? h.materielNom : 'Inconnu' %>
+                      <% } %>
+                    </td>
+                    <td><%= (h.oldQuantite !== null) ? h.oldQuantite : '-' %></td>
+                    <td><%= (h.newQuantite !== null) ? h.newQuantite : '-' %></td>
+                    <td>
+                      <!-- Gestion des différentes actions -->
+                      <% if (h.action === 'DELETE') { %>
+                        <span class="badge badge-action badge-delete">
+                          <i class="bi bi-trash-fill"></i> Supprimé
+                        </span>
+                      <% } else if (h.action === 'UPDATE') { %>
+                        <span class="badge badge-action badge-update">
+                          <i class="bi bi-pencil-square"></i> Modifié
+                        </span>
+                      <% } else if (h.action === 'CREATE') { %>
+                        <span class="badge badge-action badge-create">
+                          <i class="bi bi-plus-circle"></i> Créé
+                        </span>
+                      <% } else if (h.action === 'VEHICULE_CREATE') { %>
+                        <span class="badge badge-action badge-vehicule-create">
+                          <i class="bi bi-truck"></i> Véhicule Créé
+                        </span>
+                      <% } else { %>
+                        <span class="badge badge-action bg-info">
+                          <%= h.action %>
+                        </span>
+                      <% } %>
+                    </td>
+                    <td><%= h.user ? h.user.nom : 'Inconnu' %></td>
+                    <td><%= new Date(h.createdAt).toLocaleString('fr-FR') %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <p class="text-muted text-center fs-5 my-4">
+            <i class="bi bi-info-circle-fill"></i> Aucun historique à afficher.
+          </p>
+        <% } %>
+      </div>
+      
+      <div class="card-footer bg-light text-end">
+        <a href="/vehicule" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Retour au Dashboard Véhicules
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bootstrap JS -->
+  <script src="/js/bootstrap.bundle.min.js"></script>
+  <script nonce="<%= nonce %>">
+    const toggleBtn = document.getElementById('toggleMode');
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('mode-sombre');
+    });
+  </script>
+</body>
+</html>

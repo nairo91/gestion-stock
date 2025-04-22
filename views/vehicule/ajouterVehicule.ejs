@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter un Véhicule</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-3">
+    <h2>Ajouter un Véhicule</h2>
+    <form action="/vehicule/ajouter-vehicule" method="POST">
+      <div class="form-group mb-3">
+        <label>Plaque du Véhicule</label>
+        <input type="text" name="plaque" class="form-control" placeholder="Ex: AB-123-CD" required>
+      </div>
+      <div class="form-group mb-3">
+        <label>Description (optionnelle)</label>
+        <textarea name="description" class="form-control" placeholder="Description du véhicule"></textarea>
+      </div>
+      <button type="submit" class="btn btn-success">Ajouter le Véhicule</button>
+    </form>
+    <a href="/vehicule" class="btn btn-secondary mt-3">Retour au Dashboard Véhicules</a>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

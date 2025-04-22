@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Modifier Matériel Véhicule</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-3">
+    <h2>Modifier Matériel Véhicule</h2>
+    <form action="/vehicule/modifier/<%= materiel.id %>" method="POST">
+      <div class="mb-3">
+        <label>Nom</label>
+        <input type="text" name="nom" class="form-control" value="<%= materiel.nom %>" required>
+      </div>
+      <div class="mb-3">
+        <label>Quantité</label>
+        <input type="number" name="quantite" class="form-control" value="<%= materiel.quantite %>" required>
+      </div>
+      <div class="mb-3">
+        <label>Description</label>
+        <textarea name="description" class="form-control"><%= materiel.description || '' %></textarea>
+      </div>
+      <div class="mb-3">
+        <label>Prix</label>
+        <input type="number" step="0.01" name="prix" class="form-control" value="<%= materiel.prix %>" required>
+      </div>
+      <div class="mb-3">
+        <label>Catégorie</label>
+        <input type="text" name="categorie" class="form-control" value="<%= materiel.categorie %>">
+      </div>
+      <div class="mb-3">
+        <label>Véhicule</label>
+        <select name="vehiculeId" class="form-control">
+          <option value="">Aucun</option>
+          <% vehicles.forEach(function(v) { %>
+            <option value="<%= v.id %>" <%= (materiel.vehiculeId == v.id) ? 'selected' : '' %>>
+              <%= v.plaque %> (<%= v.description || '' %>)
+            </option>
+          <% }); %>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-success">Enregistrer</button>
+      <a href="/vehicule" class="btn btn-secondary">Retour</a>
+    </form>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

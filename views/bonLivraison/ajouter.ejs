@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter un bon de livraison</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Icônes Bootstrap (optionnel) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <style>
+
+    
+  /* Mettre en avant les cases à cocher */
+  .form-check-input[type="checkbox"] {
+    width: 1.3rem;          /* Largeur augmentée */
+    height: 1.3rem;         /* Hauteur augmentée */
+    border-radius: 0.25rem; /* Coins légèrement arrondis */
+    border: 2px solid #ccc; /* Bordure plus épaisse */
+    cursor: pointer;        /* Curseur "pointer" pour inviter au clic */
+  }
+
+  /* Couleur quand la case est cochée */
+  .form-check-input[type="checkbox"]:checked {
+    background-color: #2980b9; /* Couleur de fond lors du check */
+    border-color: #2980b9;     /* Bordure assortie */
+  }
+
+  /* Optionnel: survol de la case (hover) */
+  .form-check-input[type="checkbox"]:hover {
+    border-color: #2980b9;
+  }
+
+    body {
+      background-color: #f8f9fa; /* Gris très clair */
+      color: #333;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+    }
+    .navbar {
+      background-color: #2980b9; /* Couleur du header */
+    }
+    .navbar-brand {
+      color: #fff !important;
+      font-weight: 500;
+      font-size: 1.2rem;
+    }
+    .navbar-brand:hover {
+      color: #ecf0f1 !important;
+      text-decoration: none;
+    }
+    .navbar-light .navbar-toggler {
+      border-color: rgba(255,255,255,0.5);
+    }
+    .navbar-light .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba%281,1,1,0.5%29' stroke-width='2' stroke-linecap='round' d='M4 7h22M4 15h22M4 23h22' /%3E%3C/svg%3E");
+    }
+
+    .card {
+      border: none;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-top: 1.5rem;
+    }
+    .card-header {
+      background-color: #2980b9; 
+      color: #fff;
+      border-bottom: none;
+      padding: 1rem 1.5rem;
+    }
+    .card-header h1 {
+      font-size: 1.4rem;
+      margin: 0;
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    .card-footer {
+      background-color: #f1f1f1;
+      border-top: none;
+      padding: 1rem 1.5rem;
+    }
+
+    /* Section "Articles livrés" */
+    .article-section-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+    }
+    .article-section-title i {
+      margin-right: 0.5rem;
+    }
+
+    .form-check-label {
+      font-weight: 500;
+    }
+
+    /* Petits ajustements responsive */
+    @media (max-width: 576px) {
+      .card-header h1 {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Barre de navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <i class="bi bi-box-seam me-1"></i> Mon Application
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link text-white" href="/bonLivraison">
+              <i class="bi bi-card-checklist me-1"></i> Liste des bons de livraison
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenu principal -->
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h1><i class="bi bi-plus-circle me-2"></i> Ajouter un bon de livraison</h1>
+      </div>
+      <div class="card-body">
+
+        <form action="/bonLivraison/ajouter" method="POST">
+          <!-- Informations générales -->
+          <div class="mb-3">
+            <label for="fournisseur" class="form-label">Fournisseur <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="fournisseur" name="fournisseur" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="dateLivraison" class="form-label">Date de livraison <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="dateLivraison" name="dateLivraison" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="reference" class="form-label">Référence</label>
+            <input type="text" class="form-control" id="reference" name="reference">
+          </div>
+
+          <div class="mb-3">
+            <label for="receptionneur" class="form-label">Réceptionné par <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="receptionneur" name="receptionneur" required>
+          </div>
+
+          <!-- Destination -->
+          <div class="mb-3">
+            <label for="destination" class="form-label">Destination <span class="text-danger">*</span></label>
+            <select class="form-select" id="destination" name="destination" required>
+              <option value="" disabled selected>-- Choisir la destination --</option>
+              <option value="Stock dépôt">Stock dépôt</option>
+              <option value="Chantier">Chantier</option>
+              <option value="Véhicule">Véhicule</option>
+            </select>
+          </div>
+
+          <!-- Bloc Chantier (caché par défaut) -->
+          <div class="mb-3" id="chantierDiv" style="display: none;">
+            <label for="chantierId" class="form-label">Chantier</label>
+            <select class="form-select" id="chantierId" name="chantierId">
+              <option value="" disabled selected>-- Choisir un chantier --</option>
+              <% if (chantiers && chantiers.length > 0) { %>
+                <% chantiers.forEach(function(chantier) { %>
+                  <option value="<%= chantier.id %>">
+                    <%= chantier.nom %> - <%= chantier.localisation %>
+                  </option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+
+          <!-- Bloc Véhicule (caché par défaut) -->
+          <div class="mb-3" id="vehiculeDiv" style="display: none;">
+            <label for="vehiculeId" class="form-label">Véhicule</label>
+            <select class="form-select" id="vehiculeId" name="vehiculeId">
+              <option value="" disabled selected>-- Choisir un véhicule --</option>
+              <% if (vehicules && vehicules.length > 0) { %>
+                <% vehicules.forEach(function(v) { %>
+                  <option value="<%= v.id %>">
+                    <%= v.plaque %> (<%= v.description || '' %>)
+                  </option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+
+          <hr>
+
+          <!-- Articles livrés -->
+          <div class="article-section-title">
+            <i class="bi bi-cart-check me-1"></i> Articles livrés
+          </div>
+          <p class="mb-3 text-muted" style="font-size: 0.95rem;">
+            Cochez chaque article concerné, et indiquez la quantité :
+          </p>
+
+          <% if (materiels && materiels.length > 0) { %>
+            <% materiels.forEach(function(materiel, index) { %>
+              <div class="mb-3">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="materiel-<%= materiel.id %>"
+                    name="items[<%= index %>][materielId]"
+                    value="<%= materiel.id %>"
+                  >
+                  <label class="form-check-label" for="materiel-<%= materiel.id %>">
+                    <%= materiel.nom %> <span class="text-muted">(Disponible: <%= materiel.quantite %>)</span>
+                  </label>
+                </div>
+                <input
+                  type="number"
+                  class="form-control mt-2"
+                  name="items[<%= index %>][quantite]"
+                  min="0"
+                  placeholder="Quantité"
+                >
+              </div>
+            <% }); %>
+          <% } else { %>
+            <p>Aucun matériel disponible.</p>
+          <% } %>
+
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i> Ajouter le bon de livraison
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card-footer text-end">
+        <a href="/bonLivraison" class="btn btn-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script Bootstrap -->
+  <script src="/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Script pour gérer l'affichage Chantiers / Véhicule -->
+  <script nonce="<%= nonce %>">
+    document.addEventListener('DOMContentLoaded', function() {
+      const destSelect  = document.getElementById('destination');
+      const chantierDiv = document.getElementById('chantierDiv');
+      const vehiculeDiv = document.getElementById('vehiculeDiv');
+
+      function handleDestinationChange() {
+        chantierDiv.style.display = 'none';
+        vehiculeDiv.style.display = 'none';
+
+        if (destSelect.value === 'Chantier') {
+          chantierDiv.style.display = 'block';
+        } else if (destSelect.value === 'Véhicule') {
+          vehiculeDiv.style.display = 'block';
+        }
+      }
+
+      if (destSelect) {
+        destSelect.addEventListener('change', handleDestinationChange);
+      }
+    });
+  </script>
+</body>
+</html>
