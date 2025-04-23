@@ -12,14 +12,13 @@ const helmet        = require('helmet');
 
 const app = express();
 
-// Utilisation de Helmet pour d'autres protections
+// Sécurité : protection des en-têtes HTTP
 app.use(helmet());
 
-// Middleware pour générer un nonce et définir la CSP
+// Génération d’un nonce et définition d'une politique de sécurité CSP
 app.use((req, res, next) => {
   const nonce = crypto.randomBytes(16).toString('base64');
   res.locals.nonce = nonce;
-  // On autorise uniquement les scripts de 'self' et les scripts inline portant ce nonce.
   res.setHeader(
     "Content-Security-Policy",
     "default-src 'self'; " +
@@ -29,15 +28,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Configuration du moteur de template EJS
+// EJS comme moteur de template
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Middleware pour parser le corps des requêtes et servir les fichiers statiques
+// Middleware pour le corps des requêtes et les fichiers statiques
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Gestion des sessions et flash messages
+// Sessions et messages flash
 app.use(session({
   secret: 'ton_secret_super_secure',
   resave: false,
@@ -45,47 +45,37 @@ app.use(session({
 }));
 app.use(flash());
 
-// Initialisation de Passport
+// Passport.js
 require('./config/passport')(passport);
 app.use(passport.initialize());
 app.use(passport.session());
 
-// <-- AJOUTER CE MIDDLEWARE POUR QUE LA VARIABLE user SOIT DISPONIBLE DANS LES VUES
+// Injection de l'utilisateur dans les vues EJS
 app.use((req, res, next) => {
   res.locals.user = req.user;
   next();
 });
 
-// Synchronisation de la base de données avec alteration pour mettre à jour la structure
+// Base de données Sequelize + modèles supplémentaires
 const { sequelize } = require('./models');
-
-// Chargez explicitement les modèles qui ne sont pas importés automatiquement
 require('./models/Chantier');
 require('./models/MaterielChantier');
 
 sequelize.sync({ alter: true })
-    .then(() => console.log('Base de données synchronisée avec les nouveaux champs'))
-    .catch(err => console.error('Erreur de synchronisation', err));
+  .then(() => console.log('✅ Base de données synchronisée'))
+  .catch(err => console.error('❌ Erreur de synchronisation', err));
 
-// Définition des routes
-app.use('/',               require('./routes/index'));
-app.use('/auth',           require('./routes/auth'));
-app.use('/materiel',       require('./routes/materiel'));
-// Dans app.js, après les autres routes
-app.use('/vehicule',       require('./routes/vehicule'));
+// Déclaration des routes principales
+app.use('/', require('./routes/index'));
+app.use('/auth', require('./routes/auth'));
+app.use('/materiel', require('./routes/materiel'));
+app.use('/vehicule', require('./routes/vehicule'));
+app.use('/bonLivraison', require('./routes/bonLivraison'));
+app.use('/chantier', require('./routes/chantier'));
+app.use('/materielChantier', require('./routes/materielChantier')); // ← MANQUAIT
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Démarrage du serveur
+// Lancement du serveur
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`🚀 Serveur lancé sur le port ${PORT}`);
 });
-
-// Routes supplémentaires
-const bonLivraisonRoutes = require('./routes/bonLivraison');
-app.use('/bonLivraison', bonLivraisonRoutes);
-
-const chantierRoutes = require('./routes/chantier');
-app.use('/chantier', chantierRoutes);
-const materielChantierRoutes = require('./routes/materielChantier');
