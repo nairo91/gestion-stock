@@ -1,7 +1,7 @@
 // script/importUsers.js
 const fs = require('fs');
 const readline = require('readline');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { sequelize } = require('../models');
 const User = require('../models/User');
 
