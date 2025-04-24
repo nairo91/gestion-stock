@@ -1,21 +1,11 @@
 // models/index.js
-require('dotenv').config();                 // ← lit .env
-const { Sequelize } = require('sequelize');
+require('dotenv').config();
 
 /* ============ 1) Connexion ============ */
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host   : process.env.DB_HOST,
-    port   : process.env.DB_PORT || 5432,
-    dialect: 'postgres',
-    logging: false,            // passe à true pour voir les requêtes SQL
-  }
-);
+/* On RÉUTILISE l’instance créée dans config/database.js */
+const { sequelize, Sequelize } = require('../config/database');
 
-/* ============ 2) Imports ============ */
+/* ============ 2) Imports de modèles ============ */
 const User             = require('./User');
 const Materiel         = require('./Materiel');
 const Chantier         = require('./Chantier');
@@ -30,28 +20,28 @@ const Historique       = require('./Historique');
 
 /* ============ 3) Associations ============ */
 /* --- Chantier ⟷ Materiel (pivot : MaterielChantier) --- */
-MaterielChantier.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier', onDelete: 'CASCADE' });
-MaterielChantier.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel', onDelete: 'CASCADE' });
+MaterielChantier.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier',  onDelete: 'CASCADE' });
+MaterielChantier.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel',  onDelete: 'CASCADE' });
 Chantier.hasMany(MaterielChantier,   { foreignKey: 'chantierId', as: 'materielChantiers' });
 Materiel.hasMany(MaterielChantier,   { foreignKey: 'materielId', as: 'materielChantiers' });
 
 /* --- BonLivraison ⟷ Materiel (pivot : MaterielDelivery) --- */
-MaterielDelivery.belongsTo(BonLivraison,{ foreignKey: 'bonLivraisonId', as: 'bonLivraison', onDelete: 'CASCADE' });
-MaterielDelivery.belongsTo(Materiel,    { foreignKey: 'materielId',     as: 'materiel',      onDelete: 'CASCADE' });
-BonLivraison.hasMany(MaterielDelivery,  { foreignKey: 'bonLivraisonId', as: 'materiels' });
-Materiel.hasMany(MaterielDelivery,      { foreignKey: 'materielId',     as: 'deliveries' });
+MaterielDelivery.belongsTo(BonLivraison, { foreignKey: 'bonLivraisonId', as: 'bonLivraison', onDelete: 'CASCADE' });
+MaterielDelivery.belongsTo(Materiel,     { foreignKey: 'materielId',     as: 'materiel',     onDelete: 'CASCADE' });
+BonLivraison.hasMany(MaterielDelivery,   { foreignKey: 'bonLivraisonId', as: 'materiels' });
+Materiel.hasMany(MaterielDelivery,       { foreignKey: 'materielId',     as: 'deliveries' });
 
-/* --- Chantier ⟷ BonLivraison (une livraison peut cibler un chantier) --- */
+/* --- Chantier ⟷ BonLivraison (livraison vers un chantier) --- */
 BonLivraison.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier', onDelete: 'SET NULL' });
 Chantier.hasMany(BonLivraison,  { foreignKey: 'chantierId', as: 'bonsLivraison' });
 
 /* --- Vehicule ⟷ Materiel --- */
-Vehicule.hasMany(Materiel, { foreignKey: 'vehiculeId', as: 'materiels', onDelete: 'SET NULL' });
-Materiel.belongsTo(Vehicule, { foreignKey: 'vehiculeId', as: 'vehicule', onDelete: 'SET NULL' });
+Vehicule.hasMany(Materiel,   { foreignKey: 'vehiculeId', as: 'materiels', onDelete: 'SET NULL' });
+Materiel.belongsTo(Vehicule, { foreignKey: 'vehiculeId', as: 'vehicule',  onDelete: 'SET NULL' });
 
 /* --- Materiel ⟷ Photo --- */
 Photo.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel', onDelete: 'CASCADE' });
-Materiel.hasMany(Photo,   { foreignKey: 'materielId', as: 'photos'   });
+Materiel.hasMany(Photo,   { foreignKey: 'materielId', as: 'photos' });
 
 /* --- Historique ⟷ (Materiel / User) --- */
 Historique.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel', onDelete: 'SET NULL' });
@@ -64,7 +54,7 @@ module.exports = {
   sequelize,
   Sequelize,
 
-  // modèles (pratique pour les require ailleurs)
+  // Accès pratique aux modèles
   User,
   Materiel,
   Chantier,
