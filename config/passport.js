@@ -1,32 +1,51 @@
 // config/passport.js
 const LocalStrategy = require('passport-local').Strategy;
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+const bcrypt        = require('bcryptjs');
+const { User }      = require('../models');
 
-module.exports = function(passport) {
-    passport.use(new LocalStrategy({ usernameField: 'email' }, (email, password, done) => {
-        User.findOne({ where: { email } })
-            .then(user => {
-                if (!user) return done(null, false, { message: 'Email non trouvé' });
-                bcrypt.compare(password, user.password, (err, isMatch) => {
-                    if (err) throw err;
-                    if (isMatch) {
-                        return done(null, user);
-                    } else {
-                        return done(null, false, { message: 'Mot de passe incorrect' });
-                    }
-                });
-            })
-            .catch(err => done(err));
-    }));
+module.exports = function (passport) {
+  /*─────────────────────────────────────────────*
+   * STRATÉGIE « e-mail / mot de passe »          *
+   *─────────────────────────────────────────────*/
+  passport.use(
+    new LocalStrategy(
+      { usernameField: 'email' },
+      async (email, password, done) => {
+        try {
+          // on inclut la colonne password grâce au scope défini dans le modèle
+          const user = await User.scope('withPassword').findOne({ where: { email } });
 
-    passport.serializeUser((user, done) => {
-        done(null, user.id);
-    });
+          if (!user) {
+            return done(null, false, { message: 'Email inconnu' });
+          }
 
-    passport.deserializeUser((id, done) => {
-        User.findByPk(id)
-            .then(user => done(null, user))
-            .catch(err => done(err));
-    });
+          const ok = await bcrypt.compare(password, user.password);
+          if (!ok) {
+            return done(null, false, { message: 'Mot de passe incorrect' });
+          }
+
+          // on retire le hash avant de renvoyer l’objet en session
+          const safeUser = user.get({ plain: true });
+          delete safeUser.password;
+          return done(null, safeUser);
+        } catch (err) {
+          return done(err);
+        }
+      }
+    )
+  );
+
+  /*─────────────────────────────────────────────*
+   * SÉRIALISATION / DÉSÉRIALISATION             *
+   *─────────────────────────────────────────────*/
+  passport.serializeUser((user, done) => done(null, user.id));
+
+  passport.deserializeUser(async (id, done) => {
+    try {
+      const user = await User.findByPk(id);
+      done(null, user);
+    } catch (err) {
+      done(err);
+    }
+  });
 };

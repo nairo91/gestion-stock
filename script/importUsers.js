@@ -1,11 +1,10 @@
 // script/importUsers.js
-const fs = require('fs');
-const readline = require('readline');
-const bcrypt = require('bcryptjs');
+const fs        = require('fs');
+const readline  = require('readline');
 const { sequelize } = require('../models');
-const User = require('../models/User');
+const User      = require('../models/User');
 
-// Ajoutez ici la liste des e-mails devant devenir admin
+/* ─── listes d’administrateurs ─── */
 const ADMIN_EMAILS = [
   'mirona.rn@batirenov.info',
   'rouault.remy@batirenov.info',
@@ -15,93 +14,62 @@ const ADMIN_EMAILS = [
 
 async function importUsers(filePath) {
   const fileStream = fs.createReadStream(filePath, { encoding: 'utf8' });
-  const rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Infinity
-  });
+  const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
-  const results = [];
+  const batch = [];
   let lineNumber = 0;
 
   for await (const line of rl) {
     lineNumber++;
 
-    // Ignore les lignes vides
-    if (!line.trim()) {
-      console.log(`Ligne ${lineNumber} ignorée (vide).`);
-      continue;
-    }
+    if (!line.trim()) continue;                 // vide
+    if (lineNumber === 1)  continue;            // en-tête
 
-    // Ignorer la première ligne (en-tête)
-    if (lineNumber === 1) {
-      console.log(`Ligne ${lineNumber} ignorée (en-tête).`);
-      continue;
-    }
-
-    // Découper la ligne par le séparateur ';'
     const parts = line.split(';');
-
-    // On attend 7 colonnes (ID, Nom, Prénom, (vide), Email, (vide), Mot de passe)
     if (parts.length < 7) {
-      console.error(`Ligne ${lineNumber} ignorée (colonnes insuffisantes): ${line}`);
+      console.error(`Ligne ${lineNumber} ignorée (colonnes insuffisantes)`);
       continue;
     }
 
-    // Extraction des données selon l'ordre attendu
-    const nom = parts[1] ? parts[1].trim() : 'SansNom';
-    const prenom = parts[2] ? parts[2].trim() : '';
-    const email = parts[4] ? parts[4].trim() : '';
-    const rawPassword = parts[6] ? parts[6].trim() : '';
+    const nom   = (parts[1] || '').trim();
+    const prenom= (parts[2] || '').trim();
+    const email = (parts[4] || '').trim();
+    const pwd   = (parts[6] || '').replace(/MDP.?[:\s]*/i, '').trim();
 
-    if (!email || !rawPassword) {
-      console.error(`Ligne ${lineNumber} : email ou mot de passe manquant. Ligne: ${line}`);
+    if (!email || !pwd) {
+      console.error(`Ligne ${lineNumber} : email ou mdp manquant`);
       continue;
     }
 
-    // Optionnel : retirer un éventuel préfixe "MDP:" dans le mot de passe
-    const password = rawPassword.replace(/MDP.?[:\s]*/i, '').trim();
-
-    results.push({ nom: `${nom} ${prenom}`, email, password });
+    batch.push({
+      nom : `${nom} ${prenom}`.trim(),
+      email,
+      password: pwd,                    // mot de passe EN CLAIR (hook ➜ hash)
+      role: ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'user'
+    });
   }
 
   try {
-    // Synchronisation de la base (sans forcer pour conserver les données existantes)
-    await sequelize.sync();
+    await sequelize.sync();             // s’assure que la table existe
 
-    for (const userData of results) {
-      // Vérifier si l'utilisateur existe déjà (pour éviter les doublons)
-      const existingUser = await User.findOne({ where: { email: userData.email } });
-      if (existingUser) {
-        console.log(`Doublon détecté pour ${userData.email}, on ignore cette ligne.`);
-        continue;
-      }
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-      // Vérifier si l'email fait partie de la liste ADMIN_EMAILS
-      const role = ADMIN_EMAILS.includes(userData.email.toLowerCase())
-        ? 'admin'
-        : 'user';
-
-      await User.create({
-        nom: userData.nom,
-        email: userData.email,
-        password: hashedPassword,
-        role
-      });
-      console.log(`Compte créé pour : ${userData.email} (role: ${role})`);
+    for (const data of batch) {
+      const exists = await User.findOne({ where: { email: data.email } });
+      if (exists) continue;
+      await User.create(data);
+      console.log(`✓ ${data.email} (role ${data.role})`);
     }
-    console.log('Import terminé.');
+    console.log('Import terminé 🎉');
     process.exit(0);
   } catch (err) {
-    console.error("Erreur lors de l'import :", err);
+    console.error(err);
     process.exit(1);
   }
 }
 
+/* ─── lance le script ─── */
 const filePath = process.argv[2];
 if (!filePath) {
-  console.error("Usage: node script/importUsers.js <chemin_du_fichier>");
+  console.error('Usage: node script/importUsers.js <chemin_csv>');
   process.exit(1);
 }
-
 importUsers(filePath);
