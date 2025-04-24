@@ -1,76 +1,107 @@
 // models/Materiel.js
-const { sequelize, Sequelize } = require('./index');
-const Historique = require('./Historique');
-const Vehicule = require('./Vehicule');
-const Chantier = require('./Chantier');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');      // ajuste le chemin si besoin
 
-const Materiel = sequelize.define('Materiel', {
-  id: {
-    type: Sequelize.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+const Materiel = sequelize.define(
+  'Materiel',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+
+    /* --- Informations de base --- */
+    nom: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    reference: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    barcode: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+
+    /* --- Stock & tarification --- */
+    quantite: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+
+    prix: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
+
+    categorie: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    /* --- Emplacement physique (dépôt) --- */
+    rack: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    compartiment: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    niveau: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
+    /* --- FK vers véhicule ou chantier (mutuellement exclusifs) --- */
+    vehiculeId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'vehicules', key: 'id' },
+      onDelete: 'SET NULL',
+    },
+
+    chantierId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'chantiers', key: 'id' },
+      onDelete: 'SET NULL',
+    },
   },
-  nom: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  // Nouveau champ : Référence interne
-  reference: {
-    type: Sequelize.STRING,
-    allowNull: true,
-    defaultValue: ''
-  },
-  // Nouveau champ : code-barres ou QR code scanné
-  barcode: {
-    type: Sequelize.STRING,
-    allowNull: true,
-    defaultValue: null,
-    unique: false // Passez à true si vous voulez imposer l'unicité
-  },
-  quantite: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
-    defaultValue: 0
-  },
-  description: {
-    type: Sequelize.TEXT
-  },
-  prix: {
-    type: Sequelize.FLOAT,
-    allowNull: false
-  },
-  categorie: {
-    type: Sequelize.STRING,
-    allowNull: false,
-    defaultValue: 'Autre'
-  },
-  rack: {
-    type: Sequelize.STRING,
-    allowNull: true
-  },
-  compartiment: {
-    type: Sequelize.STRING,
-    allowNull: true
-  },
-  niveau: {
-    type: Sequelize.INTEGER,
-    allowNull: true
-  },
-  vehiculeId: {
-    type: Sequelize.INTEGER,
-    allowNull: true
-  },
-  chantierId: {
-    type: Sequelize.INTEGER,
-    allowNull: true
+  {
+    tableName: 'materiels',
+    timestamps: true,
+    indexes: [
+      { unique: true, fields: ['barcode'] },
+      // index composite utile dans les recherches
+      { fields: ['categorie', 'nom'] },
+    ],
   }
-});
+);
 
-// Associations
-Materiel.hasMany(Historique, { foreignKey: 'materielId', as: 'historiques' });
-Historique.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel' });
+/* ======================
+   Associations (à placer après l’import
+   de tous les modèles, par ex. dans models/index.js)
+======================
 
-Materiel.belongsTo(Vehicule, { foreignKey: 'vehiculeId', as: 'vehicule' });
-Materiel.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier' });
+Materiel.belongsTo(Vehicule,  { foreignKey: 'vehiculeId',  as: 'vehicule' });
+Materiel.belongsTo(Chantier,  { foreignKey: 'chantierId',  as: 'chantier'  });
+Materiel.hasMany(Photo,       { foreignKey: 'materielId',  as: 'photos'   });
+Materiel.hasMany(Historique,  { foreignKey: 'materielId',  as: 'historiques' });
+
+*/
 
 module.exports = Materiel;

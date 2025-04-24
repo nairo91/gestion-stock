@@ -1,60 +1,74 @@
 // models/BonLivraison.js
-const { sequelize, Sequelize } = require('./index');
-const MaterielDelivery = require('./MaterielDelivery');
-const Chantier = require('./Chantier'); // pour l’association
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');   // ajuste le chemin si besoin
 
-const BonLivraison = sequelize.define('BonLivraison', {
-  fournisseur: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  dateLivraison: {
-    type: Sequelize.DATE,
-    allowNull: false
-  },
-  reference: {
-    type: Sequelize.STRING,
-    allowNull: true
-  },
-  receptionneur: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  destination: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-
-  // NOUVEAU CHAMP : chantierId
-  chantierId: {
-    type: Sequelize.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'Chantiers', // nom de la table
-      key: 'id'
+const BonLivraison = sequelize.define(
+  'BonLivraison',
+  {
+    id: {
+      type      : DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
     },
-    onUpdate: 'CASCADE',
-    onDelete: 'SET NULL'
+
+    fournisseur: {
+      type     : DataTypes.STRING,
+      allowNull: false,
+    },
+
+    dateLivraison: {
+      type     : DataTypes.DATEONLY,
+      allowNull: false,
+    },
+
+    reference: {
+      type     : DataTypes.STRING,
+      allowNull: true,
+    },
+
+    receptionneur: {
+      type     : DataTypes.STRING,
+      allowNull: true,
+    },
+
+    // « Stock dépôt », « Chantier », « Véhicule »
+    destination: {
+      type     : DataTypes.ENUM('Stock dépôt', 'Chantier', 'Véhicule'),
+      allowNull: false,
+    },
+
+    // FK optionnelle vers le chantier destinataire
+    chantierId: {
+      type      : DataTypes.INTEGER,
+      allowNull : true,
+      references: { model: 'chantiers', key: 'id' },
+      onDelete  : 'SET NULL',
+    },
+  },
+  {
+    tableName : 'bon_livraisons',
+    timestamps: true,
   }
-}, {
-  // freezeTableName: true,
-  // tableName: 'BonLivraison'
-});
+);
 
-// Association : un BonLivraison a plusieurs MaterielDelivery
-BonLivraison.hasMany(MaterielDelivery, {
-  foreignKey: 'bonLivraisonId',
-  as: 'materiels'
-});
-MaterielDelivery.belongsTo(BonLivraison, {
-  foreignKey: 'bonLivraisonId',
-  as: 'bonLivraison'
-});
+/* ======================
+   Associations à POUSSER dans models/index.js
+======================
 
-// Association : un BonLivraison appartient (optionnellement) à un Chantier
+const BonLivraison = require('./BonLivraison');
+const Chantier     = require('./Chantier');
+
 BonLivraison.belongsTo(Chantier, {
   foreignKey: 'chantierId',
-  as: 'chantier'
+  as        : 'chantier',
+  onDelete  : 'SET NULL',
 });
+
+Chantier.hasMany(BonLivraison, {
+  foreignKey: 'chantierId',
+  as        : 'bonsLivraison',
+});
+
+*/
 
 module.exports = BonLivraison;

@@ -1,18 +1,61 @@
-const { sequelize, Sequelize } = require('./index');
-const Chantier = require('./Chantier');
-const Materiel = require('./Materiel');
+// models/MaterielChantier.js
+const { DataTypes } = require('sequelize');
+const { sequelize }  = require('../config/database');   // ajuste le chemin si besoin
 
-const MaterielChantier = sequelize.define('MaterielChantier', {
-  quantite: {
-    type: Sequelize.INTEGER,
-    allowNull: false
+/**
+ * Table d’association n-m entre les chantiers et les matériels.
+ * Chaque ligne dit : « il y a N exemplaires de tel matériel sur tel chantier ».
+ */
+const MaterielChantier = sequelize.define(
+  'MaterielChantier',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+
+    quantite: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+      },
+    },
+  },
+  {
+    tableName: 'materiel_chantiers',
+    timestamps: true,    // createdAt / updatedAt
   }
-}, {
-  timestamps: true
+);
+
+/* ======================
+   Associations (à placer dans le fichier central)
+======================
+
+MaterielChantier.belongsTo(Chantier, {
+  foreignKey: 'chantierId',
+  as: 'chantier',
+  onDelete: 'CASCADE',
 });
 
-// Associations : un MaterielChantier appartient à un Chantier et à un Materiel
-MaterielChantier.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier' });
-MaterielChantier.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel' });
+MaterielChantier.belongsTo(Materiel, {
+  foreignKey: 'materielId',
+  as: 'materiel',
+  onDelete: 'CASCADE',
+});
+
+Chantier.hasMany(MaterielChantier, {
+  foreignKey: 'chantierId',
+  as: 'materielChantiers',
+});
+
+Materiel.hasMany(MaterielChantier, {
+  foreignKey: 'materielId',
+  as: 'materielChantiers',
+});
+
+*/
 
 module.exports = MaterielChantier;

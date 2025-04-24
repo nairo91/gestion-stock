@@ -1,52 +1,71 @@
 // models/Historique.js
-const { sequelize, Sequelize } = require('./index');
+const { DataTypes } = require('sequelize');
+const { sequelize }  = require('../config/database');      // ajuste le chemin si besoin
 
-const Historique = sequelize.define('Historique', {
+const Historique = sequelize.define(
+  'Historique',
+  {
     id: {
-        type: Sequelize.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
     },
-    materielId: {
-        type: Sequelize.INTEGER,
-        allowNull: true, // Permettre null après suppression
-        references: {
-            model: 'Materiels',
-            key: 'id'
-        },
-        onDelete: 'SET NULL'
+
+    // Stock concerné : ‘depot’, ‘chantier’, ‘vehicule’, etc.
+    stockType: {
+      type: DataTypes.ENUM('depot', 'chantier', 'vehicule'),
+      allowNull: false,
     },
+
+    // Action : CREATE, UPDATE, DELETE, DELIVERY_TO_CHANTIER…
+    action: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+
+    // Quantités avant / après (null si pas applicable)
     oldQuantite: {
-        type: Sequelize.INTEGER
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
     newQuantite: {
-        type: Sequelize.INTEGER
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
+    // Libellé lisible (nom du matériel ou autre)
+    materielNom: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    /* ===== Clés étrangères facultatives ===== */
+    materielId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'materiels', key: 'id' },
+      onDelete: 'SET NULL',
     },
     userId: {
-        type: Sequelize.INTEGER
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'users', key: 'id' },
+      onDelete: 'SET NULL',
     },
-    // Champ pour distinguer la nature de l’opération (UPDATE, DELETE, CREATE, etc.)
-    action: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: 'UPDATE'
-    },
-    // Champ pour conserver le nom du matériel au moment de l’opération
-    materielNom: {
-        type: Sequelize.STRING
-    },
-    // Nouveau champ pour le type de stock ("depot" ou "chantier")
-    stockType: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: 'depot'
-    }
-}, {
-    timestamps: true
-});
+  },
+  {
+    tableName: 'historiques',
+    timestamps: true,           // createdAt / updatedAt
+  }
+);
+
+/* ======================
+   Associations (à placer dans le fichier central)
+======================
+
+Historique.belongsTo(Materiel, { foreignKey: 'materielId',  as: 'materiel' });
+Historique.belongsTo(User,     { foreignKey: 'userId',      as: 'user'     });
+
+*/
 
 module.exports = Historique;
-
-// Association Historique ↔ User
-const User = require('./User');
-Historique.belongsTo(User, { foreignKey: 'userId', as: 'user' });

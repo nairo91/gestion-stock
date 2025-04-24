@@ -1,23 +1,52 @@
 // models/Vehicule.js
-const { sequelize, Sequelize } = require('./index');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');   // ajuste le chemin si besoin
 
-const Vehicule = sequelize.define('Vehicule', {
-  id: {
-    type: Sequelize.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+const Vehicule = sequelize.define(
+  'Vehicule',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+
+    plaque: {
+      type     : DataTypes.STRING,
+      allowNull: false,
+      unique   : true,
+    },
+
+    description: {
+      type     : DataTypes.TEXT,
+      allowNull: true,
+    },
   },
-  plaque: {
-    type: Sequelize.STRING,
-    allowNull: false,
-    unique: true
-  },
-  description: {
-    type: Sequelize.STRING,
-    allowNull: true
+  {
+    tableName : 'vehicules',
+    timestamps: true,
   }
-}, {
-  // Options supplémentaires si besoin
+);
+
+/* ======================
+   Associations à POUSSER dans models/index.js
+======================
+
+const Vehicule = require('./Vehicule');
+const Materiel = require('./Materiel');
+
+Vehicule.hasMany(Materiel, {
+  foreignKey: 'vehiculeId',
+  as        : 'materiels',
+  onDelete  : 'SET NULL',
 });
+
+Materiel.belongsTo(Vehicule, {
+  foreignKey: 'vehiculeId',
+  as        : 'vehicule',
+  onDelete  : 'SET NULL',
+});
+
+*/
 
 module.exports = Vehicule;
