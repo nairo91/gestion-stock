@@ -180,6 +180,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   try {
     const {
       nom,
+      reference,
       minPrix,
       maxPrix,
       minQuantite,
@@ -199,6 +200,10 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     // Filtres
     if (nom && nom.trim() !== '') {
       whereClause.nom = { [Op.like]: `%${nom}%` };
+    }
+     /* ✅ filtre référence */
+     if (reference && reference.trim() !== '') {
+      whereClause.reference = { [Op.like]: `%${reference}%` };
     }
     if (categorie && categorie.trim() !== '') {
       whereClause.categorie = categorie;
