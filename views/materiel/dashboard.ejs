@@ -328,6 +328,46 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Mobile: on masque le tableau et on affiche des cartes -->
+<div class="d-block d-md-none">
+  <% materiels.forEach(function(m) { %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">
+          <%= m.nom %> 
+          <% if (m.reference) { %>
+            <small class="text-muted">(<%= m.reference %>)</small>
+          <% } %>
+        </h5>
+        <ul class="list-unstyled mb-0">
+          <li><strong>Quantité :</strong> <%= m.quantite %></li>
+          <li><strong>Catégorie :</strong> <%= m.categorie %></li>
+          <li><strong>Rack :</strong> <%= m.rack %></li>
+          <li><strong>Compartiment :</strong> <%= m.compartiment %></li>
+          <li><strong>Niveau :</strong> <%= m.niveau!==null?m.niveau:'' %></li>
+          <li><strong>Description :</strong> <%= m.description %></li>
+          <li><strong>Prix :</strong> <%= m.prix %> €</li>
+          <li>
+            <strong>Photos :</strong>
+            <% if (m.photos.length) { %>
+              <% m.photos.forEach(photo => { %>
+                <a href="/<%=photo.chemin%>" target="_blank">📷</a>
+              <% }) %>
+            <% } else { %>Aucune<% } %>
+          </li>
+        </ul>
+        <% if (user && user.role==='admin') { %>
+          <a href="/materiel/modifier/<%=m.id%>" class="btn btn-sm btn-warning">Modifier</a>
+          <form action="/materiel/supprimer/<%=m.id%>" method="POST" style="display:inline;">
+            <button class="btn btn-sm btn-danger">Supprimer</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
       </div>
     </div>
   </div> <!-- /container -->
