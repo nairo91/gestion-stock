@@ -1,28 +1,31 @@
-// src/script/createAdmin.js
-const bcrypt = require('bcryptjs');
-const { sequelize, User } = require('../models');
+// script/createAdmin.js
+const { sequelize } = require('../models');
+const User        = require('../models/User');
 
-(async () => {
+/* ─── informations du compte Bastien ─── */
+const ADMIN_DATA = {
+  nom     : 'Bastien Giry',
+  email   : 'giry.bastien@batirenov.info',
+  password: 'BastienBR91Giry',  // en clair : sera hashé par le hook
+  role    : 'admin'
+};
+
+(async function createAdmin() {
   try {
-    const hash = await bcrypt.hash('BastienBR91Giry', 10);
-
-    // Synchronise la base (création des tables si nécessaire)
+    // 1) Synchronise la base (crée la table si besoin)
     await sequelize.sync();
 
-    // Crée ou mets à jour l’utilisateur
+    // 2) Crée ou met à jour l’utilisateur
     const [user, created] = await User.findOrCreate({
-      where: { email: 'giry.bastien@batirenov.info' },
-      defaults: {
-        nom     : 'Bastien Giry',
-        password: hash,
-        role    : 'admin'
-      }
+      where:   { email: ADMIN_DATA.email },
+      defaults: ADMIN_DATA
     });
 
     if (!created) {
-      user.nom      = 'Bastien Giry';
-      user.password = hash;
-      user.role     = 'admin';
+      // Si déjà présent, on met à jour nom, mot de passe, rôle
+      user.nom      = ADMIN_DATA.nom;
+      user.password = ADMIN_DATA.password;
+      user.role     = ADMIN_DATA.role;
       await user.save();
       console.log('✓ Utilisateur existant mis à jour en admin');
     } else {
