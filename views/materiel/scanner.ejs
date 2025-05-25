@@ -3,29 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <title>Scanner un code-barres / QR</title>
+
+  <!-- Bootstrap -->
   <link rel="stylesheet" href="/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
+
   <div class="container py-4">
     <h1>Scanner un code-barres / QR</h1>
-    <p>Placez le code devant la caméra.</p>
+    <p class="mb-3">Autorise l’accès à la caméra, puis place le code dans le cadre.</p>
 
-    <!-- Élément vidéo pour la capture -->
-    <div id="video-container" style="max-width: 500px;">
-      <video id="video" width="100%" height="auto"></video>
+    <!-- Flux vidéo -->
+    <div id="video-container" style="max-width:500px">
+      <video id="video" width="100%" height="auto" playsinline></video>
     </div>
 
-    <div class="mt-3">
-      <button id="stopBtn" class="btn btn-danger">Arrêter le scan</button>
-    </div>
+    <button id="stopBtn" class="btn btn-danger mt-3">Arrêter le scan</button>
 
-    <!-- On affiche le résultat brut du scan ici -->
-    <div id="result" class="alert alert-info mt-3" style="display:none;"></div>
+    <!-- Message résultat -->
+    <div id="result" class="alert mt-3" style="display:none"></div>
   </div>
 
-  <!-- Script ZXing (CDN) -->
-  <script src="https://unpkg.com/@zxing/browser@latest"></script>
-  <!-- Notre script de gestion du scan -->
-  <script src="/js/scanner.js"></script>
+  <!-- ZXing : doit être chargé AVANT scanner.js -->
+  <script src="/js/zxing.min.js" nonce="<%= nonce %>"></script>
+  <!-- Ton script -->
+  <script src="/js/scanner.js"     nonce="<%= nonce %>"></script>
 </body>
 </html>

@@ -1,30 +1,35 @@
 // config/database.js
-require('dotenv').config();
-const { Sequelize } = require('sequelize');
+require('dotenv').config()
+const { Sequelize } = require('sequelize')
 
-/**
- * Instance Sequelize UNIQUE pour toute l’application.
- * Inclut l’option SSL indispensable sur Render (PostgreSQL managé).
- */
-const sequelize = new Sequelize(
-  process.env.DB_NAME,          // ex. gestionstock_isaq
-  process.env.DB_USER,          // ex. gestionstock_user
-  process.env.DB_PASSWORD,      // ex. pMyc9YEsT7PrAwWFEOvVD3wiiseMURs
-  {
-    host   : process.env.DB_HOST,         // dpg-xxxxxxxx.frankfurt-postgres.render.com
-    port   : process.env.DB_PORT || 5432, // 5432 par défaut
-    dialect: 'postgres',
+let sequelize
 
-    // ➜ Ajout : Render exige SSL
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false, // Render fournit un certificat auto-signé
+if (process.env.NODE_ENV === 'production' && process.env.DB_HOST) {
+  // Sur Render (production), on se connecte à Postgres
+  sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
+    {
+      host   : process.env.DB_HOST,
+      port   : process.env.DB_PORT || 5432,
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
       },
-    },
+      logging: false
+    }
+  )
+} else {
+  // En développement local, on utilise SQLite (fichier database.sqlite à la racine)
+  sequelize = new Sequelize({
+    dialect : 'sqlite',
+    storage : './database.sqlite',
+    logging : false
+  })
+}
 
-    logging: false, // passe à true pour voir les requêtes SQL
-  }
-);
-
-module.exports = { sequelize, Sequelize };
+module.exports = { sequelize, Sequelize }

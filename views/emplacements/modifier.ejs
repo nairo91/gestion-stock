@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Modifier Emplacement</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-4">
+    <h1>Modifier Emplacement</h1>
+    <form method="POST" action="/emplacements/modifier/<%= emplacement.id %>">
+      <div class="mb-3">
+        <label class="form-label">Nom</label>
+        <input name="nom" value="<%= emplacement.nom %>" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <input name="description" value="<%= emplacement.description %>" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Chantier</label>
+        <select name="chantierId" class="form-select" required>
+          <% chantiers.forEach(c => { %>
+            <option value="<%= c.id %>" <%= c.id===emplacement.chantierId?'selected':'' %>><%= c.nom %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="btn btn-primary">Enregistrer</button>
+      <a href="/emplacements" class="btn btn-secondary">Annuler</a>
+    </form>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

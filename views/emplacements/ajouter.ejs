@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajouter un Emplacement</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-4">
+    <h1>Nouvel Emplacement</h1>
+    <form method="POST" action="/emplacements/ajouter">
+      <div class="mb-3">
+        <label class="form-label">Nom</label>
+        <input name="nom" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <input name="description" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Chantier</label>
+        <select name="chantierId" class="form-select" required>
+          <option value="" disabled selected>Choisir un chantier</option>
+          <% chantiers.forEach(c => { %>
+            <option value="<%= c.id %>"><%= c.nom %> – <%= c.localisation %></option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="btn btn-success">Créer</button>
+      <a href="/emplacements" class="btn btn-secondary">Annuler</a>
+    </form>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

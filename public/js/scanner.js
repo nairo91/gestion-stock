@@ -1,64 +1,56 @@
-// public/js/scanner.js
+/* public/js/scanner.js */
+(() => {
+  const video      = document.getElementById('video');
+  const resultBox  = document.getElementById('result');
+  const stopBtn    = document.getElementById('stopBtn');
+  const codeReader = new ZXing.BrowserMultiFormatReader();
 
-window.addEventListener('DOMContentLoaded', async () => {
-    const codeReader = new ZXing.BrowserMultiFormatReader();
-    const video = document.getElementById('video');
-    const resultDiv = document.getElementById('result');
-    const stopBtn = document.getElementById('stopBtn');
-  
+  /** Affiche un message (succès / erreur) */
+  function show(msg, error = false) {
+    resultBox.className = 'alert ' + (error ? 'alert-danger' : 'alert-success');
+    resultBox.textContent = msg;
+    resultBox.style.display = 'block';
+  }
+
+  /** Stoppe proprement la lecture vidéo */
+  function stop() { codeReader.reset(); }
+
+  /** Envoie le code scanné à l’API /materiel/scan */
+  async function sendToServer(code) {
     try {
-      // Liste des caméras
+      const r = await fetch('/materiel/scan', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ barcode: code })
+      });
+      const data = await r.json();
+      if (data.redirect)      location.href = data.redirect;
+      else if (data.error)    show(data.error, true);
+    } catch (e) { show('Erreur réseau', true); }
+  }
+
+  /** Lance le scanner */
+  async function start() {
+    try {
       const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
-      if (devices.length === 0) {
-        resultDiv.style.display = 'block';
-        resultDiv.textContent = 'Aucune caméra détectée.';
-        return;
-      }
-  
-      // On prend la première caméra
-      const selectedDeviceId = devices[0].deviceId;
-  
-      // Lance le scan
-      await codeReader.decodeFromVideoDevice(selectedDeviceId, video, (result, err) => {
-        if (result) {
-          console.log('Code détecté : ', result.getText());
-          resultDiv.style.display = 'block';
-          resultDiv.textContent = 'Code détecté : ' + result.getText();
-  
-          // On arrête le scan
-          codeReader.reset();
-  
-          // On envoie en POST
-          fetch('/materiel/scan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ barcode: result.getText() })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.redirect) {
-              window.location.href = data.redirect;
-            } else if (data.error) {
-              resultDiv.textContent = 'Erreur : ' + data.error;
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            resultDiv.textContent = 'Erreur lors de l’envoi au serveur.';
-          });
+      const backCam = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[0];
+      await codeReader.decodeFromVideoDevice(
+        backCam?.deviceId,
+        video,
+        (result, err) => {
+          if (result) {
+            const code = result.text;
+            show(`Code détecté : ${code}`);
+            stop();
+            sendToServer(code);
+          }
         }
-      });
-  
-      // Bouton Arrêter
-      stopBtn.addEventListener('click', () => {
-        codeReader.reset();
-        resultDiv.style.display = 'block';
-        resultDiv.textContent = 'Scan arrêté.';
-      });
-    } catch (error) {
-      console.error('Erreur accès caméra ou lecture code : ', error);
-      resultDiv.style.display = 'block';
-      resultDiv.textContent = 'Erreur accès caméra ou lecture code.';
+      );
+    } catch (e) {
+      show(`Impossible d’accéder à la caméra : ${e.message}`, true);
     }
-  });
-  
+  }
+
+  stopBtn.addEventListener('click', stop);
+  start();
+})();

@@ -18,6 +18,9 @@ const MaterielDelivery = require('./MaterielDelivery');
 
 const Historique       = require('./Historique');
 
+const Emplacement = require('./Emplacement');
+
+
 /* ============ 3) Associations ============ */
 /* --- Chantier ⟷ Materiel (pivot : MaterielChantier) --- */
 MaterielChantier.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier',  onDelete: 'CASCADE' });
@@ -49,6 +52,11 @@ Historique.belongsTo(User,     { foreignKey: 'userId',     as: 'user',     onDel
 Materiel.hasMany(Historique,   { foreignKey: 'materielId', as: 'historiques' });
 User.hasMany(Historique,       { foreignKey: 'userId',     as: 'historiques' });
 
+
+// Dans la section associations Chantier ↔ Emplacement
+Emplacement.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier', onDelete: 'CASCADE' });
+Chantier.hasMany(Emplacement, { foreignKey: 'chantierId', as: 'emplacements' });
+
 /* ============ 4) Export ============ */
 module.exports = {
   sequelize,
@@ -64,4 +72,5 @@ module.exports = {
   MaterielChantier,
   MaterielDelivery,
   Historique,
+   Emplacement,
 };

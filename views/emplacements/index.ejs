@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Gérer les Emplacements</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-4">
+    <h1>Emplacements</h1>
+    <form class="row g-2 mb-3" method="GET" action="/emplacements">
+      <div class="col-md-4">
+        <select name="chantierId" class="form-select">
+          <option value="">Tous les chantiers</option>
+          <% chantiers.forEach(c => { %>
+            <option value="<%= c.id %>" <%= query.chantierId==c.id? 'selected':'' %>><%= c.nom %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary w-100">Filtrer</button>
+      </div>
+      <div class="col-md-2 offset-md-4 text-end">
+        <a href="/emplacements/ajouter" class="btn btn-success">Nouvel emplacement</a>
+      </div>
+    </form>
+
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>ID</th><th>Nom</th><th>Chantier</th><th>Description</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (emplacements.length) { %>
+          <% emplacements.forEach(emp => { %>
+            <tr>
+              <td><%= emp.id %></td>
+              <td><%= emp.nom %></td>
+              <td><%= emp.chantier?.nom || 'N/A' %></td>
+              <td><%= emp.description || '' %></td>
+              <td>
+                <a href="/emplacements/modifier/<%= emp.id %>" class="btn btn-sm btn-warning">Modifier</a>
+                <form action="/emplacements/supprimer/<%= emp.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Confirmer ?');">
+                  <button class="btn btn-sm btn-danger">Supprimer</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr>
+            <td colspan="5" class="text-center">Aucun emplacement trouvé.</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

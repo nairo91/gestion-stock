@@ -1,4 +1,5 @@
 // routes/chantier.js
+const Emplacement = require('../models/Emplacement');
 const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
@@ -45,7 +46,9 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 router.get('/ajouterMateriel', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const chantiers = await Chantier.findAll();
-    res.render('chantier/ajouterMateriel', { chantiers });
+    const emplacements = await Emplacement.findAll();
+    // On passe chantiers et emplacements en une seule réponse
+    res.render('chantier/ajouterMateriel', { chantiers, emplacements });
   } catch (err) {
     console.error(err);
     res.send("Erreur lors du chargement du formulaire d'ajout de matériel dans un chantier.");
@@ -120,7 +123,11 @@ router.get('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
         quantite: { [Op.gt]: 0 }
       }
     });
-    res.render('chantier/ajouterLivraison', { chantiers, materiels });
+
+     // On charge tous les emplacements (on filtrera en EJS)
+   const emplacements = await Emplacement.findAll();
+
+    res.render('chantier/ajouterLivraison', { chantiers, materiels, emplacements, });
   } catch (err) {
     console.error(err);
     res.send("Erreur lors du chargement du formulaire d'ajout de livraison vers chantier.");

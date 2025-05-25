@@ -73,7 +73,8 @@ app.use('/vehicule', require('./routes/vehicule'));
 app.use('/bonLivraison', require('./routes/bonLivraison'));
 app.use('/chantier', require('./routes/chantier'));
 //app.use('/materielChantier', require('./routes/materielChantier')); // ← MANQUAIT
-
+ app.use('/emplacements', require('./routes/emplacements'));
+ 
 // Lancement du serveur
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
