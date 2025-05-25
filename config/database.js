@@ -5,52 +5,47 @@ const { Sequelize } = require('sequelize');
 let sequelize;
 
 if (process.env.NODE_ENV === 'production') {
-  // Essayons d'abord DATABASE_URL, fourni par Render (ex: postgres://user:pw@host:port/db)
-  const connectionString = process.env.DATABASE_URL;
-
-  if (connectionString) {
-    sequelize = new Sequelize(connectionString, {
-      dialect: 'postgres',
-      protocol: 'postgres',
-      dialectOptions: {
-        ssl: {
-          require: true,
-          // Render fournit un certificat auto-signé
-          rejectUnauthorized: false,
-        },
-      },
-      logging: false,
-    });
-  } else if (process.env.DB_HOST) {
-    // Fallback sur DB_HOST, DB_USER, etc. si tu préfères
-    sequelize = new Sequelize(
-      process.env.DB_NAME,
-      process.env.DB_USER,
-      process.env.DB_PASSWORD,
-      {
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT || 5432,
-        dialect: 'postgres',
-        dialectOptions: {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false,
-          },
-        },
-        logging: false,
-      }
-    );
-  } else {
+  let connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
     throw new Error(
-      'En production, il faut définir DATABASE_URL ou au moins DB_HOST, DB_NAME, DB_USER et DB_PASSWORD'
+      'En prod : définis DATABASE_URL (postgres://user:pw@host:port/db)'
     );
   }
+
+  // Si quelqu’un a mis postgresql:// à la place de postgres://
+  if (connectionString.startsWith('postgresql://')) {
+    connectionString = connectionString.replace(
+      /^postgresql:\/\//i,
+      'postgres://'
+    );
+  }
+
+  console.log('🔗 DB CONNECTION STRING:', connectionString);
+
+  sequelize = new Sequelize(connectionString, {
+    dialect: 'postgres',
+    protocol: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+      keepAlive: true
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+    logging: false,
+  });
+
 } else {
-  // Dev local : SQLite
   sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: './database.sqlite',
-    logging: false,
+    logging: false
   });
 }
 
