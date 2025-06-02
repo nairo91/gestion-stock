@@ -9,25 +9,45 @@
   <div class="container mt-3">
     <h2>Modifier l'enregistrement pour <%= mc.materiel.nom %> dans le chantier <%= mc.chantier.nom %></h2>
     <form action="/chantier/materielChantier/modifier/<%= mc.id %>" method="POST">
+      
       <div class="mb-3">
         <label for="quantite" class="form-label">Quantité actuelle : <strong><%= mc.quantite %></strong></label>
       </div>
+
       <div class="mb-3">
-        <label for="quantite">Nouvelle quantité</label>
-        <input type="number" name="quantite" id="quantite" class="form-control" required>
+        <label for="quantite" class="form-label">Nouvelle quantité</label>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-outline-secondary" onclick="changerQuantite(-1)">-</button>
+          <input type="number" name="quantite" id="quantite" class="form-control" value="<%= mc.quantite %>" min="0" required>
+          <button type="button" class="btn btn-outline-secondary" onclick="changerQuantite(1)">+</button>
+        </div>
       </div>
+
       <div class="mb-3">
-  <label for="emplacementId">Nouvel emplacement</label>
-  <select name="emplacementId" id="emplacementId" class="form-control" required>
-    <% emplacements.forEach(function(e) { %>
-      <option value="<%= e.id %>" <%= (mc.materiel.emplacementId === e.id) ? 'selected' : '' %>><%= e.nom %></option>
-    <% }) %>
-  </select>
-</div>
+        <label for="emplacementId" class="form-label">Nouvel emplacement</label>
+        <select name="emplacementId" id="emplacementId" class="form-control">
+          <option value="">-- Aucun --</option>
+          <% emplacements.forEach(function(e) { %>
+            <option value="<%= e.id %>" <%= (mc.materiel.emplacementId === e.id) ? 'selected' : '' %>>
+              <%= e.nom %> (Chantier: <%= e.chantierId %>)
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
       <button type="submit" class="btn btn-success">Enregistrer</button>
       <a href="/chantier" class="btn btn-secondary">Retour</a>
     </form>
   </div>
+
+  <script>
+    function changerQuantite(delta) {
+      const input = document.getElementById('quantite');
+      let value = parseInt(input.value || "0");
+      value = Math.max(0, value + delta);
+      input.value = value;
+    }
+  </script>
   <script src="/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
