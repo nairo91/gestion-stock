@@ -80,6 +80,14 @@ const Materiel = sequelize.define(
       references: { model: 'chantiers', key: 'id' },
       onDelete: 'SET NULL',
     },
+
+    emplacementId: {
+  type: DataTypes.INTEGER,
+  allowNull: true,
+  references: { model: 'emplacements', key: 'id' },
+  onDelete: 'SET NULL',
+},
+
   },
   {
     tableName: 'materiels',
@@ -101,7 +109,16 @@ Materiel.belongsTo(Vehicule,  { foreignKey: 'vehiculeId',  as: 'vehicule' });
 Materiel.belongsTo(Chantier,  { foreignKey: 'chantierId',  as: 'chantier'  });
 Materiel.hasMany(Photo,       { foreignKey: 'materielId',  as: 'photos'   });
 Materiel.hasMany(Historique,  { foreignKey: 'materielId',  as: 'historiques' });
+Materiel.belongsTo(Emplacement, { foreignKey: 'emplacementId', as: 'emplacement' });
+
 
 */
 
 module.exports = Materiel;
+
+const Emplacement = require('./Emplacement');
+
+Materiel.belongsTo(Emplacement, {
+  foreignKey: 'emplacementId',
+  as: 'emplacement'
+});
