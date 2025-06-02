@@ -58,8 +58,7 @@ app.use((req, res, next) => {
 
 // Base de données Sequelize + modèles supplémentaires
 const { sequelize } = require('./models');
-require('./models/Chantier');
-require('./models/MaterielChantier');
+
 
 sequelize.sync({ alter: true })
   .then(() => console.log('✅ Base de données synchronisée'))
