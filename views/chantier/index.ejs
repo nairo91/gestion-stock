@@ -27,6 +27,42 @@
   <a href="/materiel" class="btn btn-secondary">Retour au Dashboard Dépôt</a>
 </div>
     <h1>Inventaire cumulé des livraisons vers chantier</h1>
+
+<form method="GET" action="/chantier" class="row g-3 mb-4">
+  <div class="col-md-3">
+    <label for="chantierId" class="form-label">Filtrer par chantier</label>
+    <select class="form-select" name="chantierId" id="chantierId">
+      <option value="">-- Tous les chantiers --</option>
+      <% if (chantiers && chantiers.length > 0) { %>
+        <% chantiers.forEach(function(c) { %>
+          <option value="<%= c.id %>" <%= (c.id == chantierId) ? 'selected' : '' %>><%= c.nom %> - <%= c.localisation %></option>
+        <% }); %>
+      <% } %>
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label for="nomMateriel" class="form-label">Nom du matériel</label>
+    <input type="text" class="form-control" name="nomMateriel" id="nomMateriel" value="<%= nomMateriel || '' %>">
+  </div>
+
+  <div class="col-md-3">
+    <label for="categorie" class="form-label">Catégorie</label>
+    <input type="text" class="form-control" name="categorie" id="categorie" value="<%= categorie || '' %>">
+  </div>
+
+  <div class="col-md-3">
+    <label for="emplacement" class="form-label">Emplacement</label>
+    <input type="text" class="form-control" name="emplacement" id="emplacement" value="<%= emplacement || '' %>">
+  </div>
+
+  <div class="col-12 mt-2">
+    <button type="submit" class="btn btn-primary">Appliquer les filtres</button>
+    <a href="/chantier" class="btn btn-secondary">Réinitialiser</a>
+  </div>
+</form>
+
+
     <table class="table table-bordered table-striped">
       <thead>
         <tr>

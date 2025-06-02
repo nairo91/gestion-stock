@@ -29,31 +29,52 @@ const upload = multer({ storage: storage });
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-   const materielChantiers = await MaterielChantier.findAll({
-  include: [
-    { model: Chantier, as: 'chantier' },
-    {
-      model: Materiel,
-      as: 'materiel',
+    const { chantierId, nomMateriel, categorie, emplacement } = req.query;
+
+    const whereChantier = chantierId ? { chantierId: chantierId } : {};
+    const whereMateriel = {};
+
+    if (nomMateriel) whereMateriel.nom = { [Op.like]: `%${nomMateriel}%` };
+    if (categorie) whereMateriel.categorie = { [Op.like]: `%${categorie}%` };
+
+    const materielChantiers = await MaterielChantier.findAll({
+      where: whereChantier,
       include: [
-        { model: Photo, as: 'photos' },
-        { model: Emplacement, as: 'emplacement' } // 👈 Ajout ici
+        { model: Chantier, as: 'chantier' },
+        {
+          model: Materiel,
+          as: 'materiel',
+          where: whereMateriel,
+          include: [
+            { model: Photo, as: 'photos' },
+            {
+              model: Emplacement,
+              as: 'emplacement',
+              where: emplacement
+                ? { nom: { [Op.like]: `%${emplacement}%` } }
+                : undefined
+            }
+          ]
+        }
       ]
-    }
-  ]
+    });
+
+    const chantiers = await Chantier.findAll(); // Pour la liste déroulante
+    res.render('chantier/index', {
+  materielChantiers,
+  chantiers,
+  chantierId,
+  nomMateriel,
+  categorie,
+  emplacement
 });
 
-
-    // 💡 Ajoute ce log ici pour inspecter si l'emplacement est bien inclus
-    console.log(JSON.stringify(materielChantiers, null, 2));
-
-
-    res.render('chantier/index', { materielChantiers });
   } catch (err) {
     console.error(err);
     res.send("Erreur lors de la récupération du stock chantier.");
   }
 });
+
 
 /* ===== AJOUT DIRECT DE MATÉRIEL DANS UN CHANTIER ===== */
 router.get('/ajouterMateriel', ensureAuthenticated, checkAdmin, async (req, res) => {
