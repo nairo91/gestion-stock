@@ -296,6 +296,10 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, a
     const oldQte = mc.quantite;
 
     mc.quantite = parseInt(quantite, 10);
+
+    mc.materiel.nom = req.body.nomMateriel.trim();
+await mc.materiel.save();
+
     await mc.save();
 
     const newEmplacementId = parseInt(req.body.emplacementId, 10);
