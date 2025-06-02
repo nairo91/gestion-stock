@@ -358,4 +358,33 @@ router.post('/materielChantier/supprimer/:id', ensureAuthenticated, checkAdmin, 
   }
 });
 
+router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+  const mc = await MaterielChantier.findByPk(req.params.id, {
+    include: [
+      { model: Chantier, as: 'chantier' },
+      { model: Materiel, as: 'materiel' }
+    ]
+  });
+  const chantiers = await Chantier.findAll();
+  const emplacements = await Emplacement.findAll();
+  res.render('chantier/dupliquerMaterielChantier', { mc, chantiers, emplacements });
+});
+
+
+router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+  const { nom, reference, quantite, description, prix, categorie, chantierId, emplacementId } = req.body;
+  
+  const nouveauMateriel = await Materiel.create({
+    nom, reference, description, prix: parseFloat(prix), categorie, quantite: 0,
+    emplacementId: emplacementId ? parseInt(emplacementId) : null
+  });
+
+  await MaterielChantier.create({
+    chantierId: parseInt(chantierId),
+    materielId: nouveauMateriel.id,
+    quantite: parseInt(quantite)
+  });
+
+  res.redirect('/chantier');
+});
 module.exports = router;

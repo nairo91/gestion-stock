@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dupliquer un Matériel Chantier</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-4">
+    <h2>Dupliquer un Matériel Chantier</h2>
+    <form action="/chantier/materielChantier/dupliquer/<%= mc.id %>" method="POST">
+      <div class="mb-3">
+        <label for="nom" class="form-label">Nom du Matériel</label>
+        <input type="text" name="nom" id="nom" class="form-control" value="<%= mc.materiel.nom %>" required>
+      </div>
+      <div class="mb-3">
+        <label for="reference" class="form-label">Référence</label>
+        <input type="text" name="reference" id="reference" class="form-control" value="<%= mc.materiel.reference || '' %>">
+      </div>
+      <div class="mb-3">
+        <label for="quantite" class="form-label">Quantité</label>
+        <input type="number" name="quantite" id="quantite" class="form-control" value="<%= mc.quantite %>" required>
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea name="description" id="description" class="form-control"><%= mc.materiel.description || '' %></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="prix" class="form-label">Prix</label>
+        <input type="number" step="0.01" name="prix" id="prix" class="form-control" value="<%= mc.materiel.prix || '' %>" required>
+      </div>
+      <div class="mb-3">
+        <label for="categorie" class="form-label">Catégorie</label>
+        <select name="categorie" id="categorie" class="form-control" required>
+          <option value="Electricité" <%= mc.materiel.categorie === 'Electricité' ? 'selected' : '' %>>Electricité</option>
+          <option value="Plomberie" <%= mc.materiel.categorie === 'Plomberie' ? 'selected' : '' %>>Plomberie</option>
+          <option value="Climatisation" <%= mc.materiel.categorie === 'Climatisation' ? 'selected' : '' %>>Climatisation</option>
+          <option value="Chauffage" <%= mc.materiel.categorie === 'Chauffage' ? 'selected' : '' %>>Chauffage</option>
+          <option value="Revêtement mural" <%= mc.materiel.categorie === 'Revêtement mural' ? 'selected' : '' %>>Revêtement mural</option>
+          <option value="Maçonnerie" <%= mc.materiel.categorie === 'Maçonnerie' ? 'selected' : '' %>>Maçonnerie</option>
+          <option value="Menuiserie" <%= mc.materiel.categorie === 'Menuiserie' ? 'selected' : '' %>>Menuiserie</option>
+          <option value="Autre" <%= mc.materiel.categorie === 'Autre' ? 'selected' : '' %>>Autre</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="chantierId" class="form-label">Chantier</label>
+        <select name="chantierId" id="chantierId" class="form-control" required>
+          <% chantiers.forEach(c => { %>
+            <option value="<%= c.id %>" <%= c.id === mc.chantier.id ? 'selected' : '' %>><%= c.nom %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="emplacementId" class="form-label">Emplacement</label>
+        <select name="emplacementId" id="emplacementId" class="form-control">
+          <option value="">– Aucun –</option>
+          <% emplacements.forEach(e => { %>
+            <option value="<%= e.id %>" <%= mc.materiel.emplacementId === e.id ? 'selected' : '' %>>
+              <%= e.nom %> (Chantier #<%= e.chantierId %>)
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Dupliquer</button>
+      <a href="/chantier" class="btn btn-secondary ms-2">Annuler</a>
+    </form>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
