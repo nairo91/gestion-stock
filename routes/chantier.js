@@ -29,12 +29,20 @@ const upload = multer({ storage: storage });
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-    const materielChantiers = await MaterielChantier.findAll({
+   const materielChantiers = await MaterielChantier.findAll({
+  include: [
+    { model: Chantier, as: 'chantier' },
+    {
+      model: Materiel,
+      as: 'materiel',
       include: [
-        { model: Chantier, as: 'chantier' },
-        { model: Materiel, as: 'materiel', include: [{ model: Photo, as: 'photos' }] }
+        { model: Photo, as: 'photos' },
+        { model: Emplacement, as: 'emplacement' } // 👈 Ajout ici
       ]
-    });
+    }
+  ]
+});
+
     res.render('chantier/index', { materielChantiers });
   } catch (err) {
     console.error(err);
@@ -57,19 +65,21 @@ router.get('/ajouterMateriel', ensureAuthenticated, checkAdmin, async (req, res)
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, quantite, description, prix, categorie, chantierId } = req.body;
+    const { nom, reference, quantite, description, prix, categorie, chantierId, emplacementId } = req.body;
+
     
     // 1) Créer le matériel avec quantite=0 dans la table Materiel
-    const nouveauMateriel = await Materiel.create({
-      nom,
-      reference,
-      quantite: 0,  // Pour qu'il n'apparaisse pas au dépôt
-      description,
-      prix: parseFloat(prix),
-      categorie,
-      vehiculeId: null
-      // chantierId reste null, car on gère le stock chantier via MaterielChantier
-    });
+   const nouveauMateriel = await Materiel.create({
+  nom,
+  reference,
+  quantite: 0,
+  description,
+  prix: parseFloat(prix),
+  categorie,
+  vehiculeId: null,
+  emplacementId: emplacementId ? parseInt(emplacementId) : null
+});
+
 
     // 2) Gérer les photos, si fournies
     if (req.files && req.files.length > 0) {
