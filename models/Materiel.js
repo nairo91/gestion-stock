@@ -100,25 +100,7 @@ const Materiel = sequelize.define(
   }
 );
 
-/* ======================
-   Associations (à placer après l’import
-   de tous les modèles, par ex. dans models/index.js)
-======================
 
-Materiel.belongsTo(Vehicule,  { foreignKey: 'vehiculeId',  as: 'vehicule' });
-Materiel.belongsTo(Chantier,  { foreignKey: 'chantierId',  as: 'chantier'  });
-Materiel.hasMany(Photo,       { foreignKey: 'materielId',  as: 'photos'   });
-Materiel.hasMany(Historique,  { foreignKey: 'materielId',  as: 'historiques' });
-Materiel.belongsTo(Emplacement, { foreignKey: 'emplacementId', as: 'emplacement' });
-
-
-*/
 
 module.exports = Materiel;
 
-const Emplacement = require('./Emplacement');
-
-Materiel.belongsTo(Emplacement, {
-  foreignKey: 'emplacementId',
-  as: 'emplacement'
-});

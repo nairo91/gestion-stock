@@ -22,6 +22,10 @@ const Emplacement = require('./Emplacement');
 
 
 /* ============ 3) Associations ============ */
+
+Materiel.belongsTo(Emplacement, { foreignKey: 'emplacementId', as: 'emplacement' });
+Emplacement.hasMany(Materiel,   { foreignKey: 'emplacementId', as: 'materiels' });
+
 /* --- Chantier ⟷ Materiel (pivot : MaterielChantier) --- */
 MaterielChantier.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier',  onDelete: 'CASCADE' });
 MaterielChantier.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel',  onDelete: 'CASCADE' });

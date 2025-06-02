@@ -43,6 +43,11 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   ]
 });
 
+
+    // 💡 Ajoute ce log ici pour inspecter si l'emplacement est bien inclus
+    console.log(JSON.stringify(materielChantiers, null, 2));
+
+    
     res.render('chantier/index', { materielChantiers });
   } catch (err) {
     console.error(err);

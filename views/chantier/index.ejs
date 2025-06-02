@@ -22,6 +22,8 @@
           <th>Chantier</th>
           <th>Matériel</th>
           <th>Référence</th>
+          <th>Emplacement</th>
+
           <th>Quantité Livrée</th>
         </tr>
       </thead>
@@ -52,6 +54,14 @@
                   -
                 <% } %>
               </td>
+              <td>
+                <% if (mc.materiel && mc.materiel.emplacement) { %>
+                  <%= mc.materiel.emplacement.nom %>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+
               <td><%= mc.quantite %></td>
               <td>
                 <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>

@@ -33,9 +33,3 @@ const Emplacement = sequelize.define(
 );
 
 module.exports = Emplacement;
-
-const Materiel = require('./Materiel');
-Emplacement.hasMany(Materiel, {
-  foreignKey: 'emplacementId',
-  as: 'materiels'
-});
