@@ -16,6 +16,14 @@
         <label for="quantite">Nouvelle quantité</label>
         <input type="number" name="quantite" id="quantite" class="form-control" required>
       </div>
+      <div class="mb-3">
+  <label for="emplacementId">Nouvel emplacement</label>
+  <select name="emplacementId" id="emplacementId" class="form-control" required>
+    <% emplacements.forEach(function(e) { %>
+      <option value="<%= e.id %>" <%= (mc.materiel.emplacementId === e.id) ? 'selected' : '' %>><%= e.nom %></option>
+    <% }) %>
+  </select>
+</div>
       <button type="submit" class="btn btn-success">Enregistrer</button>
       <a href="/chantier" class="btn btn-secondary">Retour</a>
     </form>

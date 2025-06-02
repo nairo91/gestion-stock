@@ -47,7 +47,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     // 💡 Ajoute ce log ici pour inspecter si l'emplacement est bien inclus
     console.log(JSON.stringify(materielChantiers, null, 2));
 
-    
+
     res.render('chantier/index', { materielChantiers });
   } catch (err) {
     console.error(err);
@@ -275,7 +275,9 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
       ]
     });
     if (!mc) return res.send("Enregistrement non trouvé.");
-    res.render('chantier/modifierMaterielChantier', { mc });
+   const emplacements = await Emplacement.findAll();
+res.render('chantier/modifierMaterielChantier', { mc, emplacements });
+
   } catch (err) {
     console.error(err);
     res.send("Erreur lors de la récupération de l'enregistrement.");
@@ -295,6 +297,13 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, a
 
     mc.quantite = parseInt(quantite, 10);
     await mc.save();
+
+    const newEmplacementId = parseInt(req.body.emplacementId, 10);
+if (mc.materiel) {
+  mc.materiel.emplacementId = newEmplacementId;
+  await mc.materiel.save();
+}
+
 
     // AJOUT : Historique pour la modification
     await Historique.create({
