@@ -4,78 +4,20 @@ const { sequelize } = require('../config/database');
 const Materiel = sequelize.define(
   'Materiel',
   {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
-
-    nom: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-
-    reference: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-
-    barcode: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      unique: true,
-    },
-
-    quantite: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-    },
-
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-
-    prix: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-    },
-
-    categorie: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-
-    rack: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-
-    compartiment: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-
-    niveau: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
-
-    vehiculeId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
-
-    chantierId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    },
-
-    emplacementId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-    }
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    nom: { type: DataTypes.STRING, allowNull: false },
+    reference: { type: DataTypes.STRING },
+    barcode: { type: DataTypes.STRING, unique: true },
+    quantite: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    description: { type: DataTypes.TEXT },
+    prix: { type: DataTypes.DECIMAL(10, 2) },
+    categorie: { type: DataTypes.STRING },
+    rack: { type: DataTypes.STRING },
+    compartiment: { type: DataTypes.STRING },
+    niveau: { type: DataTypes.INTEGER },
+    vehiculeId: { type: DataTypes.INTEGER },
+    chantierId: { type: DataTypes.INTEGER },
+    emplacementId: { type: DataTypes.INTEGER },
   },
   {
     tableName: 'materiels',
@@ -87,7 +29,7 @@ const Materiel = sequelize.define(
   }
 );
 
-// ✅ Ajoute ceci à la fin pour déclarer les associations proprement
+// ✅ Déclaration différée des relations
 Materiel.associate = function (models) {
   Materiel.belongsTo(models.Emplacement, {
     foreignKey: 'emplacementId',
