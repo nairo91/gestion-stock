@@ -81,6 +81,7 @@
           <th class="d-none">Chantier</th>
           <th>Matériel</th>
           <th>Référence</th>
+          <th>Description</th>
           <th>Emplacement</th>
 
           <th>Quantité Livrée</th>
@@ -113,6 +114,14 @@
                   -
                 <% } %>
               </td>
+              <td>
+                <% if(mc.materiel && mc.materiel.description) { %>
+                  <%= mc.materiel.description %>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+
               <td>
                 <% if (mc.materiel && mc.materiel.emplacement) { %>
                   <%= mc.materiel.emplacement.nom %>
