@@ -61,6 +61,10 @@ User.hasMany(Historique,       { foreignKey: 'userId',     as: 'historiques' });
 Emplacement.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier', onDelete: 'CASCADE' });
 Chantier.hasMany(Emplacement, { foreignKey: 'chantierId', as: 'emplacements' });
 
+// Appel explicite des méthodes .associate() si elles existent
+if (typeof Materiel.associate === 'function') Materiel.associate(module.exports);
+if (typeof Emplacement.associate === 'function') Emplacement.associate(module.exports);
+
 /* ============ 4) Export ============ */
 module.exports = {
   sequelize,
