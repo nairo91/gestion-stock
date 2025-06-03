@@ -66,8 +66,8 @@
     <table class="table table-bordered table-striped">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Chantier</th>
+          <th class="d-none">ID</th>
+          <th class="d-none">Chantier</th>
           <th>Matériel</th>
           <th>Référence</th>
           <th>Emplacement</th>
@@ -79,8 +79,8 @@
         <% if (materielChantiers && materielChantiers.length > 0) { %>
           <% materielChantiers.forEach(function(mc){ %>
             <tr>
-              <td><%= mc.id %></td>
-              <td>
+              <td class="d-none"><%= mc.id %></td>
+              <td class="d-none">
                 <% if(mc.chantier) { %>
                   <%= mc.chantier.nom %> - <%= mc.chantier.localisation %>
                 <% } else { %>
