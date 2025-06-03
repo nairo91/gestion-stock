@@ -47,9 +47,20 @@
   </div>
 
   <div class="col-md-3">
-    <label for="categorie" class="form-label">Catégorie</label>
-    <input type="text" class="form-control" name="categorie" id="categorie" value="<%= categorie || '' %>">
-  </div>
+  <label for="categorie" class="form-label">Catégorie</label>
+  <select class="form-select" name="categorie" id="categorie">
+    <option value="">-- Toutes les catégories --</option>
+    <option value="Plomberie" <%= categorie === 'Plomberie' ? 'selected' : '' %>>Plomberie</option>
+    <option value="Electricité" <%= categorie === 'Electricité' ? 'selected' : '' %>>Electricité</option>
+    <option value="Climatisation" <%= categorie === 'Climatisation' ? 'selected' : '' %>>Climatisation</option>
+    <option value="Chauffage" <%= categorie === 'Chauffage' ? 'selected' : '' %>>Chauffage</option>
+    <option value="Revêtement mural" <%= categorie === 'Revêtement mural' ? 'selected' : '' %>>Revêtement mural</option>
+    <option value="Maçonnerie" <%= categorie === 'Maçonnerie' ? 'selected' : '' %>>Maçonnerie</option>
+    <option value="Menuiserie" <%= categorie === 'Menuiserie' ? 'selected' : '' %>>Menuiserie</option>
+    <option value="Autre" <%= categorie === 'Autre' ? 'selected' : '' %>>Autre</option>
+  </select>
+</div>
+
 
   <div class="col-md-3">
     <label for="emplacement" class="form-label">Emplacement</label>
