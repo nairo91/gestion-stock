@@ -11,13 +11,29 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   const { chantierId } = req.query;
   const where = {};
   if (chantierId) where.chantierId = chantierId;
- const emplacements = await Emplacement.findAll({
-  where,
-  include: [
-    { model: Chantier, as: 'chantier' },
-    { model: Emplacement, as: 'parent' }
-  ]
-});
+
+  const emplacementsBruts = await Emplacement.findAll({
+    where,
+    include: [
+      { model: Chantier, as: 'chantier' },
+      { model: Emplacement, as: 'parent' }
+    ]
+  });
+
+  function construireCheminComplet(emp) {
+    let chemin = emp.nom;
+    let courant = emp.parent;
+    while (courant) {
+      chemin = courant.nom + ' > ' + chemin;
+      courant = courant.parent;
+    }
+    return chemin;
+  }
+
+  const emplacements = emplacementsBruts.map(e => ({
+    ...e.get({ plain: true }),
+    cheminComplet: construireCheminComplet(e)
+  }));
 
   const chantiers = await Chantier.findAll();
   res.render('emplacements/index', { emplacements, chantiers, query: req.query });
