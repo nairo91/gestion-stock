@@ -49,19 +49,23 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       where: whereMateriel,
       include: [
         { model: Photo, as: 'photos' },
-        {
-          model: Emplacement,
-          as: 'emplacement',
-          where: emplacement
-            ? { nom: { [Op.like]: `%${emplacement}%` } }
-            : undefined,
-          include: [
-            {
-              model: Emplacement,
-              as: 'parent'
-            }
-          ]
-        }
+       {
+  model: Emplacement,
+  as: 'emplacement',
+  where: emplacement
+    ? { nom: { [Op.like]: `%${emplacement}%` } }
+    : undefined,
+  include: [
+    {
+      model: Emplacement,
+      as: 'parent',
+      include: [
+        { model: Emplacement, as: 'parent' } // 2 niveaux de profondeur
+      ]
+    }
+  ]
+}
+
       ]
     }
   ]
