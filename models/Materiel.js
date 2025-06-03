@@ -1,6 +1,5 @@
-// models/Materiel.js
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');      // ajuste le chemin si besoin
+const { sequelize } = require('../config/database');
 
 const Materiel = sequelize.define(
   'Materiel',
@@ -11,7 +10,6 @@ const Materiel = sequelize.define(
       autoIncrement: true,
     },
 
-    /* --- Informations de base --- */
     nom: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -28,7 +26,6 @@ const Materiel = sequelize.define(
       unique: true,
     },
 
-    /* --- Stock & tarification --- */
     quantite: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -50,7 +47,6 @@ const Materiel = sequelize.define(
       allowNull: true,
     },
 
-    /* --- Emplacement physique (dépôt) --- */
     rack: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -66,44 +62,50 @@ const Materiel = sequelize.define(
       allowNull: true,
     },
 
-    /* --- FK vers véhicule ou chantier (mutuellement exclusifs) --- */
     vehiculeId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: { model: require('./Vehicule'), key: 'id' }
-,
-      onDelete: 'SET NULL',
     },
 
     chantierId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: { model: require('./Chantier'), key: 'id' }
-,
-      onDelete: 'SET NULL',
     },
 
     emplacementId: {
-  type: DataTypes.INTEGER,
-  allowNull: true,
- references: { model: require('./Emplacement'), key: 'id' }
-,
-  onDelete: 'SET NULL',
-},
-
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    }
   },
   {
     tableName: 'materiels',
     timestamps: true,
     indexes: [
       { unique: true, fields: ['barcode'] },
-      // index composite utile dans les recherches
       { fields: ['categorie', 'nom'] },
     ],
   }
 );
 
+// ✅ Ajoute ceci à la fin pour déclarer les associations proprement
+Materiel.associate = function (models) {
+  Materiel.belongsTo(models.Emplacement, {
+    foreignKey: 'emplacementId',
+    as: 'emplacement',
+    onDelete: 'SET NULL'
+  });
 
+  Materiel.belongsTo(models.Vehicule, {
+    foreignKey: 'vehiculeId',
+    as: 'vehicule',
+    onDelete: 'SET NULL'
+  });
+
+  Materiel.belongsTo(models.Chantier, {
+    foreignKey: 'chantierId',
+    as: 'chantier',
+    onDelete: 'SET NULL'
+  });
+};
 
 module.exports = Materiel;
-
