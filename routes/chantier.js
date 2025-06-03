@@ -40,26 +40,33 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
 
     const materielChantiers = await MaterielChantier.findAll({
-      where: whereChantier,
+  where: whereChantier,
+  include: [
+    { model: Chantier, as: 'chantier' },
+    {
+      model: Materiel,
+      as: 'materiel',
+      where: whereMateriel,
       include: [
-        { model: Chantier, as: 'chantier' },
+        { model: Photo, as: 'photos' },
         {
-          model: Materiel,
-          as: 'materiel',
-          where: whereMateriel,
+          model: Emplacement,
+          as: 'emplacement',
+          where: emplacement
+            ? { nom: { [Op.like]: `%${emplacement}%` } }
+            : undefined,
           include: [
-            { model: Photo, as: 'photos' },
             {
               model: Emplacement,
-              as: 'emplacement',
-              where: emplacement
-                ? { nom: { [Op.like]: `%${emplacement}%` } }
-                : undefined
+              as: 'parent'
             }
           ]
         }
       ]
-    });
+    }
+  ]
+});
+
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ

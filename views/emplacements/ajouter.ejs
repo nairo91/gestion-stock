@@ -25,6 +25,17 @@
             <option value="<%= c.id %>"><%= c.nom %> – <%= c.localisation %></option>
           <% }) %>
         </select>
+   <div class="mb-3">
+  <label class="form-label">Emplacement parent (optionnel)</label>
+  <select name="parentId" class="form-select">
+    <option value="">Aucun</option>
+    <% emplacements.forEach(emp => { %>
+      <option value="<%= emp.id %>"><%= emp.nom %></option>
+    <% }) %>
+  </select>
+</div>
+
+
       </div>
       <button class="btn btn-success">Créer</button>
       <a href="/emplacements" class="btn btn-secondary">Annuler</a>

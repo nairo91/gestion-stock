@@ -96,7 +96,7 @@
           <th class="d-none">Chantier</th>
           <th>Matériel</th>
           <th>Référence</th>
-          <th>Description / Fournisseur / Couleur</th>
+          <th>Description / Fournisseur</th>
           <th>Emplacement</th>
 
           <th>Quantité Livrée</th>
@@ -138,11 +138,24 @@
               </td>
 
               <td>
-                <% if (mc.materiel && mc.materiel.emplacement) { %>
-                  <%= mc.materiel.emplacement.nom %>
-                <% } else { %>
-                  -
-                <% } %>
+               <% 
+  function afficherChemin(emp) {
+    let chemin = emp.nom;
+    let courant = emp;
+    while (courant.parent) {
+      chemin = courant.parent.nom + " > " + chemin;
+      courant = courant.parent;
+    }
+    return chemin;
+  }
+%>
+
+<% if (mc.materiel && mc.materiel.emplacement) { %>
+  <%= afficherChemin(mc.materiel.emplacement) %>
+<% } else { %>
+  -
+<% } %>
+
               </td>
 
               <td><%= mc.quantite %></td>

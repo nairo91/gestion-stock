@@ -40,7 +40,13 @@
           <% emplacements.forEach(emp => { %>
             <tr>
               <td><%= emp.id %></td>
-              <td><%= emp.nom %></td>
+              <td>
+  <% if (emp.parent) { %>
+    <%= emp.parent.nom %> &gt;
+  <% } %>
+  <%= emp.nom %>
+</td>
+
               <td><%= emp.chantier?.nom || 'N/A' %></td>
               <td><%= emp.description || '' %></td>
               <td>

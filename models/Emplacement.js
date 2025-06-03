@@ -1,35 +1,39 @@
 // models/Emplacement.js
-const { DataTypes } = require('sequelize');
-const { sequelize }  = require('../config/database');
-
-/**
- * Emplacement : rack, bac ou conteneur spécifique à un Chantier
- */
-const Emplacement = sequelize.define(
-  'Emplacement',
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
+module.exports = (sequelize, DataTypes) => {
+  const Emplacement = sequelize.define('Emplacement', {
     nom: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: false
     },
     description: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      type: DataTypes.STRING
     },
     chantierId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: false
+    },
+    parentId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
-  },
-  {
-    tableName: 'emplacements',
-    timestamps: true,
-  }
-);
+  });
 
-module.exports = Emplacement;
+  Emplacement.associate = function(models) {
+    Emplacement.belongsTo(models.Chantier, {
+      foreignKey: 'chantierId',
+      as: 'chantier'
+    });
+
+    Emplacement.belongsTo(models.Emplacement, {
+      foreignKey: 'parentId',
+      as: 'parent'
+    });
+
+    Emplacement.hasMany(models.Emplacement, {
+      foreignKey: 'parentId',
+      as: 'enfants'
+    });
+  };
+
+  return Emplacement;
+};
