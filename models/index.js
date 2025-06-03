@@ -51,7 +51,7 @@ Historique.belongsTo(User,     { foreignKey: 'userId', as: 'user', onDelete: 'SE
 Materiel.hasMany(Historique,   { foreignKey: 'materielId', as: 'historiques' });
 User.hasMany(Historique,       { foreignKey: 'userId', as: 'historiques' });
 
-Emplacement.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier', onDelete: 'CASCADE' });
+
 Chantier.hasMany(Emplacement,  { foreignKey: 'chantierId', as: 'emplacements' });
 
 // 🔁 Appel des .associate() avec tous les modèles déjà définis
