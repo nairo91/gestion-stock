@@ -70,21 +70,24 @@ const Materiel = sequelize.define(
     vehiculeId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: { model: 'vehicules', key: 'id' },
+      references: { model: require('./Vehicule'), key: 'id' }
+,
       onDelete: 'SET NULL',
     },
 
     chantierId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: { model: 'chantiers', key: 'id' },
+      references: { model: require('./Chantier'), key: 'id' }
+,
       onDelete: 'SET NULL',
     },
 
     emplacementId: {
   type: DataTypes.INTEGER,
   allowNull: true,
-  references: { model: 'emplacements', key: 'id' },
+ references: { model: require('./Emplacement'), key: 'id' }
+,
   onDelete: 'SET NULL',
 },
 
