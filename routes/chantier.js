@@ -62,9 +62,11 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     });
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
+    const emplacements = await Emplacement.findAll(); // AJOUTÉ
     res.render('chantier/index', {
   materielChantiers,
   chantiers,
+  emplacements,
   chantierId,
   nomMateriel,
   categorie,

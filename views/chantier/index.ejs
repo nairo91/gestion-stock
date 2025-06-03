@@ -62,10 +62,15 @@
 </div>
 
 
-  <div class="col-md-3">
-    <label for="emplacement" class="form-label">Emplacement</label>
-    <input type="text" class="form-control" name="emplacement" id="emplacement" value="<%= emplacement || '' %>">
-  </div>
+  <select class="form-select" name="emplacement" id="emplacement">
+  <option value="">-- Tous les emplacements --</option>
+  <% if (emplacements && emplacements.length > 0) { %>
+    <% emplacements.forEach(function(e) { %>
+      <option value="<%= e.nom %>" <%= emplacement === e.nom ? 'selected' : '' %>><%= e.nom %></option>
+    <% }); %>
+  <% } %>
+</select>
+
 
   <div class="col-md-3">
   <label for="description" class="form-label">Description</label>
