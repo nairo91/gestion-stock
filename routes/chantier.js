@@ -29,13 +29,15 @@ const upload = multer({ storage: storage });
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-    const { chantierId, nomMateriel, categorie, emplacement } = req.query;
+    const { chantierId, nomMateriel, categorie, emplacement, description } = req.query;
 
     const whereChantier = chantierId ? { chantierId: chantierId } : {};
     const whereMateriel = {};
 
     if (nomMateriel) whereMateriel.nom = { [Op.like]: `%${nomMateriel}%` };
     if (categorie) whereMateriel.categorie = { [Op.like]: `%${categorie}%` };
+    if (description) whereMateriel.description = { [Op.like]: `%${description}%` };
+
 
     const materielChantiers = await MaterielChantier.findAll({
       where: whereChantier,
