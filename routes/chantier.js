@@ -92,7 +92,24 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 router.get('/ajouterMateriel', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const chantiers = await Chantier.findAll();
-    const emplacements = await Emplacement.findAll();
+    const emplacementsBruts = await Emplacement.findAll({ include: [{ model: Emplacement, as: 'parent' }] });
+
+function construireCheminComplet(emplacement) {
+  let chemin = emplacement.nom;
+  let courant = emplacement.parent;
+  while (courant) {
+    chemin = `${courant.nom} > ${chemin}`;
+    courant = courant.parent;
+  }
+  return chemin;
+}
+
+const emplacements = emplacementsBruts.map(e => ({
+  id: e.id,
+  cheminComplet: construireCheminComplet(e),
+  chantierId: e.chantierId
+}));
+
     // On passe chantiers et emplacements en une seule réponse
     res.render('chantier/ajouterMateriel', { chantiers, emplacements });
   } catch (err) {
@@ -173,7 +190,24 @@ router.get('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
     });
 
      // On charge tous les emplacements (on filtrera en EJS)
-   const emplacements = await Emplacement.findAll();
+  const emplacementsBruts = await Emplacement.findAll({ include: [{ model: Emplacement, as: 'parent' }] });
+
+function construireCheminComplet(emplacement) {
+  let chemin = emplacement.nom;
+  let courant = emplacement.parent;
+  while (courant) {
+    chemin = `${courant.nom} > ${chemin}`;
+    courant = courant.parent;
+  }
+  return chemin;
+}
+
+const emplacements = emplacementsBruts.map(e => ({
+  id: e.id,
+  cheminComplet: construireCheminComplet(e),
+  chantierId: e.chantierId
+}));
+
 
     res.render('chantier/ajouterLivraison', { chantiers, materiels, emplacements, });
   } catch (err) {

@@ -211,17 +211,18 @@ select#emplacementId.form-control {
       </div>
 
  <!-- NOUVEAU : Sélection de l’emplacement -->
-  <div class="mb-3">
-    <label for="emplacementId" class="form-label">Emplacement</label>
-    <select name="emplacementId" id="emplacementId" class="form-control">
-      <option value="">– Aucun –</option>
-      <% emplacements.forEach(e => { %>
-        <option value="<%= e.id %>">
-          <%= e.nom %> <small>(Chantier #<%= e.chantierId %>)</small>
-        </option>
-      <% }) %>
-    </select>
-  </div>
+<div class="mb-3">
+  <label for="emplacementId" class="form-label">Emplacement</label>
+  <select name="emplacementId" id="emplacementId" class="form-control">
+    <option value="">– Aucun –</option>
+    <% emplacements.forEach(e => { %>
+      <option value="<%= e.id %>">
+        <%= e.cheminComplet %> <small>(Chantier #<%= e.chantierId %>)</small>
+      </option>
+    <% }) %>
+  </select>
+</div>
+
 
       <div class="mb-3">
         <label for="photos" class="form-label">Photos</label>
