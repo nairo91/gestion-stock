@@ -29,7 +29,7 @@ const upload = multer({ storage: storage });
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-    const { chantierId, nomMateriel, categorie, emplacement, description } = req.query;
+    const { chantierId, nomMateriel, categorie, emplacement, description,triNom } = req.query;
 
     const whereChantier = chantierId ? { chantierId: chantierId } : {};
     const whereMateriel = {};
@@ -68,7 +68,16 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
       ]
     }
-  ]
+  ],
+
+  order: triNom === 'asc'
+  ? [[{ model: Materiel, as: 'materiel' }, 'nom', 'ASC']]
+  : triNom === 'desc'
+  ? [[{ model: Materiel, as: 'materiel' }, 'nom', 'DESC']]
+  : undefined
+
+
+
 });
 
 
@@ -82,7 +91,8 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   nomMateriel,
   categorie,
   emplacement,
-  description
+  description,
+  triNom
 });
 
   } catch (err) {
