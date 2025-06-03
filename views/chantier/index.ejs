@@ -96,6 +96,7 @@
           <th class="d-none">Chantier</th>
           <th>Matériel</th>
           <th>Référence</th>
+          <th>Categorie</th>
           <th>Description / Fournisseur</th>
           <th>Emplacement</th>
 
@@ -125,6 +126,13 @@
               <td>
                 <% if(mc.materiel) { %>
                   <%= mc.materiel.reference %>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td>
+                <% if(mc.materiel) { %>
+                  <%= mc.materiel.categorie %>
                 <% } else { %>
                   -
                 <% } %>
