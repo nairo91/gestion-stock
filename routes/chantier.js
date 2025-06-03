@@ -68,7 +68,8 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   chantierId,
   nomMateriel,
   categorie,
-  emplacement
+  emplacement,
+  description
 });
 
   } catch (err) {
