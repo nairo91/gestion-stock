@@ -44,7 +44,7 @@ Chantier.hasMany(BonLivraison,  { foreignKey: 'chantierId', as: 'bonsLivraison' 
 Vehicule.hasMany(Materiel, { foreignKey: 'vehiculeId', as: 'materiels', onDelete: 'SET NULL' });
 
 Photo.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel', onDelete: 'CASCADE' });
-Materiel.hasMany(Photo,   { foreignKey: 'materielId', as: 'photos' });
+//Materiel.hasMany(Photo,   { foreignKey: 'materielId', as: 'photos' });
 
 Historique.belongsTo(Materiel, { foreignKey: 'materielId', as: 'materiel', onDelete: 'SET NULL' });
 Historique.belongsTo(User,     { foreignKey: 'userId', as: 'user', onDelete: 'SET NULL' });
