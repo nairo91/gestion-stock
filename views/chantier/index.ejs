@@ -109,8 +109,11 @@
           <th>Categorie</th>
           <th>Description / Fournisseur</th>
           <th>Emplacement</th>
-
+          <th>Rack</th>
+          <th>Compartiment</th>
+          <th>Niveau</th>
           <th>Qte</th>
+
         </tr>
       </thead>
       <tbody>
@@ -156,25 +159,30 @@
               </td>
 
               <td>
-               <% 
-  function afficherChemin(emp) {
-    let chemin = emp.nom;
-    let courant = emp;
-    while (courant.parent) {
-      chemin = courant.parent.nom + " > " + chemin;
-      courant = courant.parent;
-    }
-    return chemin;
-  }
-%>
+                            <% 
+                function afficherChemin(emp) {
+                  let chemin = emp.nom;
+                  let courant = emp;
+                  while (courant.parent) {
+                    chemin = courant.parent.nom + " > " + chemin;
+                    courant = courant.parent;
+                  }
+                  return chemin;
+                }
+              %>
 
-<% if (mc.materiel && mc.materiel.emplacement) { %>
-  <%= afficherChemin(mc.materiel.emplacement) %>
-<% } else { %>
-  -
-<% } %>
+              <% if (mc.materiel && mc.materiel.emplacement) { %>
+                <%= afficherChemin(mc.materiel.emplacement) %>
+              <% } else { %>
+                -
+              <% } %>
 
-              </td>
+                            </td>
+
+              <td><%= mc.materiel && mc.materiel.rack ? mc.materiel.rack : '-' %></td>
+              <td><%= mc.materiel && mc.materiel.compartiment ? mc.materiel.compartiment : '-' %></td>
+              <td><%= mc.materiel && mc.materiel.niveau != null ? mc.materiel.niveau : '-' %></td>
+
 
               <td><%= mc.quantite %></td>
               <td>
