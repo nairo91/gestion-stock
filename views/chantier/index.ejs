@@ -105,6 +105,8 @@
           <th class="d-none">ID</th>
           <th class="d-none">Chantier</th>
           <th>Matériel</th>
+          <th>Photo</th>
+
           <th>Référence</th>
           <th>Categorie</th>
           <th>Description / Fournisseur</th>
@@ -135,6 +137,13 @@
                   N/A
                 <% } %>
               </td>
+                <td>
+                    <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
+                      <img src="/uploads/<%= mc.materiel.photos[0] %>" alt="Photo" width="80">
+                    <% } else { %>
+                      -
+                    <% } %>
+                </td>
 
               <td>
                 <% if(mc.materiel) { %>

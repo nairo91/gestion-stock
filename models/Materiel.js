@@ -17,15 +17,15 @@ const Materiel = sequelize.define(
     niveau: { type: DataTypes.INTEGER },
     vehiculeId: { type: DataTypes.INTEGER },
     chantierId: { type: DataTypes.INTEGER },
-    emplacementId: { type: DataTypes.INTEGER },
+    emplacementId: { type: DataTypes.INTEGER }
   },
   {
     tableName: 'materiels',
     timestamps: true,
     indexes: [
       { unique: true, fields: ['barcode'] },
-      { fields: ['categorie', 'nom'] },
-    ],
+      { fields: ['categorie', 'nom'] }
+    ]
   }
 );
 
@@ -47,6 +47,12 @@ Materiel.associate = function (models) {
     foreignKey: 'chantierId',
     as: 'chantier',
     onDelete: 'SET NULL'
+  });
+
+  Materiel.hasMany(models.Photo, {
+    foreignKey: 'materielId',
+    as: 'photos',
+    onDelete: 'CASCADE'
   });
 };
 
