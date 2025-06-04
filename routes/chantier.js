@@ -353,6 +353,29 @@ router.post('/ajouter-chantier', ensureAuthenticated, checkAdmin, async (req, re
 
 /* ===== MODIFIER / SUPPRIMER LES ENREGISTREMENTS DU STOCK CHANTIER ===== */
 // Remplacer la route POST /materielChantier/modifier/:id existante dans routes/chantier.js par ceci :
+router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const mc = await MaterielChantier.findByPk(req.params.id, {
+      include: [
+        { model: Chantier, as: 'chantier' },
+        {
+          model: Materiel,
+          as: 'materiel',
+          include: [{ model: Photo, as: 'photos' }]
+        }
+      ]
+    });
+
+    const emplacements = await Emplacement.findAll();
+
+    if (!mc) return res.send("Enregistrement introuvable.");
+
+    res.render('chantier/modifierMaterielChantier', { mc, emplacements });
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors du chargement de la page de modification.");
+  }
+});
 
 router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
