@@ -368,7 +368,7 @@ res.render('chantier/modifierMaterielChantier', { mc, emplacements });
   }
 });
 
-router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'),async (req, res) => {
   try {
     const { quantite, nomMateriel, emplacementId, rack, compartiment, niveau } = req.body;
 
@@ -408,6 +408,18 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, a
         : 'Matériel inconnu',
       stockType: 'chantier'
     });
+
+    // Si une nouvelle photo est fournie, supprimer l'ancienne (s'il y en a) et enregistrer la nouvelle
+if (req.file) {
+  // Supprimer les anciennes photos liées à ce matériel
+  await Photo.destroy({ where: { materielId: mc.materiel.id } });
+
+  // Ajouter la nouvelle photo
+  await Photo.create({
+    chemin: req.file.path.replace(/\\/g, '/'),
+    materielId: mc.materiel.id
+  });
+}
 
     res.redirect('/chantier');
   } catch (err) {
