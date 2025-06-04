@@ -21,8 +21,8 @@ app.use((req, res, next) => {
   res.locals.nonce = nonce;
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; " +
-    "script-src 'self' 'nonce-" + nonce + "'; " +
+    "default-src 'self'; " + 
+    "script-src 'self' https://cdn.jsdelivr.net 'nonce-" + nonce + "'; " +
     "style-src 'self' 'unsafe-inline';"
   );
   next();
