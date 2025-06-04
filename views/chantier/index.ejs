@@ -212,7 +212,7 @@
 
               <td><%= mc.quantite %></td>
               <td>
-                <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
+                <a href="/chantier/materiel/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
                 <!-- Tu peux aussi ajouter un bouton pour supprimer ici -->
                 <form action="/chantier/materielChantier/supprimer/<%= mc.id %>" method="POST" style="display:inline;" 
                   onsubmit="return confirm('Voulez-vous vraiment supprimer cet enregistrement ?');">
