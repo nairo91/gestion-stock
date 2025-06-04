@@ -176,16 +176,25 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     const chantier = await Chantier.findByPk(chantierId);
 
     // 5) Historique
-    await Historique.create({
-      materielId: nouveauMateriel.id,
-      oldQuantite: null,
-      newQuantite: qte,
-      userId: req.user ? req.user.id : null,
-      action: 'CRÉÉ SUR CHANTIER',
-      // AJOUT : Inclure le nom du chantier
-      materielNom: `${nouveauMateriel.nom} (Chantier : ${chantier ? chantier.nom : 'N/A'})`,
-      stockType: 'chantier'
-    });
+  let actions = [];
+
+if (oldQte !== mc.quantite) actions.push('Qte modifiée');
+if (mc.materiel.nom !== nomMateriel.trim()) actions.push('Nom modifié');
+if (mc.materiel.emplacementId !== (emplacementId ? parseInt(emplacementId) : null)) actions.push('Emplacement modifié');
+if (mc.materiel.rack !== rack) actions.push('Rack modifié');
+if (mc.materiel.compartiment !== compartiment) actions.push('Compartiment modifié');
+if (mc.materiel.niveau !== (niveau ? parseInt(niveau) : null)) actions.push('Niveau modifié');
+
+await Historique.create({
+  materielId: mc.materiel.id,
+  oldQuantite: oldQte,
+  newQuantite: mc.quantite,
+  userId: req.user ? req.user.id : null,
+  action: actions.length > 0 ? actions.join(', ') : 'Modifications sans changement',
+  materielNom: `${mc.materiel.nom} (Chantier : ${mc.chantier ? mc.chantier.nom : 'N/A'})`,
+  stockType: 'chantier'
+});
+
 
     res.redirect('/chantier');
   } catch (err) {
