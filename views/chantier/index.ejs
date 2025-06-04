@@ -138,13 +138,29 @@
                 <% } %>
               </td>
                 <td>
-                    <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
-                     <img src="/<%= mc.materiel.photos[0].chemin %>" alt="Photo" width="80">
+                <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
+                  <img src="/<%= mc.materiel.photos[0].chemin %>" alt="Photo"
+                      width="80" style="cursor: pointer;"
+                      data-bs-toggle="modal" data-bs-target="#photoModal<%= mc.id %>">
 
-                    <% } else { %>
-                      -
-                    <% } %>
-                </td>
+                  <!-- Modale pour agrandir la photo -->
+                  <div class="modal fade" id="photoModal<%= mc.id %>" tabindex="-1" aria-labelledby="photoModalLabel<%= mc.id %>" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="photoModalLabel<%= mc.id %>">Photo de <%= mc.materiel.nom %></h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                          <img src="/<%= mc.materiel.photos[0].chemin %>" alt="Photo grand format" class="img-fluid rounded">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
 
               <td>
                 <% if(mc.materiel) { %>
