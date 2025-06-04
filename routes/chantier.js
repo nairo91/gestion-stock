@@ -486,4 +486,28 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
 
   res.redirect('/chantier');
 });
+
+router.get('/materielChantier/info/:id', ensureAuthenticated, async (req, res) => {
+  const mc = await MaterielChantier.findByPk(req.params.id, {
+    include: [
+      { model: Chantier, as: 'chantier' },
+      {
+        model: Materiel,
+        as: 'materiel',
+        include: [{ model: Photo, as: 'photos' }, { model: Emplacement, as: 'emplacement' }]
+      }
+    ]
+  });
+
+  if (!mc) return res.send("Matériel non trouvé.");
+
+  const historique = await Historique.findAll({
+    where: { materielId: mc.materiel.id },
+    include: [{ model: User, as: 'user' }],
+    order: [['createdAt', 'DESC']]
+  });
+
+  res.render('chantier/infoMaterielChantier', { mc, historique });
+});
+
 module.exports = router;

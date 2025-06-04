@@ -217,8 +217,12 @@
                 <form action="/chantier/materielChantier/supprimer/<%= mc.id %>" method="POST" style="display:inline;" 
                   onsubmit="return confirm('Voulez-vous vraiment supprimer cet enregistrement ?');">
               <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+              
             </form>
+            
             <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
+            <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
+
 
               </td>
             </tr>
