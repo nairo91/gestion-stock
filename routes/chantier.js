@@ -175,25 +175,18 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     // 4) AJOUT : Récupérer le chantier pour inclure son nom
     const chantier = await Chantier.findByPk(chantierId);
 
-    // 5) Historique
-  let actions = [];
 
-if (oldQte !== mc.quantite) actions.push('Qte modifiée');
-if (mc.materiel.nom !== nomMateriel.trim()) actions.push('Nom modifié');
-if (mc.materiel.emplacementId !== (emplacementId ? parseInt(emplacementId) : null)) actions.push('Emplacement modifié');
-if (mc.materiel.rack !== rack) actions.push('Rack modifié');
-if (mc.materiel.compartiment !== compartiment) actions.push('Compartiment modifié');
-if (mc.materiel.niveau !== (niveau ? parseInt(niveau) : null)) actions.push('Niveau modifié');
-
+// 5) Historique : création
 await Historique.create({
-  materielId: mc.materiel.id,
-  oldQuantite: oldQte,
-  newQuantite: mc.quantite,
+  materielId: nouveauMateriel.id,
+  oldQuantite: null,
+  newQuantite: qte,
   userId: req.user ? req.user.id : null,
-  action: actions.length > 0 ? actions.join(', ') : 'Modifications sans changement',
-  materielNom: `${mc.materiel.nom} (Chantier : ${mc.chantier ? mc.chantier.nom : 'N/A'})`,
+  action: 'CRÉÉ SUR CHANTIER',
+  materielNom: `${nouveauMateriel.nom} (Chantier : ${chantier ? chantier.nom : 'N/A'})`,
   stockType: 'chantier'
 });
+
 
 
     res.redirect('/chantier');
@@ -377,7 +370,7 @@ res.render('chantier/modifierMaterielChantier', { mc, emplacements });
   }
 });
 
-router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'),async (req, res) => {
+router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
     const { quantite, nomMateriel, emplacementId, rack, compartiment, niveau } = req.body;
 
@@ -386,12 +379,17 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
     if (!mc) return res.send("Enregistrement non trouvé.");
 
-    // Ancienne quantité
     const oldQte = mc.quantite;
+    const changements = [];
+
+    if (mc.quantite !== parseInt(quantite, 10)) changements.push('Qte modifiée');
+    if (mc.materiel.nom !== nomMateriel.trim()) changements.push('Nom modifié');
+    if (mc.materiel.emplacementId !== (emplacementId ? parseInt(emplacementId) : null)) changements.push('Emplacement modifié');
+    if (mc.materiel.rack !== rack) changements.push('Rack modifié');
+    if (mc.materiel.compartiment !== compartiment) changements.push('Compartiment modifié');
+    if (mc.materiel.niveau !== (niveau ? parseInt(niveau) : null)) changements.push('Niveau modifié');
 
     mc.quantite = parseInt(quantite, 10);
-
-   
     mc.materiel.nom = nomMateriel.trim();
     mc.materiel.emplacementId = emplacementId ? parseInt(emplacementId) : null;
     mc.materiel.rack = rack;
@@ -399,36 +397,25 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     mc.materiel.niveau = niveau ? parseInt(niveau) : null;
 
     await mc.materiel.save();
-
     await mc.save();
 
- 
-
-
-    // AJOUT : Historique pour la modification
     await Historique.create({
-      materielId: mc.materiel ? mc.materiel.id : null,
+      materielId: mc.materiel.id,
       oldQuantite: oldQte,
       newQuantite: mc.quantite,
       userId: req.user ? req.user.id : null,
-      action: 'UPDATE_CHANTIER',
-      materielNom: mc.materiel
-        ? `${mc.materiel.nom} (Chantier : ${mc.chantier ? mc.chantier.nom : 'N/A'})`
-        : 'Matériel inconnu',
+      action: changements.length > 0 ? changements.join(', ') : 'Modifications sans changement',
+      materielNom: `${mc.materiel.nom} (Chantier : ${mc.chantier ? mc.chantier.nom : 'N/A'})`,
       stockType: 'chantier'
     });
 
-    // Si une nouvelle photo est fournie, supprimer l'ancienne (s'il y en a) et enregistrer la nouvelle
-if (req.file) {
-  // Supprimer les anciennes photos liées à ce matériel
-  await Photo.destroy({ where: { materielId: mc.materiel.id } });
-
-  // Ajouter la nouvelle photo
-  await Photo.create({
-    chemin: req.file.path.replace(/\\/g, '/'),
-    materielId: mc.materiel.id
-  });
-}
+    if (req.file) {
+      await Photo.destroy({ where: { materielId: mc.materiel.id } });
+      await Photo.create({
+        chemin: req.file.path.replace(/\\/g, '/'),
+        materielId: mc.materiel.id
+      });
+    }
 
     res.redirect('/chantier');
   } catch (err) {
@@ -436,6 +423,7 @@ if (req.file) {
     res.send("Erreur lors de la mise à jour de l'enregistrement.");
   }
 });
+
 
 // Supprimer un enregistrement de MaterielChantier
 router.post('/materielChantier/supprimer/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
