@@ -134,7 +134,7 @@ const emplacements = emplacementsBruts.map(e => ({
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, quantite, description, prix, categorie, chantierId, emplacementId } = req.body;
+    const { nom, reference, quantite, description, prix, categorie, chantierId, emplacementId, rack, compartiment, niveau } = req.body;
 
     
     // 1) Créer le matériel avec quantite=0 dans la table Materiel
@@ -146,7 +146,10 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
   prix: parseFloat(prix),
   categorie,
   vehiculeId: null,
-  emplacementId: emplacementId ? parseInt(emplacementId) : null
+  emplacementId: emplacementId ? parseInt(emplacementId) : null,
+   rack,
+  compartiment,
+  niveau: niveau ? parseInt(niveau) : null
 });
 
 
@@ -367,7 +370,8 @@ res.render('chantier/modifierMaterielChantier', { mc, emplacements });
 
 router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
-    const { quantite } = req.body;
+    const { quantite, nomMateriel, emplacementId, rack, compartiment, niveau } = req.body;
+
     const mc = await MaterielChantier.findByPk(req.params.id, {
       include: [{ model: Materiel, as: 'materiel' }, { model: Chantier, as: 'chantier' }]
     });
@@ -378,16 +382,18 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, a
 
     mc.quantite = parseInt(quantite, 10);
 
-    mc.materiel.nom = req.body.nomMateriel.trim();
-await mc.materiel.save();
+   
+    mc.materiel.nom = nomMateriel.trim();
+    mc.materiel.emplacementId = emplacementId ? parseInt(emplacementId) : null;
+    mc.materiel.rack = rack;
+    mc.materiel.compartiment = compartiment;
+    mc.materiel.niveau = niveau ? parseInt(niveau) : null;
+
+    await mc.materiel.save();
 
     await mc.save();
 
-    const newEmplacementId = parseInt(req.body.emplacementId, 10);
-if (mc.materiel) {
-  mc.materiel.emplacementId = newEmplacementId;
-  await mc.materiel.save();
-}
+ 
 
 
     // AJOUT : Historique pour la modification
