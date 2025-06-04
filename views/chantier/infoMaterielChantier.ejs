@@ -47,7 +47,7 @@
         <tbody>
           <% historique.forEach(h => { %>
             <tr>
-              <td><%= new Date(h.createdAt).toLocaleString() %></td>
+              <td><%= new Date(h.createdAt).toLocaleString('fr-FR') %></td>
               <td><%= h.action %></td>
               <td><%= h.user ? h.user.nom : 'Inconnu' %></td>
               <td><%= h.oldQuantite ?? '-' %></td>
