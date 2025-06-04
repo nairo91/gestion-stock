@@ -139,7 +139,8 @@
               </td>
                 <td>
                     <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
-                      <img src="/uploads/<%= mc.materiel.photos[0] %>" alt="Photo" width="80">
+                     <img src="/<%= mc.materiel.photos[0].chemin %>" alt="Photo" width="80">
+
                     <% } else { %>
                       -
                     <% } %>
