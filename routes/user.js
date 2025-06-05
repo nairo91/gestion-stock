@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { ensureAuthenticated, checkAdmin } = require('../middleware/auth');
+const { ensureAuthenticated, checkAdmin } = require('./materiel');
 
 // Modifier le rôle d’un utilisateur
 router.post('/changer-role/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
