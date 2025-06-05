@@ -17,12 +17,16 @@
 
   <div class="container" style="margin-top: 6rem;">
 <div class="mb-4 d-flex flex-wrap gap-2">
-  <!-- <a href="/chantier/ajouter" class="btn btn-primary">Ajouter une livraison chantier</a>-->
+  <% if (user && user.role === 'admin') { %>
+  <!-- Bouton ici -->
+   <!-- <a href="/chantier/ajouter" class="btn btn-primary">Ajouter une livraison chantier</a>-->
   <a href="/chantier/ajouterMateriel" class="btn btn-success">Ajouter du matériel dans un chantier</a>
   <!-- Supprime le bouton "Modifier" global ici -->
   <a href="/chantier/ajouter-chantier" class="btn btn-success">Créer un nouveau chantier</a>
   <a href="/chantier/historique" class="btn btn-warning">Voir l'historique chantier</a>
   <a href="/emplacements" class="btn btn-info">Gérer les emplacements</a>
+<% } %>
+  
 
   <a href="/materiel" class="btn btn-secondary">Retour</a>
 </div>
@@ -212,7 +216,10 @@
 
               <td><%= mc.quantite %></td>
               <td>
-                <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
+
+                <% if (user && user.role === 'admin') { %>
+                <!-- Bouton ici -->
+                 <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
                 <!-- Tu peux aussi ajouter un bouton pour supprimer ici -->
                 <form action="/chantier/materielChantier/supprimer/<%= mc.id %>" method="POST" style="display:inline;" 
                   onsubmit="return confirm('Voulez-vous vraiment supprimer cet enregistrement ?');">
@@ -222,6 +229,8 @@
             
             <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
             <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
+                <% } %>
+                
 
 
               </td>
