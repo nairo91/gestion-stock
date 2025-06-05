@@ -531,48 +531,41 @@ router.get('/materielChantier/info/:id', ensureAuthenticated, async (req, res) =
   res.render('chantier/infoMaterielChantier', { mc, historique });
 });
 
-// 📁 routes/chantier.js (ajouter en bas du fichier)
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
 
-const MaterielChantier = require('../models/MaterielChantier');
-const Chantier = require('../models/Chantier');
-const Emplacement = require('../models/Emplacement');
+const PDFDocument = require('pdfkit');
 
 router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const materiels = await MaterielChantier.findAll({
-      include: [Chantier, Emplacement],
+      include: [Materiel, Chantier, Emplacement]
     });
 
-    const doc = new PDFDocument({ margin: 40 });
-    const filename = 'stock_chantier.pdf';
-    res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-type', 'application/pdf');
+    const doc = new PDFDocument();
+    res.setHeader('Content-Disposition', 'attachment; filename=stock_chantiers.pdf');
+    res.setHeader('Content-Type', 'application/pdf');
     doc.pipe(res);
 
-    doc.fontSize(20).text('Stock des Chantiers', { align: 'center' });
+    doc.fontSize(18).text('Stock des Chantiers', { align: 'center' });
     doc.moveDown();
 
-    materiels.forEach((m, index) => {
-      const emplacementStr = [m.rack, m.compartiment, m.niveau].filter(Boolean).join(' / ');
-      doc
-        .fontSize(12)
-        .text(`• Chantier : ${m.Chantier.nom}`)
-        .text(`  → Matériel : ${m.nom}`)
-        .text(`     Quantité : ${m.quantite} ${m.unite}`)
-        .text(`     État : ${m.etat}`)
-        .text(`     Date ajout : ${m.dateAjout?.toLocaleDateString('fr-FR') || ''}`)
-        .text(`     Emplacement : ${emplacementStr || 'N/A'}`)
-        .moveDown();
+    materiels.forEach(m => {
+      const chantierNom = m.Chantier?.nom || 'N/A';
+      const materielNom = m.Materiel?.nom || 'N/A';
+      const qte = m.quantite || 0;
+      const emplacement = m.Emplacement?.nom || 'N/A';
+
+      doc.fontSize(12).text(`Chantier : ${chantierNom}`);
+      doc.text(`Matériel : ${materielNom}`);
+      doc.text(`Quantité : ${qte}`);
+      doc.text(`Emplacement : ${emplacement}`);
+      doc.moveDown();
     });
 
     doc.end();
   } catch (err) {
-    console.error('Erreur export PDF :', err);
-    res.status(500).send('Erreur lors de la génération du PDF');
+    console.error(err);
+    res.status(500).send('Erreur lors de la génération du PDF.');
   }
 });
-
 
 module.exports = router;
