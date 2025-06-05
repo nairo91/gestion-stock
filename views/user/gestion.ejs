@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestion des rôles</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container mt-4">
+    <h1>Gestion des utilisateurs</h1>
+
+    <table class="table table-striped mt-4">
+      <thead class="table-dark">
+        <tr>
+          <th>Nom</th>
+          <th>Email</th>
+          <th>Rôle actuel</th>
+          <th>Changer le rôle</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(u => { %>
+          <tr>
+            <td><%= u.nom %></td>
+            <td><%= u.email %></td>
+            <td><%= u.role %></td>
+            <td>
+              <form action="/changer-role/<%= u.id %>" method="POST" class="d-flex">
+                <select name="role" class="form-select me-2">
+                  <option value="user" <%= u.role === 'user' ? 'selected' : '' %>>Utilisateur</option>
+                  <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Administrateur</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Valider</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <a href="/depot" class="btn btn-secondary mt-3">Retour au dépôt</a>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

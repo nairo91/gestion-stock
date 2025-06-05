@@ -1,0 +1,13 @@
+<tr>
+  <td><%= user.nom %></td>
+  <td><%= user.email %></td>
+  <td>
+    <form action="/user/changer-role/<%= user.id %>" method="POST" class="d-flex gap-2">
+      <select name="role" class="form-select form-select-sm" style="width:auto;">
+        <option value="user" <%= user.role === 'user' ? 'selected' : '' %>>Utilisateur</option>
+        <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
+      </select>
+      <button type="submit" class="btn btn-sm btn-primary">Modifier</button>
+    </form>
+  </td>
+</tr>
