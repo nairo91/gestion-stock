@@ -534,7 +534,7 @@ router.get('/materielChantier/info/:id', ensureAuthenticated, async (req, res) =
 // 📁 routes/chantier.js (ajouter en bas du fichier)
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
-const path = require('path');
+
 const MaterielChantier = require('../models/MaterielChantier');
 const Chantier = require('../models/Chantier');
 const Emplacement = require('../models/Emplacement');
