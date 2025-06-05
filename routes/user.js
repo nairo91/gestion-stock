@@ -25,7 +25,7 @@ router.post('/changer-role/:id', ensureAuthenticated, checkAdmin, async (req, re
 });
 
 // Afficher tous les utilisateurs (interface admin)
-router.get('/user/gestion', ensureAuthenticated, checkAdmin, async (req, res) => {
+router.get('/gestion', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const users = await User.findAll();
     res.render('user/gestion', { users });

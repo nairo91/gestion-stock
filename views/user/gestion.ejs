@@ -4,42 +4,88 @@
   <meta charset="UTF-8">
   <title>Gestion des rôles</title>
   <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f5f8fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    h1 {
+      color: #1d3557;
+    }
+    .badge-admin {
+      background-color: #1d3557;
+    }
+    .badge-user {
+      background-color: #6c757d;
+    }
+    .table thead {
+      background-color: #457b9d;
+      color: white;
+    }
+    .form-select {
+      min-width: 140px;
+    }
+    .container {
+      max-width: 900px;
+    }
+    .btn-primary {
+      background-color: #1d3557;
+      border-color: #1d3557;
+    }
+    .btn-primary:hover {
+      background-color: #16324f;
+      border-color: #16324f;
+    }
+  </style>
 </head>
 <body>
-  <div class="container mt-4">
-    <h1>Gestion des utilisateurs</h1>
+  <div class="container mt-5">
+    <h1 class="mb-4 text-center">Gestion des utilisateurs</h1>
 
-    <table class="table table-striped mt-4">
-      <thead class="table-dark">
-        <tr>
-          <th>Nom</th>
-          <th>Email</th>
-          <th>Rôle actuel</th>
-          <th>Changer le rôle</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% users.forEach(u => { %>
-          <tr>
-            <td><%= u.nom %></td>
-            <td><%= u.email %></td>
-            <td><%= u.role %></td>
-            <td>
-              <form action="/changer-role/<%= u.id %>" method="POST" class="d-flex">
-                <select name="role" class="form-select me-2">
-                  <option value="user" <%= u.role === 'user' ? 'selected' : '' %>>Utilisateur</option>
-                  <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Administrateur</option>
-                </select>
-                <button type="submit" class="btn btn-primary btn-sm">Valider</button>
-              </form>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Email</th>
+              <th>Rôle actuel</th>
+              <th>Changer le rôle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach(u => { %>
+              <tr>
+                <td><%= u.nom %></td>
+                <td><%= u.email %></td>
+                <td>
+                  <% if (u.role === 'admin') { %>
+                    <span class="badge badge-admin">Administrateur</span>
+                  <% } else { %>
+                    <span class="badge badge-user">Utilisateur</span>
+                  <% } %>
+                </td>
+                <td>
+                  <form action="/changer-role/<%= u.id %>" method="POST" class="d-flex align-items-center gap-2">
+                    <select name="role" class="form-select">
+                      <option value="user" <%= u.role === 'user' ? 'selected' : '' %>>Utilisateur</option>
+                      <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Administrateur</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-sm">Valider</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
 
-    <a href="/depot" class="btn btn-secondary mt-3">Retour au dépôt</a>
+        <div class="text-center mt-4">
+          <a href="/depot" class="btn btn-outline-secondary">Retour au dépôt</a>
+        </div>
+      </div>
+    </div>
   </div>
+
   <script src="/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

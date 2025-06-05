@@ -77,6 +77,7 @@ app.use('/chantier', require('./routes/chantier'));
 
   const userRoutes = require('./routes/user');
   app.use('/user', userRoutes);
+app.use('/user', require('./routes/user'));
 
 // Lancement du serveur
 const PORT = process.env.PORT || 3000;
