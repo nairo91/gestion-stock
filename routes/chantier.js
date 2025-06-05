@@ -537,7 +537,10 @@ const PDFDocument = require('pdfkit');
 router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const materiels = await MaterielChantier.findAll({
-      include: [Materiel, Chantier, Emplacement]
+      include: [
+        { model: Materiel, as: 'materiel' },
+        { model: Chantier, as: 'chantier' }
+      ]
     });
 
     const doc = new PDFDocument();
@@ -549,23 +552,30 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
     doc.moveDown();
 
     materiels.forEach(m => {
-      const chantierNom = m.Chantier?.nom || 'N/A';
-      const materielNom = m.Materiel?.nom || 'N/A';
-      const qte = m.quantite || 0;
-      const emplacement = m.Emplacement?.nom || 'N/A';
-
-      doc.fontSize(12).text(`Chantier : ${chantierNom}`);
-      doc.text(`Matériel : ${materielNom}`);
-      doc.text(`Quantité : ${qte}`);
-      doc.text(`Emplacement : ${emplacement}`);
+      const chantierNom = m.chantier?.nom || 'N/A';
+      const materiel = m.materiel;
+      const ligne = [
+        `Chantier : ${chantierNom}`,
+        `Matériel : ${materiel?.nom || 'N/A'}`,
+        `Réf : ${materiel?.reference || '-'}`,
+        `Catégorie : ${materiel?.categorie || '-'}`,
+        `Description : ${materiel?.description || '-'}`,
+        `Emplacement : ${materiel?.emplacementId || '-'}`,
+        `Rack : ${materiel?.rack || '-'}`,
+        `Compartiment : ${materiel?.compartiment || '-'}`,
+        `Niveau : ${materiel?.niveau ?? '-'}`,
+        `Quantité : ${m.quantite}`
+      ];
+      doc.fontSize(10).text(ligne.join(' | '));
       doc.moveDown();
     });
 
     doc.end();
   } catch (err) {
-    console.error(err);
+    console.error('Erreur export PDF :', err);
     res.status(500).send('Erreur lors de la génération du PDF.');
   }
 });
+
 
 module.exports = router;
