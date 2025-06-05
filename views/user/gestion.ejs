@@ -2,85 +2,90 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Gestion des rôles</title>
+  <title>Gestion des utilisateurs</title>
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <style>
     body {
-      background-color: #f5f8fa;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .container {
+      max-width: 1000px;
     }
     h1 {
-      color: #1d3557;
+      color: #1c3d5a;
+      margin-bottom: 30px;
     }
     .badge-admin {
-      background-color: #1d3557;
+      background-color: #007bff;
     }
     .badge-user {
       background-color: #6c757d;
     }
     .table thead {
-      background-color: #457b9d;
+      background-color: #1c3d5a;
       color: white;
     }
-    .form-select {
-      min-width: 140px;
-    }
-    .container {
-      max-width: 900px;
+    .card {
+      border-radius: 10px;
     }
     .btn-primary {
-      background-color: #1d3557;
-      border-color: #1d3557;
+      background-color: #1c3d5a;
+      border: none;
     }
     .btn-primary:hover {
-      background-color: #16324f;
-      border-color: #16324f;
+      background-color: #154165;
+    }
+    .btn-outline-secondary {
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
   <div class="container mt-5">
-    <h1 class="mb-4 text-center">Gestion des utilisateurs</h1>
+    <h1 class="text-center">Gestion des utilisateurs</h1>
 
-    <div class="card shadow-sm">
+    <div class="card shadow">
       <div class="card-body">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>Nom</th>
-              <th>Email</th>
-              <th>Rôle actuel</th>
-              <th>Changer le rôle</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% users.forEach(u => { %>
+        <div class="table-responsive">
+          <table class="table table-striped align-middle text-center">
+            <thead>
               <tr>
-                <td><%= u.nom %></td>
-                <td><%= u.email %></td>
-                <td>
-                  <% if (u.role === 'admin') { %>
-                    <span class="badge badge-admin">Administrateur</span>
-                  <% } else { %>
-                    <span class="badge badge-user">Utilisateur</span>
-                  <% } %>
-                </td>
-                <td>
-                  <form action="/user/changer-role/<%= u.id %>" method="POST" class="d-flex align-items-center gap-2">
-                    <select name="role" class="form-select">
-                      <option value="user" <%= u.role === 'user' ? 'selected' : '' %>>Utilisateur</option>
-                      <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Administrateur</option>
-                    </select>
-                    <button type="submit" class="btn btn-primary btn-sm">Valider</button>
-                  </form>
-                </td>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Rôle actuel</th>
+                <th>Changer le rôle</th>
               </tr>
-            <% }) %>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <% users.forEach(u => { %>
+                <tr>
+                  <td><%= u.nom %></td>
+                  <td><%= u.email %></td>
+                  <td>
+                    <% if (u.role === 'admin') { %>
+                      <span class="badge badge-admin text-white">Administrateur</span>
+                    <% } else { %>
+                      <span class="badge badge-user text-white">Utilisateur</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <form action="/user/changer-role/<%= u.id %>" method="POST" class="d-flex justify-content-center gap-2">
+                      <select name="role" class="form-select w-auto">
+                        <option value="user" <%= u.role === 'user' ? 'selected' : '' %>>Utilisateur</option>
+                        <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Administrateur</option>
+                      </select>
+                      <button type="submit" class="btn btn-primary btn-sm">Valider</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
 
         <div class="text-center mt-4">
-          <a href="/materiel" class="btn btn-outline-secondary">Retour au dépôt</a>
+          <a href="/materiel" class="btn btn-outline-secondary">← Retour au dépôt</a>
         </div>
       </div>
     </div>

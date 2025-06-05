@@ -17,7 +17,7 @@ router.post('/changer-role/:id', ensureAuthenticated, checkAdmin, async (req, re
 
     user.role = nouveauRole;
     await user.save();
-    res.redirect('/depot'); // ou la bonne redirection
+    res.redirect('/materiel'); // ou la bonne redirection
   } catch (err) {
     console.error(err);
     res.status(500).send("Erreur serveur.");
