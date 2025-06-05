@@ -531,51 +531,99 @@ router.get('/materielChantier/info/:id', ensureAuthenticated, async (req, res) =
   res.render('chantier/infoMaterielChantier', { mc, historique });
 });
 
-
+// 📦 Export PDF structuré et lisible
 const PDFDocument = require('pdfkit');
 
 router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const materiels = await MaterielChantier.findAll({
       include: [
-        { model: Materiel, as: 'materiel' },
+        { model: Materiel, as: 'materiel', include: [{ model: Emplacement, as: 'emplacement' }] },
         { model: Chantier, as: 'chantier' }
       ]
     });
 
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ margin: 30, size: 'A4' });
     res.setHeader('Content-Disposition', 'attachment; filename=stock_chantiers.pdf');
     res.setHeader('Content-Type', 'application/pdf');
     doc.pipe(res);
 
-    doc.fontSize(18).text('Stock des Chantiers', { align: 'center' });
+    // Titre
+    doc.fontSize(18).text('Inventaire Matériel par Chantier', { align: 'center' });
     doc.moveDown();
 
-    materiels.forEach(m => {
-      const chantierNom = m.chantier?.nom || 'N/A';
-      const materiel = m.materiel;
-      const ligne = [
-        `Chantier : ${chantierNom}`,
-        `Matériel : ${materiel?.nom || 'N/A'}`,
-        `Réf : ${materiel?.reference || '-'}`,
-        `Catégorie : ${materiel?.categorie || '-'}`,
-        `Description : ${materiel?.description || '-'}`,
-        `Emplacement : ${materiel?.emplacementId || '-'}`,
-        `Rack : ${materiel?.rack || '-'}`,
-        `Compartiment : ${materiel?.compartiment || '-'}`,
-        `Niveau : ${materiel?.niveau ?? '-'}`,
-        `Quantité : ${m.quantite}`
-      ];
-      doc.fontSize(10).text(ligne.join(' | '));
-      doc.moveDown();
+    // En-têtes
+    const headers = [
+      'Chantier', 'Matériel', 'Référence', 'Catégorie',
+      'Description', 'Emplacement', 'Rack', 'Compartiment', 'Niveau', 'Quantité'
+    ];
+    const colWidths = [90, 70, 70, 60, 100, 90, 40, 60, 40, 50];
+    const startX = doc.x;
+    let y = doc.y;
+
+    // Fonction pour une cellule
+    const drawCell = (text, x, y, width) => {
+      doc.rect(x, y, width, 20).stroke();
+      doc.fontSize(9).text(text || '-', x + 2, y + 6, { width: width - 4, height: 20 });
+    };
+
+    // En-têtes de colonnes
+    let x = startX;
+    headers.forEach((header, i) => {
+      drawCell(header, x, y, colWidths[i]);
+      x += colWidths[i];
     });
+
+    y += 20;
+
+    // Contenu
+    for (const m of materiels) {
+      const mat = m.materiel;
+      const chantier = m.chantier;
+
+      const emplacement = mat?.emplacement;
+      const cheminEmplacement = [];
+      let courant = emplacement;
+      while (courant) {
+        cheminEmplacement.unshift(courant.nom);
+        courant = courant.parent;
+      }
+
+      const values = [
+        chantier?.nom || 'N/A',
+        mat?.nom || 'N/A',
+        mat?.reference || '-',
+        mat?.categorie || '-',
+        mat?.description || '-',
+        cheminEmplacement.join(' > ') || '-',
+        mat?.rack || '-',
+        mat?.compartiment || '-',
+        mat?.niveau != null ? String(mat.niveau) : '-',
+        m.quantite != null ? String(m.quantite) : '0'
+      ];
+
+      x = startX;
+      values.forEach((val, i) => {
+        drawCell(val, x, y, colWidths[i]);
+        x += colWidths[i];
+      });
+
+      y += 20;
+
+      // Nouvelle page si on dépasse
+      if (y > 750) {
+        doc.addPage();
+        y = 30;
+      }
+    }
 
     doc.end();
   } catch (err) {
-    console.error('Erreur export PDF :', err);
+    console.error(err);
     res.status(500).send('Erreur lors de la génération du PDF.');
   }
 });
+
 
 
 module.exports = router;
