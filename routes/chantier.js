@@ -538,54 +538,51 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const materiels = await MaterielChantier.findAll({
       include: [
-        { model: Materiel, as: 'materiel', include: [{ model: Emplacement, as: 'emplacement' }] },
+        { model: Materiel, as: 'materiel', include: [{ model: Emplacement, as: 'emplacement', include: [{ model: Emplacement, as: 'parent' }] }] },
         { model: Chantier, as: 'chantier' }
       ]
     });
 
-    const doc = new PDFDocument({ margin: 30, size: 'A4' });
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
     res.setHeader('Content-Disposition', 'attachment; filename=stock_chantiers.pdf');
     res.setHeader('Content-Type', 'application/pdf');
     doc.pipe(res);
 
-    // Titre
     doc.fontSize(18).text('Inventaire Matériel par Chantier', { align: 'center' });
-    doc.moveDown();
+    doc.moveDown(1.5);
 
-    // En-têtes
+    // Colonnes du tableau
     const headers = [
       'Chantier', 'Matériel', 'Référence', 'Catégorie',
       'Description', 'Emplacement', 'Rack', 'Compartiment', 'Niveau', 'Quantité'
     ];
-    const colWidths = [90, 70, 70, 60, 100, 90, 40, 60, 40, 50];
+    const colWidths = [80, 90, 70, 60, 110, 90, 35, 50, 40, 40];
     const startX = doc.x;
     let y = doc.y;
 
-    // Fonction pour une cellule
     const drawCell = (text, x, y, width) => {
-      doc.rect(x, y, width, 20).stroke();
-      doc.fontSize(9).text(text || '-', x + 2, y + 6, { width: width - 4, height: 20 });
+      doc.rect(x, y, width, 30).stroke();
+      doc.fontSize(8).text(text || '-', x + 2, y + 4, { width: width - 4 });
     };
 
-    // En-têtes de colonnes
+    // En-têtes
     let x = startX;
-    headers.forEach((header, i) => {
-      drawCell(header, x, y, colWidths[i]);
+    headers.forEach((h, i) => {
+      drawCell(h, x, y, colWidths[i]);
       x += colWidths[i];
     });
 
-    y += 20;
+    y += 30;
 
-    // Contenu
     for (const m of materiels) {
       const mat = m.materiel;
       const chantier = m.chantier;
 
       const emplacement = mat?.emplacement;
-      const cheminEmplacement = [];
+      const chemin = [];
       let courant = emplacement;
       while (courant) {
-        cheminEmplacement.unshift(courant.nom);
+        chemin.unshift(courant.nom);
         courant = courant.parent;
       }
 
@@ -595,7 +592,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         mat?.reference || '-',
         mat?.categorie || '-',
         mat?.description || '-',
-        cheminEmplacement.join(' > ') || '-',
+        chemin.join(' > ') || '-',
         mat?.rack || '-',
         mat?.compartiment || '-',
         mat?.niveau != null ? String(mat.niveau) : '-',
@@ -608,12 +605,11 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         x += colWidths[i];
       });
 
-      y += 20;
+      y += 30;
 
-      // Nouvelle page si on dépasse
       if (y > 750) {
         doc.addPage();
-        y = 30;
+        y = 40;
       }
     }
 
