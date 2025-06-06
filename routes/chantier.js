@@ -353,44 +353,26 @@ router.post('/ajouter-chantier', ensureAuthenticated, checkAdmin, async (req, re
 
 /* ===== MODIFIER / SUPPRIMER LES ENREGISTREMENTS DU STOCK CHANTIER ===== */
 // Remplacer la route POST /materielChantier/modifier/:id existante dans routes/chantier.js par ceci :
-router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
-  try {
-    const mc = await MaterielChantier.findByPk(req.params.id, {
-      include: [
-        { model: Chantier, as: 'chantier' },
-        {
-          model: Materiel,
-          as: 'materiel',
-          include: [{ model: Photo, as: 'photos' }]
-        }
-      ]
-    });
-
-    const emplacements = await Emplacement.findAll();
-
-    if (!mc) return res.send("Enregistrement introuvable.");
-
-    res.render('chantier/modifierMaterielChantier', { mc, emplacements });
-  } catch (err) {
-    console.error(err);
-    res.send("Erreur lors du chargement de la page de modification.");
-  }
-});
-
 router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
-    const { quantite, nomMateriel, emplacementId, rack, compartiment, niveau } = req.body;
+    const {
+      quantite, nomMateriel, categorie, emplacementId,
+      rack, compartiment, niveau
+    } = req.body;
 
     const mc = await MaterielChantier.findByPk(req.params.id, {
-      include: [{ model: Materiel, as: 'materiel' }, { model: Chantier, as: 'chantier' }]
+      include: [
+        { model: Materiel, as: 'materiel' },
+        { model: Chantier, as: 'chantier' }
+      ]
     });
     if (!mc) return res.send("Enregistrement non trouvé.");
 
-    const changements = [];
     const changementsDetail = [];
 
     const oldQte = mc.quantite;
     const oldNom = mc.materiel.nom;
+    const oldCategorie = mc.materiel.categorie;
     const oldEmplacement = mc.materiel.emplacementId;
     const oldRack = mc.materiel.rack;
     const oldCompartiment = mc.materiel.compartiment;
@@ -398,6 +380,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
 
     const newQte = parseInt(quantite, 10);
     const newNom = nomMateriel.trim();
+    const newCategorie = categorie;
     const newEmplacement = emplacementId ? parseInt(emplacementId) : null;
     const newRack = rack;
     const newCompartiment = compartiment;
@@ -405,14 +388,16 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
 
     if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
     if (oldNom !== newNom) changementsDetail.push(`Nom: ${oldNom} ➔ ${newNom}`);
+    if (oldCategorie !== newCategorie) changementsDetail.push(`Catégorie: ${oldCategorie || '-'} ➔ ${newCategorie}`);
     if (oldEmplacement !== newEmplacement) changementsDetail.push(`Emplacement: ${oldEmplacement || '-'} ➔ ${newEmplacement || '-'}`);
     if (oldRack !== newRack) changementsDetail.push(`Rack: ${oldRack || '-'} ➔ ${newRack || '-'}`);
     if (oldCompartiment !== newCompartiment) changementsDetail.push(`Compartiment: ${oldCompartiment || '-'} ➔ ${newCompartiment || '-'}`);
     if (oldNiveau !== newNiveau) changementsDetail.push(`Niveau: ${oldNiveau || '-'} ➔ ${newNiveau || '-'}`);
 
-    // Sauvegarde
+    // Mise à jour
     mc.quantite = newQte;
     mc.materiel.nom = newNom;
+    mc.materiel.categorie = newCategorie;
     mc.materiel.emplacementId = newEmplacement;
     mc.materiel.rack = newRack;
     mc.materiel.compartiment = newCompartiment;
@@ -431,7 +416,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       stockType: 'chantier'
     });
 
-    // Ne supprimer l'ancienne photo que si une nouvelle est fournie
+    // Photo
     if (req.file) {
       await Photo.destroy({ where: { materielId: mc.materiel.id } });
       await Photo.create({
@@ -446,6 +431,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     res.send("Erreur lors de la mise à jour de l'enregistrement.");
   }
 });
+
 
 
 

@@ -30,6 +30,25 @@
       </div>
 
       <div class="mb-3">
+  <label for="categorie" class="form-label">Catégorie</label>
+  <select class="form-select" name="categorie" id="categorie" required>
+    <option value="">-- Choisir une catégorie --</option>
+    <option value="Plomberie" <%= mc.materiel.categorie === 'Plomberie' ? 'selected' : '' %>>Plomberie</option>
+    <option value="Electricité" <%= mc.materiel.categorie === 'Electricité' ? 'selected' : '' %>>Electricité</option>
+    <option value="Climatisation" <%= mc.materiel.categorie === 'Climatisation' ? 'selected' : '' %>>Climatisation</option>
+    <option value="Chauffage" <%= mc.materiel.categorie === 'Chauffage' ? 'selected' : '' %>>Chauffage</option>
+    <option value="Revêtement mural" <%= mc.materiel.categorie === 'Revêtement mural' ? 'selected' : '' %>>Revêtement mural</option>
+    <option value="Maçonnerie" <%= mc.materiel.categorie === 'Maçonnerie' ? 'selected' : '' %>>Maçonnerie</option>
+    <option value="Menuiserie" <%= mc.materiel.categorie === 'Menuiserie' ? 'selected' : '' %>>Menuiserie</option>
+    <option value="Mobilier" <%= mc.materiel.categorie === 'Mobilier' ? 'selected' : '' %>>Mobilier</option>
+    <option value="Agencement" <%= mc.materiel.categorie === 'Agencement' ? 'selected' : '' %>>Agencement</option>
+    <option value="Fixation/Visserie" <%= mc.materiel.categorie === 'Fixation/Visserie' ? 'selected' : '' %>>Fixation/Visserie</option>
+    <option value="Autre" <%= mc.materiel.categorie === 'Autre' ? 'selected' : '' %>>Autre</option>
+  </select>
+</div>
+
+
+      <div class="mb-3">
         <label for="emplacementId" class="form-label">Nouvel emplacement</label>
         <select name="emplacementId" id="emplacementId" class="form-control">
           <option value="">-- Aucun --</option>
