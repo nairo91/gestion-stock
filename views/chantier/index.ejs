@@ -229,12 +229,34 @@
                 <!-- Bouton ici -->
                  <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
                 <!-- Tu peux aussi ajouter un bouton pour supprimer ici -->
-                <form action="/chantier/materielChantier/supprimer/<%= mc.id %>" method="POST" style="display:inline;" 
-                  onsubmit="return confirm('Voulez-vous vraiment supprimer cet enregistrement ?');">
-              <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-              
-            </form>
-            
+                 <!-- Bouton pour ouvrir la modale -->
+<button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal<%= mc.id %>">
+  Supprimer
+</button>
+
+<!-- Modale Bootstrap -->
+<div class="modal fade" id="confirmDeleteModal<%= mc.id %>" tabindex="-1" aria-labelledby="confirmDeleteLabel<%= mc.id %>" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/chantier/materielChantier/supprimer/<%= mc.id %>" method="POST">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="confirmDeleteLabel<%= mc.id %>">Confirmer la suppression</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          Êtes-vous sûr de vouloir supprimer ce matériel du chantier ?<br>
+          <strong>Cette action est irréversible.</strong>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-danger">Supprimer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+                          
             <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
             <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
                 <% } %>
