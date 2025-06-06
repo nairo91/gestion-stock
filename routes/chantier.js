@@ -373,7 +373,7 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
     res.render('chantier/modifierMaterielChantier', { mc, emplacements });
   } catch (err) {
     console.error(err);
-    res.send("Erreur lors du chargement de la page de modification.");
+    res.send("Erreur lors du chargement de la page    de modification.");
   }
 });
 
@@ -502,22 +502,44 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
 });
 
 
-router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
-  const { nom, reference, quantite, description, prix, categorie, chantierId, emplacementId } = req.body;
-  
-  const nouveauMateriel = await Materiel.create({
-    nom, reference, description, prix: parseFloat(prix), categorie, quantite: 0,
-    emplacementId: emplacementId ? parseInt(emplacementId) : null
-  });
+router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
+  try {
+    const { nom, reference, quantite, description, prix, categorie, chantierId, emplacementId } = req.body;
 
-  await MaterielChantier.create({
-    chantierId: parseInt(chantierId),
-    materielId: nouveauMateriel.id,
-    quantite: parseInt(quantite)
-  });
+    // Créer le matériel
+    const nouveauMateriel = await Materiel.create({
+      nom,
+      reference,
+      description,
+      prix: parseFloat(prix),
+      categorie,
+      quantite: 0,
+      emplacementId: emplacementId ? parseInt(emplacementId) : null
+    });
 
-  res.redirect('/chantier');
+    // Gérer la photo si fournie
+    if (req.file) {
+      const chemin = req.file.path.replace(/\\/g, '/');
+      await Photo.create({
+        chemin,
+        materielId: nouveauMateriel.id
+      });
+    }
+
+    // Ajouter dans le chantier
+    await MaterielChantier.create({
+      chantierId: parseInt(chantierId),
+      materielId: nouveauMateriel.id,
+      quantite: parseInt(quantite)
+    });
+
+    res.redirect('/chantier');
+  } catch (err) {
+    console.error(err);
+    res.send("Erreur lors de la duplication avec photo.");
+  }
 });
+
 
 router.get('/materielChantier/info/:id', ensureAuthenticated, async (req, res) => {
   const mc = await MaterielChantier.findByPk(req.params.id, {

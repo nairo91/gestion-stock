@@ -8,8 +8,8 @@
 <body>
   <div class="container mt-4">
     <h2>Dupliquer un Matériel Chantier</h2>
-    <form action="/chantier/materielChantier/dupliquer/<%= mc.id %>" method="POST">
-      <div class="mb-3">
+    <form action="/chantier/materielChantier/dupliquer/<%= mc.id %>" method="POST"><form action="/chantier/materielChantier/dupliquer/<%= mc.id %>" method="POST" enctype="multipart/form-data">
+  <div class="mb-3">
         <label for="nom" class="form-label">Nom du Matériel</label>
         <input type="text" name="nom" id="nom" class="form-control" value="<%= mc.materiel.nom %>" required>
       </div>
@@ -61,6 +61,11 @@
           <% }) %>
         </select>
       </div>
+      <div class="mb-3">
+  <label for="photo" class="form-label">Photo du matériel</label>
+  <input type="file" name="photo" id="photo" class="form-control" accept="image/*">
+</div>
+
       <button type="submit" class="btn btn-primary">Dupliquer</button>
       <a href="/chantier" class="btn btn-secondary ms-2">Annuler</a>
     </form>
