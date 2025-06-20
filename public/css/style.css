@@ -22,7 +22,10 @@
   }
 
 /* Couleur du texte pour les informations de matériel */
-.table-materiel th,
+.table-materiel th {
+  color: #fff !important;
+}
+
 .table-materiel td {
   color: #000 !important;
 }
