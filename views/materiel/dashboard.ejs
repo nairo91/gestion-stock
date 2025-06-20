@@ -310,8 +310,8 @@
                   <td>
                     <% if (m.photos && m.photos.length > 0) { %>
                       <% m.photos.forEach(function(photo) { %>
-                        <a href="/<%= photo.chemin.replace(/\\\\/g, '/') %>" target="_blank" class="me-1">
-                          <img src="/<%= photo.chemin.replace(/\\\\/g, '/') %>" alt="Photo" style="width: 50px; height: auto;">
+                          <a href="/<%= photo.chemin.replace(/\\/g, '/') %>" target="_blank" class="me-1">
+                          <img src="/<%= photo.chemin.replace(/\\/g, '/') %>" alt="Photo" style="width: 50px; height: auto;">
                         </a>
                       <% }) %>
                     <% } else { %>
@@ -357,7 +357,7 @@
             <strong>Photos :</strong>
             <% if (m.photos.length) { %>
               <% m.photos.forEach(photo => { %>
-                <a href="/<%= photo.chemin.replace(/\\\\/g, '/') %>" target="_blank">📷</a>
+                  <a href="/<%= photo.chemin.replace(/\\/g, '/') %>" target="_blank">📷</a>
               <% }) %>
             <% } else { %>Aucune<% } %>
           </li>

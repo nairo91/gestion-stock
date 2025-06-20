@@ -35,7 +35,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware pour le corps des requêtes et les fichiers statiques
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), { maxAge: 0 }));
 
 // Sessions et messages flash
 app.use(session({
