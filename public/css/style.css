@@ -19,5 +19,14 @@
     background-color: var(--primary-color);
     border-color: var(--primary-color);
   }
+
+  body.mode-sombre table {
+    background-color: #1a1a1a;
+  }
+
+  body.mode-sombre th,
+  body.mode-sombre td {
+    color: #ffffff;
+  }
   
   /* Ajoute d'autres styles personnalisés ici si nécessaire */
