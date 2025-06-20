@@ -54,20 +54,16 @@ router.post('/login', passport.authenticate('local', {
 // Déconnexion (passer en POST)
 router.post('/logout', (req, res, next) => {
   console.log("Début du logout...");
-  req.logout(err => {
+  // Passport 0.4.x : req.logout() est synchrone
+  req.logout();
+  req.session.destroy(err => {
     if (err) {
-      console.error("Erreur lors du logout :", err);
+      console.error("Erreur lors de la destruction de la session :", err);
       return next(err);
     }
-    req.session.destroy(err => {
-      if (err) {
-        console.error("Erreur lors de la destruction de la session :", err);
-        return next(err);
-      }
-      res.clearCookie('connect.sid', { path: '/' });
-      console.log("Logout terminé, redirection vers /auth/login");
-      return res.redirect('/auth/login');
-    });
+    res.clearCookie('connect.sid', { path: '/' });
+    console.log("Logout terminé, redirection vers /auth/login");
+    return res.redirect('/auth/login');
   });
 });
 

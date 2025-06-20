@@ -5,7 +5,8 @@
   }
   
   .mode-sombre {
-    --bg-color: #121212;
+    /* Fond très foncé mais non noir pour le mode sombre */
+    --bg-color: #1a1a1a;
     --text-color: #e0e0e0;
     --primary-color: #bb86fc;
   }
