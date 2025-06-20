@@ -43,7 +43,9 @@
       <a href="/vehicule/ajouter" class="btn btn-primary">Ajouter au stock véhicule</a>
       <a href="/vehicule/ajouter-vehicule" class="btn btn-warning">Ajouter un véhicule</a>
       <a href="/vehicule/historique" class="btn btn-warning">Consulter historique</a>
-      <a href="/auth/logout" class="btn btn-secondary">Déconnexion</a>
+      <form action="/auth/logout" method="POST" style="display:inline;">
+        <button type="submit" class="btn btn-secondary">Déconnexion</button>
+      </form>
     </div>
 
     <div class="table-responsive">
