@@ -286,7 +286,9 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
     // Enregistrement des photos
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const relativePath = file.path.replace(/\\/g, '/');
+        const relativePath = path
+          .join('uploads', file.filename)
+          .replace(/\\/g, '/');
         await Photo.create({
           chemin: relativePath,
           materielId: nouveauMateriel.id

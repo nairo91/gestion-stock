@@ -156,7 +156,9 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     // 2) Gérer les photos, si fournies
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const relativePath = file.path.replace(/\\/g, '/');
+        const relativePath = path
+          .join('uploads', file.filename)
+          .replace(/\\/g, '/');
         await Photo.create({
           chemin: relativePath,
           materielId: nouveauMateriel.id
@@ -444,8 +446,11 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     // Photo
     if (req.file) {
       await Photo.destroy({ where: { materielId: mc.materiel.id } });
+      const chemin = path
+        .join('uploads', req.file.filename)
+        .replace(/\\/g, '/');
       await Photo.create({
-        chemin: req.file.path.replace(/\\/g, '/'),
+        chemin,
         materielId: mc.materiel.id
       });
     }
@@ -519,7 +524,9 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
 
     // Gérer la photo si fournie
     if (req.file) {
-      const chemin = req.file.path.replace(/\\/g, '/');
+      const chemin = path
+        .join('uploads', req.file.filename)
+        .replace(/\\/g, '/');
       await Photo.create({
         chemin,
         materielId: nouveauMateriel.id
