@@ -29,7 +29,7 @@ const upload = multer({ storage: storage });
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-    const { chantierId, nomMateriel, categorie, emplacement, description,triNom } = req.query;
+    const { chantierId, nomMateriel, categorie, emplacement, description, triNom, triAjout, triModification } = req.query;
 
     const whereChantier = chantierId ? { chantierId: chantierId } : {};
     const whereMateriel = {};
@@ -38,6 +38,17 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     if (categorie) whereMateriel.categorie = { [Op.like]: `%${categorie}%` };
     if (description) whereMateriel.description = { [Op.like]: `%${description}%` };
 
+
+    const order = [];
+    if (triNom === 'asc' || triNom === 'desc') {
+      order.push([{ model: Materiel, as: 'materiel' }, 'nom', triNom.toUpperCase()]);
+    }
+    if (triAjout === 'asc' || triAjout === 'desc') {
+      order.push(['createdAt', triAjout.toUpperCase()]);
+    }
+    if (triModification === 'asc' || triModification === 'desc') {
+      order.push(['updatedAt', triModification.toUpperCase()]);
+    }
 
     const materielChantiers = await MaterielChantier.findAll({
   where: whereChantier,
@@ -70,11 +81,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     }
   ],
 
-  order: triNom === 'asc'
-  ? [[{ model: Materiel, as: 'materiel' }, 'nom', 'ASC']]
-  : triNom === 'desc'
-  ? [[{ model: Materiel, as: 'materiel' }, 'nom', 'DESC']]
-  : undefined
+  order: order.length > 0 ? order : undefined
 
 
 
@@ -92,7 +99,9 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   categorie,
   emplacement,
   description,
-  triNom
+  triNom,
+  triAjout,
+  triModification
 });
 
   } catch (err) {

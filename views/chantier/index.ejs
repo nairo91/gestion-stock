@@ -108,6 +108,20 @@
   </select>
 </div>
 
+ <div class="col-md-3">
+   <label for="triAjout" class="form-label">Ordre d'ajout</label>
+   <select class="form-select" name="triAjout" id="triAjout">
+     <option value="">-- Aucun tri --</option>
+     <option value="desc" <%= triAjout === 'desc' ? 'selected' : '' %>>Plus récent d'abord</option>
+     <option value="asc" <%= triAjout === 'asc' ? 'selected' : '' %>>Plus ancien d'abord</option>
+   </select>
+ </div>
+
+ <input type="hidden" name="triModification" id="triModification" value="<%= triModification || '' %>">
+ <div class="col-md-3 d-flex align-items-end">
+   <button type="button" id="toggleModif" class="btn btn-outline-secondary">Trier par modification</button>
+ </div>
+
 
   <div class="col-md-3">
   <label for="categorie" class="form-label">Catégorie</label>
@@ -330,6 +344,8 @@
     const toggleBtn = document.getElementById('toggleMode');
     const body = document.body;
     const navBar = document.querySelector('.navbar');
+    const modifBtn = document.getElementById('toggleModif');
+    const modifInput = document.getElementById('triModification');
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
         body.classList.toggle('mode-sombre');
@@ -340,6 +356,13 @@
           navBar.classList.remove('navbar-dark');
           navBar.classList.add('navbar-light', 'bg-light');
         }
+      });
+    }
+
+    if(modifBtn){
+      modifBtn.addEventListener('click', () => {
+        modifInput.value = modifInput.value === 'desc' ? 'asc' : 'desc';
+        modifBtn.form.submit();
       });
     }
   </script>
