@@ -9,6 +9,7 @@
     --bg-color: #1a1a1a;
     --text-color: #e0e0e0;
     --primary-color: #bb86fc;
+    --bs-table-bg: #383838;
   }
   
   body {
@@ -22,7 +23,7 @@
   }
 
 body.mode-sombre table {
-    background-color: #1f1f1f !important;
+    background-color: var(--bs-table-bg) !important;
   }
 
 body.mode-sombre thead th {
