@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { Op } = require('sequelize');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
@@ -289,8 +290,10 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
         const relativePath = path
           .join('uploads', file.filename)
           .replace(/\\/g, '/');
+        const data = fs.readFileSync(file.path);
         await Photo.create({
           chemin: relativePath,
+          data,
           materielId: nouveauMateriel.id
         });
       }

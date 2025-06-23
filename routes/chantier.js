@@ -5,6 +5,7 @@ const router = express.Router();
 const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const Materiel = require('../models/Materiel');
 const Photo = require('../models/Photo');
@@ -168,8 +169,10 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
         const relativePath = path
           .join('uploads', file.filename)
           .replace(/\\/g, '/');
+        const data = fs.readFileSync(file.path);
         await Photo.create({
           chemin: relativePath,
+          data,
           materielId: nouveauMateriel.id
         });
       }
@@ -458,8 +461,10 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       const chemin = path
         .join('uploads', req.file.filename)
         .replace(/\\/g, '/');
+      const data = fs.readFileSync(req.file.path);
       await Photo.create({
         chemin,
+        data,
         materielId: mc.materiel.id
       });
     }
@@ -536,8 +541,10 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
       const chemin = path
         .join('uploads', req.file.filename)
         .replace(/\\/g, '/');
+      const data = fs.readFileSync(req.file.path);
       await Photo.create({
         chemin,
+        data,
         materielId: nouveauMateriel.id
       });
     }
