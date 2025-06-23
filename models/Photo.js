@@ -11,16 +11,10 @@ const Photo = sequelize.define(
       autoIncrement: true,
     },
 
-    // Chemin vers le fichier image (optionnel si stockage en BDD)
+    // Chemin vers le fichier image
     chemin: {
       type: DataTypes.STRING,
-      allowNull: true,
-    },
-
-    // Données binaires de la photo pour un stockage persistant
-    data: {
-      type: DataTypes.BLOB('long'),
-      allowNull: true,
+      allowNull: false,
     },
 
     // FK vers le matériel associé

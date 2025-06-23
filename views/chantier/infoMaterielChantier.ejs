@@ -44,11 +44,7 @@
 
         <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
             <p><strong>🖼️ Photo :</strong></p>
-            <% const photo = mc.materiel.photos[0]; %>
-            <% const src = photo.data ?
-              ('data:image/jpeg;base64,' + photo.data.toString('base64')) :
-              ('/' + photo.chemin.replace(/\\/g, '/')); %>
-            <img src="<%= src %>" alt="Photo du matériel">
+            <img src="/<%= mc.materiel.photos[0].chemin.replace(/\\/g, '/') %>" alt="Photo du matériel">
           <% } else { %>
             <p><strong>🖼️ Photo :</strong> -</p>
           <% } %>

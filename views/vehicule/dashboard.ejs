@@ -87,11 +87,8 @@
                 <td>
                   <% if (m.photos && m.photos.length > 0) { %>
                     <% m.photos.forEach(function(photo) { %>
-                      <% const src = photo.data ?
-                        ('data:image/jpeg;base64,' + photo.data.toString('base64')) :
-                        ('/' + photo.chemin); %>
-                      <a href="<%= src %>" target="_blank">
-                        <img src="<%= src %>" alt="Photo" style="width: 50px; height: auto; margin-right: 5px;">
+                      <a href="/<%= photo.chemin %>" target="_blank">
+                        <img src="/<%= photo.chemin %>" alt="Photo" style="width: 50px; height: auto; margin-right: 5px;">
                       </a>
                     <% }); %>
                   <% } else { %>
