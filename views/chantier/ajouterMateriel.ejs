@@ -299,16 +299,16 @@ select#emplacementId.form-control {
       }
 
       const designationMap = {
-      "AGENCEMENT": [
+      agencement: [
         "Data: 09-05-2025 / Oportunitate de referință: 0035 /Versiune: 3"
       ],
-      "CVC": [
+      cvc: [
         "Fib'Air A2 NETO / Fib'Air ALU A2",
         "AUSTRALE DIAM 125",
         "MANCHON PLACO AUSTRALE D125",
         "Gaine alu 125 en ML"
       ],
-      "Conso": [
+      conso: [
         "Réf. 1353492 VRAC CHEVILLES MÉTAL.Ø5X63+VISØ5X72 X238",
         "Réf. 1353471 VRAC CHEVILLES MÉTAL.Ø5X37+VISØ5X43 X315",
         "Réf. 1267742 Vis autoforeuse Diam. 3,5 x 9,5 mm Boîte de 500 - ISOLPRO",
@@ -327,7 +327,7 @@ select#emplacementId.form-control {
         "Réf. 10962560 Ruban de masquage de précision surface délicate l.25 mm x L.50 m - TESA",
         "Réf. 25014595 3M PT206036 Ruban de masquage pour peinture 3M™ 2060 vert clair (L x l) 50 m x 36 mm 1 pc(s)"
       ],
-      "MENUISERIE": [
+      menuiserie: [
         "Réf. 1221024 Bloc-porte isoplan prépeint Larg.63cm  Huiss72 mm",
         "ENSEMBLE BÉQUILLE DIANE SUR ROSACE BLANCHE AVEC ROSACE A CONDAMNATION",
         "Réf. 138033 Champlat  6 x 30 mm Long.2,4 m - SOTRINBOIS LOT DE 10",
@@ -335,18 +335,18 @@ select#emplacementId.form-control {
         "Ferme-porte à pignon excentré et crémaillère GR 400 - GROOM FERMETURES",
         "Structure lit superposé"
       ],
-      "MENUISERIE EXT": [
+      "menuiserie ext": [
         "OFFRE 1829/25"
       ],
-      "MOBILIER": [
+      mobilier: [
         "Chaise Trill Nardi - Coloris TORTORA Fibre de verre",
         "RAIL 6010 IBIS STANDARD BLANC - L215",
         "TETE MICROFLEX PLIS SIMPLE (PMPS) NOCTURNE M1 UNI PERLE - L215xH249 1 pan"
       ],
-      "PEINTURE": [
+      peinture: [
         "Réf. 1406160 Mastic de rebouchage Soudacryl FF acrylique blanc 300 ml - SOUDAL"
       ],
-      "PLÂTRERIE": [
+      platrerie: [
         "Réf. 334194 Rail métallique 48/28 mm Long.3 m NF - ISOLPRO",
         "Réf. 334180 Montant métallique 48/35 mm Long.2,50 m NF - ISOLPRO",
         "Plaque de plâtre BA13 standard NF H.250 x l.120 cm",
@@ -355,7 +355,7 @@ select#emplacementId.form-control {
         "Lot de 8 panneaux laine de roche phonique rocksilence - Ep.40 mm lambda 34 R=1,35 L.120 x l.60 cm - ROCKWOOL",
         "Mortier adhésif en poudre 25 kg"
       ],
-      "SOL": [
+      sol: [
         "Bidon eco prim universel 20kg mapei 200gr/m²",
         "Ragréage P3 intérieur 25 kg - Planidur PRB 1,5 kg/m²/mm (base 2mm)",
         "Sarlibain Surestep 171032 smoke au m² (5.00 ROL 250.00M2)",
@@ -370,15 +370,15 @@ select#emplacementId.form-control {
         "LVT Allura 62513 Grigio Concrete 100x100cm FORBO",
         "Colle contact gel 4,25 kg - PATTEX"
       ],
-      "ST": [
+      st: [
         "PEINTURES & SOLS",
         "ELEC - 4,5K/phase (x7)",
         "STICKAGE PORTE - D-202501-046"
       ],
-      "Stockage Déchets": [
+      "stockage dechets": [
         "2 Conteneurs + 1 Algeco + Benne DIB & Bois"
       ],
-      "plomberie": [
+      plomberie: [
         "Receveur Alterna Daily'O 120 x 80 cm ardoise blanc recoupable",
         "Kit de réparation receveurs Alterna Daily'O, Daily'C et Daily'L blanc",
         "Receveur de douche ALTERNA Daily'O 90x70cm blanc effet ardoise antidérapant",
@@ -415,7 +415,7 @@ select#emplacementId.form-control {
         "Pot balai court à poser Référence:274 00",
         "PACK BATI SUPPORT COMPLET Geberit + cuvette Renova Compact 203245000"
       ],
-      "électricité": [
+      electricite: [
         "INTERRUPTEUR A BADGE - CM0010 complet",
         "Interrupteur double Surface Céliane blanc compris : boite d'encastrement simple, support, interrupteur double, enjoliveur & plaque finition",
         "Interrupteur simple Surface Céliane blanc compris : boite d'encastrement, support, interrupteur, enjoliveur & plaque finition",
@@ -441,27 +441,17 @@ select#emplacementId.form-control {
       ]
       };
 
-      // Normalize keys for case/accents to ensure reliable lookup
-      const normalizedMap = {};
-      Object.keys(designationMap).forEach(k => {
-        const nk = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        normalizedMap[nk] = designationMap[k];
-      });
-
     const categorySelect = document.getElementById('categorieSelect');
     const designationSelect = document.getElementById('designationSelect');
     const designationInput = document.getElementById('designationInput');
 
     function updateDesignations() {
-      const cat = categorySelect.value
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase();
+      const cat = categorySelect.value.toLowerCase();
       designationSelect.innerHTML = '<option value="">-- Sélectionner une désignation --</option>';
       designationSelect.value = '';
       designationInput.value = '';
-      if (normalizedMap[cat]) {
-        normalizedMap[cat].forEach(d => {
+      if (designationMap[cat]) {
+        designationMap[cat].forEach(d => {
           const opt = document.createElement('option');
           opt.value = d;
           opt.textContent = d;
