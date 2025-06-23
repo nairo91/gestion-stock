@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Modifier l'enregistrement du chantier</title>
-        </select>
   <link rel="stylesheet" href="/css/bootstrap.min.css">
 </head>
 <body>
@@ -163,13 +162,14 @@
 
   <script src="/js/bootstrap.bundle.min.js"></script>
   <script>
-    const fSelect = document.getElementById('fournisseurSelect');
-    const fInput = document.getElementById('fournisseurInput');
-    if (fSelect) {
-      fSelect.addEventListener('change', () => {
-        fInput.value = fSelect.value;
-      });
-    }
+    document.addEventListener('DOMContentLoaded', function () {
+      const fSelect = document.getElementById('fournisseurSelect');
+      const fInput = document.getElementById('fournisseurInput');
+      if (fSelect) {
+        fSelect.addEventListener('change', () => {
+          fInput.value = fSelect.value;
+        });
+      }
 
     const designationMap = {
       "AGENCEMENT": [
@@ -344,14 +344,15 @@
       });
     }
 
-    const form = document.getElementById('modifForm');
-    if (form) {
-      form.addEventListener('submit', () => {
-        if (dSelect.value) {
-          dInput.value = dSelect.value;
-        }
-      });
-    }
+      const form = document.getElementById('modifForm');
+      if (form) {
+        form.addEventListener('submit', () => {
+          if (dSelect.value) {
+            dInput.value = dSelect.value;
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>
