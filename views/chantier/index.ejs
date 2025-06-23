@@ -175,7 +175,7 @@
         <tr>
           <th class="d-none">ID</th>
           <th class="d-none">Chantier</th>
-          <th>Matériel</th>
+          <th>Désignation</th>
           <th>Photo</th>
 
           <th>Référence</th>
@@ -252,6 +252,9 @@
                   <%= mc.materiel.description %>
                 <% } else { %>
                   -
+                <% } %>
+                <% if(mc.materiel && mc.materiel.fournisseur) { %>
+                  <br><small class="text-muted">Fournisseur: <%= mc.materiel.fournisseur %></small>
                 <% } %>
               </td>
 
