@@ -38,7 +38,7 @@ MaterielDelivery.belongsTo(Materiel,     { foreignKey: 'materielId', as: 'materi
 BonLivraison.hasMany(MaterielDelivery,   { foreignKey: 'bonLivraisonId', as: 'materiels' });
 Materiel.hasMany(MaterielDelivery,       { foreignKey: 'materielId', as: 'deliveries' });
 
-BonLivraison.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier', onDelete: 'SET NULL' });
+BonLivraison.belongsTo(Chantier, { foreignKey: 'chantierId', as: 'chantier', onDelete: 'SET NULL', constraints: false });
 Chantier.hasMany(BonLivraison,  { foreignKey: 'chantierId', as: 'bonsLivraison' });
 
 Vehicule.hasMany(Materiel, { foreignKey: 'vehiculeId', as: 'materiels', onDelete: 'SET NULL' });
