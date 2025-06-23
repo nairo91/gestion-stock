@@ -12,8 +12,8 @@
     <form id="modifForm" action="/chantier/materielChantier/modifier/<%= mc.id %>" method="POST" enctype="multipart/form-data">
 
       <div class="mb-3">
-  <label for="categorie" class="form-label">Catégorie</label>
-  <select class="form-select" name="categorie" id="categorie" required>
+  <label for="categorieSelect" class="form-label">Catégorie</label>
+  <select class="form-select" name="categorie" id="categorieSelect" required>
     <option value="">-- Choisir une catégorie --</option>
     <option value="AGENCEMENT" <%= mc.materiel.categorie === 'AGENCEMENT' ? 'selected' : '' %>>AGENCEMENT</option>
     <option value="CVC" <%= mc.materiel.categorie === 'CVC' ? 'selected' : '' %>>CVC</option>
@@ -314,7 +314,7 @@
       ]
     };
 
-    const categorySelect = document.getElementById('categorie');
+    const categorySelect = document.getElementById('categorieSelect');
     const dSelect = document.getElementById('designationSelect');
     const dInput = document.getElementById('nomMateriel');
 
