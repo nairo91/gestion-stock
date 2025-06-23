@@ -166,8 +166,8 @@ select#emplacementId.form-control {
     <h2>Ajouter du Matériel dans un Chantier</h2>
     <form id="ajoutForm" action="/chantier/ajouterMateriel" method="POST" enctype="multipart/form-data">
       <div class="mb-3">
-        <label for="categorie" class="form-label">Catégorie</label>
-        <select name="categorie" id="categorie" class="form-control" required>
+        <label for="categorieSelect" class="form-label">Catégorie</label>
+        <select name="categorie" id="categorieSelect" class="form-control" required>
             <option value="AGENCEMENT">AGENCEMENT</option>
             <option value="CVC">CVC</option>
             <option value="Conso">Conso</option>
@@ -441,7 +441,7 @@ select#emplacementId.form-control {
       ]
     };
 
-    const categorySelect = document.getElementById('categorie');
+    const categorySelect = document.getElementById('categorieSelect');
     const designationSelect = document.getElementById('designationSelect');
     const designationInput = document.getElementById('designationInput');
 
