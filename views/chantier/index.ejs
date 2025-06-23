@@ -210,7 +210,11 @@
               </td>
                 <td>
                 <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
-                  <img src="/<%= mc.materiel.photos[0].chemin.replace(/\\/g, '/') %>" alt="Photo"
+                  <% const photo = mc.materiel.photos[0]; %>
+                  <% const src = photo.data ?
+                    ('data:image/jpeg;base64,' + photo.data.toString('base64')) :
+                    ('/' + photo.chemin.replace(/\\/g, '/')); %>
+                  <img src="<%= src %>" alt="Photo"
                       width="80" style="cursor: pointer;"
                       data-bs-toggle="modal" data-bs-target="#photoModal<%= mc.id %>">
 
@@ -223,7 +227,7 @@
                           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
                         <div class="modal-body text-center">
-                          <img src="/<%= mc.materiel.photos[0].chemin.replace(/\\/g, '/') %>" alt="Photo grand format" class="img-fluid rounded">
+                          <img src="<%= src %>" alt="Photo grand format" class="img-fluid rounded">
                         </div>
                       </div>
                     </div>
