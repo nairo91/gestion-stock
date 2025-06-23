@@ -12,6 +12,7 @@ const Materiel = sequelize.define(
     description: { type: DataTypes.TEXT },
     prix: { type: DataTypes.DECIMAL(10, 2) },
     categorie: { type: DataTypes.STRING },
+    fournisseur: { type: DataTypes.STRING },
     rack: { type: DataTypes.STRING },
     compartiment: { type: DataTypes.STRING },
     niveau: { type: DataTypes.INTEGER },

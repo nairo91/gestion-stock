@@ -143,7 +143,7 @@ const emplacements = emplacementsBruts.map(e => ({
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, quantite, description, prix, categorie, chantierId, emplacementId, rack, compartiment, niveau } = req.body;
+    const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau } = req.body;
 
     
     // 1) Créer le matériel avec quantite=0 dans la table Materiel
@@ -154,6 +154,7 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
   description,
   prix: parseFloat(prix),
   categorie,
+  fournisseur,
   vehiculeId: null,
   emplacementId: emplacementId ? parseInt(emplacementId) : null,
    rack,
@@ -392,7 +393,7 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
 router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
     const {
-      quantite, nomMateriel, categorie, emplacementId,
+      quantite, nomMateriel, categorie, fournisseur, emplacementId,
       rack, compartiment, niveau
     } = req.body;
 
@@ -412,6 +413,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldEmplacement = mc.materiel.emplacementId;
     const oldRack = mc.materiel.rack;
     const oldCompartiment = mc.materiel.compartiment;
+    const oldFournisseur = mc.materiel.fournisseur;
     const oldNiveau = mc.materiel.niveau;
 
     const newQte = parseInt(quantite, 10);
@@ -420,6 +422,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newEmplacement = emplacementId ? parseInt(emplacementId) : null;
     const newRack = rack;
     const newCompartiment = compartiment;
+    const newFournisseur = fournisseur;
     const newNiveau = niveau ? parseInt(niveau) : null;
 
     if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
@@ -427,6 +430,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldCategorie !== newCategorie) changementsDetail.push(`Catégorie: ${oldCategorie || '-'} ➔ ${newCategorie}`);
     if (oldEmplacement !== newEmplacement) changementsDetail.push(`Emplacement: ${oldEmplacement || '-'} ➔ ${newEmplacement || '-'}`);
     if (oldRack !== newRack) changementsDetail.push(`Rack: ${oldRack || '-'} ➔ ${newRack || '-'}`);
+    if (oldFournisseur !== newFournisseur) changementsDetail.push(`Fournisseur: ${oldFournisseur || '-'} ➔ ${newFournisseur || '-'}`);
     if (oldCompartiment !== newCompartiment) changementsDetail.push(`Compartiment: ${oldCompartiment || '-'} ➔ ${newCompartiment || '-'}`);
     if (oldNiveau !== newNiveau) changementsDetail.push(`Niveau: ${oldNiveau || '-'} ➔ ${newNiveau || '-'}`);
 
@@ -435,6 +439,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     mc.materiel.nom = newNom;
     mc.materiel.categorie = newCategorie;
     mc.materiel.emplacementId = newEmplacement;
+    mc.materiel.fournisseur = newFournisseur;
     mc.materiel.rack = newRack;
     mc.materiel.compartiment = newCompartiment;
     mc.materiel.niveau = newNiveau;

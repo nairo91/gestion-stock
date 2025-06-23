@@ -25,9 +25,70 @@
       </div>
 
       <div class="mb-3">
-        <label for="nomMateriel" class="form-label">Nom du matériel</label>
-        <input type="text" class="form-control" id="nomMateriel" name="nomMateriel" value="<%= mc.materiel.nom %>" required>
-      </div>
+        <label for="nomMateriel" class="form-label">Désignation</label>
+        <input type="text" class="form-control" id="nomMateriel" name="nomMateriel" value="<%= mc.materiel.nom %>">
+        <select id="designationSelect" class="form-select mt-2">
+          <option value="">-- Sélectionner une désignation --</option>
+          <option value="PROFIL NR LAZER L-R 2,01M">PROFIL NR LAZER L-R 2,01M</option>
+          <option value="2 Conteneurs + 1 Algeco + Benne DIB & Bois">2 Conteneurs + 1 Algeco + Benne DIB & Bois</option>
+          <option value="ALIM 15W IP20 24VDC">ALIM 15W IP20 24VDC</option>
+          <option value="AUSTRALE DIAM 125">AUSTRALE DIAM 125</option>
+          <option value="Applique salle d'eau Sagara noir Mat ASTRO LIGHTING">Applique salle d'eau Sagara noir Mat ASTRO LIGHTING</option>
+          <option value="Bidon eco prim universel 20kg mapei 200gr/m²">Bidon eco prim universel 20kg mapei 200gr/m²</option>
+          <option value="COLLE Fixit blanc 290ml ou  Bostik MS 107 ou MSPOOL">COLLE Fixit blanc 290ml ou  Bostik MS 107 ou MSPOOL</option>
+          <option value="Chaise Trill Nardi - Coloris TORTORA Fibre de verre">Chaise Trill Nardi - Coloris TORTORA Fibre de verre</option>
+          <option value="Colle contact gel 4,25 kg - PATTEX">Colle contact gel 4,25 kg - PATTEX</option>
+          <option value="Colle fixation plinthes - BOSTIK Réf. 850983">Colle fixation plinthes - BOSTIK Réf. 850983</option>
+          <option value="Corbeille ovale polypropylène 6L Référence:240 00">Corbeille ovale polypropylène 6L Référence:240 00</option>
+          <option value="DIFF. OPAL LZR L/LZR L-R 2,01M">DIFF. OPAL LZR L/LZR L-R 2,01M</option>
+          <option value="Data: 09-05-2025 / Oportunitate de referință: 0035 /Versiune: 3">Data: 09-05-2025 / Oportunitate de referință: 0035 /Versiune: 3</option>
+          <option value="Distributeur papier rouleau simple White Serenity Référence:2321 00 00">Distributeur papier rouleau simple White Serenity Référence:2321 00 00</option>
+          <option value="ELEC - 4,5K/phase (x7)">ELEC - 4,5K/phase (x7)</option>
+          <option value="ENSEMBLE BÉQUILLE DIANE SUR ROSACE BLANCHE AVEC ROSACE A CONDAMNATION">ENSEMBLE BÉQUILLE DIANE SUR ROSACE BLANCHE AVEC ROSACE A CONDAMNATION</option>
+          <option value="EUROFIX TACK PLUS 150gr/m²">EUROFIX TACK PLUS 150gr/m²</option>
+          <option value="Ferme-porte à pignon excentré et crémaillère GR 400 - GROOM FERMETURES">Ferme-porte à pignon excentré et crémaillère GR 400 - GROOM FERMETURES</option>
+          <option value="Fib'Air A2 NETO / Fib'Air ALU A2">Fib'Air A2 NETO / Fib'Air ALU A2</option>
+          <option value="Forbo allura decibel 8WSM03 dune smooth oak au m² (268.00 CS)">Forbo allura decibel 8WSM03 dune smooth oak au m² (268.00 CS)</option>
+          <option value="Gaine alu 125 en ML">Gaine alu 125 en ML</option>
+          <option value="Grohtherm 500 douche avec ensemble Tempesta 110 1 jet 8l barre 600 Chromé Réf. 34808001">Grohtherm 500 douche avec ensemble Tempesta 110 1 jet 8l barre 600 Chromé Réf. 34808001</option>
+          <option value="Hager - Goulotte de distribution lifea LFF 30x30mm 1 compartivement PVC Blanc - LFF3003009016 - 2ml">Hager - Goulotte de distribution lifea LFF 30x30mm 1 compartivement PVC Blanc - LFF3003009016 - 2ml</option>
+          <option value="Hager - Socle pour plinthe SL 20x80mm Noir - SL200801 - 2ml Hager - Couvercle pour plinthe SL 20x80mm Graphite Noir - SL2008029011 - 2ml">Hager - Socle pour plinthe SL 20x80mm Noir - SL200801 - 2ml Hager - Couvercle pour plinthe SL 20x80mm Graphite Noir - SL2008029011 - 2ml</option>
+          <option value="INTERRUPTEUR A BADGE - CM0010 complet">INTERRUPTEUR A BADGE - CM0010 complet</option>
+          <option value="Interrupteur double Surface Céliane blanc compris : boite d'encastrement simple, support, interrupteur double, enjoliveur & plaque finition">Interrupteur double Surface Céliane blanc compris : boite d'encastrement simple, support, interrupteur double, enjoliveur & plaque finition</option>
+          <option value="Interrupteur simple Surface Céliane blanc compris : boite d'encastrement, support, interrupteur, enjoliveur & plaque finition">Interrupteur simple Surface Céliane blanc compris : boite d'encastrement, support, interrupteur, enjoliveur & plaque finition</option>
+          <option value="Kit de réparation receveurs Alterna Daily'O, Daily'C et Daily'L blanc">Kit de réparation receveurs Alterna Daily'O, Daily'C et Daily'L blanc</option>
+          <option value="L04 Spot isolé TARGETTI">L04 Spot isolé TARGETTI</option>
+          <option value="LISEUSE Applique radar 1 x LED 3 2 blanc mat 05-6488-14-14 LedC4">LISEUSE Applique radar 1 x LED 3 2 blanc mat 05-6488-14-14 LedC4</option>
+          <option value="LUXA 103 S360-100-12 DE-UP WH">LUXA 103 S360-100-12 DE-UP WH</option>
+          <option value="LUXA 103 S360-100-28 DE-UP WH">LUXA 103 S360-100-28 DE-UP WH</option>
+          <option value="LVT Allura 62513 Grigio Concrete 100x100cm FORBO">LVT Allura 62513 Grigio Concrete 100x100cm FORBO</option>
+          <option value="Lavabo Geberit Acanto 500.620.01.2">Lavabo Geberit Acanto 500.620.01.2</option>
+          <option value="Lot de 8 panneaux laine de roche phonique rocksilence - Ep.40 mm lambda 34 R=1,35 L.120 x l.60 cm - ROCKWOOL">Lot de 8 panneaux laine de roche phonique rocksilence - Ep.40 mm lambda 34 R=1,35 L.120 x l.60 cm - ROCKWOOL</option>
+          <option value="MANCHON PLACO AUSTRALE D125">MANCHON PLACO AUSTRALE D125</option>
+          <option value="Mitigeur lavabo Eurosmart réf : 33265003">Mitigeur lavabo Eurosmart réf : 33265003</option>
+          <option value="Mortier adhésif en poudre 25 kg">Mortier adhésif en poudre 25 kg</option>
+          <option value="OFFRE 1829/25">OFFRE 1829/25</option>
+          <option value="PACK BATI SUPPORT COMPLET Geberit + cuvette Renova Compact 203245000">PACK BATI SUPPORT COMPLET Geberit + cuvette Renova Compact 203245000</option>
+          <option value="PC simple Surface Céliane blanc compris : boite d'encastrement, support, prise 2P+T, enjoliveur & plaque finition">PC simple Surface Céliane blanc compris : boite d'encastrement, support, prise 2P+T, enjoliveur & plaque finition</option>
+          <option value="PC simple USB-C Surface Céliane blanc compris : boite d'encastrement, support, prise 2P+T USB C intégré, enjoliveur & plaque finition">PC simple USB-C Surface Céliane blanc compris : boite d'encastrement, support, prise 2P+T USB C intégré, enjoliveur & plaque finition</option>
+          <option value="PEINTURES & SOLS">PEINTURES & SOLS</option>
+          <option value="PROJECTEUR SUR RAIL LED SP 8W - 8W 23V diamètre 40 - 2700K - couleur BLANC TARGETTI">PROJECTEUR SUR RAIL LED SP 8W - 8W 23V diamètre 40 - 2700K - couleur BLANC TARGETTI</option>
+          <option value="Panneau en pvc cellulaire durci imprimé reboost carré écossais verni ép 6mm de hauteur 1100mm x largeur 700mm (wc)">Panneau en pvc cellulaire durci imprimé reboost carré écossais verni ép 6mm de hauteur 1100mm x largeur 700mm (wc)</option>
+          <option value="Panneau en pvc cellulaire durci imprimé reboost carré écossais verni ép 6mm de hauteur 2350mm x largeur 811mm (lavabo) 2200x800x6mm ?">Panneau en pvc cellulaire durci imprimé reboost carré écossais verni ép 6mm de hauteur 2350mm x largeur 811mm (lavabo) 2200x800x6mm ?</option>
+          <option value="Paroi d'angle 90(gauche)x70(droite)">Paroi d'angle 90(gauche)x70(droite)</option>
+          <option value="Patère simple Continental Référence:381 00 00">Patère simple Continental Référence:381 00 00</option>
+          <option value="Plaque de fixation pour raccord à sertir entraxe 150 PER ROBIFIX D16">Plaque de fixation pour raccord à sertir entraxe 150 PER ROBIFIX D16</option>
+          <option value="Plaque de plâtre BA13 hydrofuge NF H.250 x l.120 cm">Plaque de plâtre BA13 hydrofuge NF H.250 x l.120 cm</option>
+          <option value="Plaque de plâtre BA13 standard NF H.250 x l.120 cm">Plaque de plâtre BA13 standard NF H.250 x l.120 cm</option>
+          <option value="Plinthe FORBO PVC 6500 80mm 2ml/unité (27.00 CAR)">Plinthe FORBO PVC 6500 80mm 2ml/unité (27.00 CAR)</option>
+          <option value="Plinthe FORBO PVC BLANC 80mm 2ml/unité (9.00 CAR)">Plinthe FORBO PVC BLANC 80mm 2ml/unité (9.00 CAR)</option>
+          <option value="Porte-papier de réserve Continental Référence:324 01 01">Porte-papier de réserve Continental Référence:324 01 01</option>
+          <option value="Pot balai court à poser Référence:274 00">Pot balai court à poser Référence:274 00</option>
+          <option value="Prise + Inter VV Surface Céliane blanc compris : boite d'encastrement double, support double, prise 2P+T USB C intégré, inter VV, enjoliveurs, plaque finition double">Prise + Inter VV Surface Céliane blanc compris : boite d'encastrement double, support double, prise 2P+T USB C intégré, inter VV, enjoliveurs, plaque finition double</option>
+          <option value="Prise 2x2P+T USB C intégré Surface Céliane blanc compris : boite d'encastrement double, support double, 2x prise 2x2P+T USB C intégré, enjoliveurs, plaque finition double">Prise 2x2P+T USB C intégré Surface Céliane blanc compris : boite d'encastrement double, support double, 2x prise 2x2P+T USB C intégré, enjoliveurs, plaque finition double</option>
+          <option value="Prise TV + PC Surface Céliane blanc compris : boite d'encastrement DOUBLE, support DOUBLE, prise 2P+T, prise tv, enjoliveurs, plaque finition double">Prise TV + PC Surface Céliane blanc compris : boite d'encastrement DOUBLE, support DOUBLE, prise 2P+T, prise tv, enjoliveurs, plaque finition double</option>
+          <option value="Profilé PVC Angle/Plat L2350mm - BLANC">Profilé PVC Angle/Plat L2350mm - BLANC</option>
+          <option value="Profilé cache chant parois 6mm long. 2,5m - BLANC laqué">Profilé cache chant parois 6mm long. 2,5m - BLANC laqué</option>
 
       <div class="mb-3">
   <label for="categorie" class="form-label">Catégorie</label>
@@ -57,6 +118,37 @@
               <%= e.nom %> (Chantier: <%= e.chantierId %>)
             </option>
           <% }) %>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="fournisseur" class="form-label">Fournisseur</label>
+        <input type="text" name="fournisseur" id="fournisseurInput" class="form-control" value="<%= mc.materiel.fournisseur || '' %>">
+        <select id="fournisseurSelect" class="form-select mt-2">
+          <option value="">-- Sélectionner un fournisseur --</option>
+          <option value="4 Pieds">4 Pieds</option>
+          <option value="BRICOMAN">BRICOMAN</option>
+          <option value="CEDEO">CEDEO</option>
+          <option value="FORBO">FORBO</option>
+          <option value="FOUSSIER">FOUSSIER</option>
+          <option value="France'AIR">France'AIR</option>
+          <option value="HUSSEIN">HUSSEIN</option>
+          <option value="JM EXIM">JM EXIM</option>
+          <option value="José">José</option>
+          <option value="KINEDO">KINEDO</option>
+          <option value="LES RIPEURS">LES RIPEURS</option>
+          <option value="MPI">MPI</option>
+          <option value="ODF">ODF</option>
+          <option value="PIXELO">PIXELO</option>
+          <option value="RICHARDSON">RICHARDSON</option>
+          <option value="SANITINO">SANITINO</option>
+          <option value="SONEPAR">SONEPAR</option>
+          <option value="SOTEXPRO">SOTEXPRO</option>
+          <option value="STMI">STMI</option>
+          <option value="TARGETTI">TARGETTI</option>
+          <option value="TEMPO">TEMPO</option>
+          <option value="Wurth">Wurth</option>
+          <option value="pure-com">pure-com</option>
+          <option value="Autre">Autre</option>
         </select>
       </div>
 
@@ -127,5 +219,22 @@
 </script>
 
   <script src="/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const fSelect = document.getElementById('fournisseurSelect');
+    const fInput = document.getElementById('fournisseurInput');
+    if (fSelect) {
+      fSelect.addEventListener('change', () => {
+        fInput.value = fSelect.value;
+      });
+    }
+
+    const dSelect = document.getElementById('designationSelect');
+    const dInput = document.getElementById('nomMateriel');
+    if (dSelect) {
+      dSelect.addEventListener('change', () => {
+        dInput.value = dSelect.value;
+      });
+    }
+  </script>
 </body>
 </html>
