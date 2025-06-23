@@ -289,15 +289,16 @@ select#emplacementId.form-control {
   </div>
   <script src="/js/bootstrap.bundle.min.js"></script>
   <script>
-    const fournisseurSelect = document.getElementById('fournisseurSelect');
-    const fournisseurInput = document.getElementById('fournisseurInput');
-    if (fournisseurSelect) {
-      fournisseurSelect.addEventListener('change', () => {
-        fournisseurInput.value = fournisseurSelect.value;
-      });
-    }
+    document.addEventListener('DOMContentLoaded', function () {
+      const fournisseurSelect = document.getElementById('fournisseurSelect');
+      const fournisseurInput = document.getElementById('fournisseurInput');
+      if (fournisseurSelect) {
+        fournisseurSelect.addEventListener('change', () => {
+          fournisseurInput.value = fournisseurSelect.value;
+        });
+      }
 
-    const designationMap = {
+      const designationMap = {
       "AGENCEMENT": [
         "Data: 09-05-2025 / Oportunitate de referință: 0035 /Versiune: 3"
       ],
@@ -478,6 +479,7 @@ select#emplacementId.form-control {
         }
       });
     }
+    });
   </script>
 </body>
 </html>
