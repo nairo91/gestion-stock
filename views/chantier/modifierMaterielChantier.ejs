@@ -314,17 +314,27 @@
       ]
     };
 
+    // Normalize keys for case/accents
+    const normalizedMap = {};
+    Object.keys(designationMap).forEach(k => {
+      const nk = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      normalizedMap[nk] = designationMap[k];
+    });
+
     const categorySelect = document.getElementById('categorieSelect');
     const dSelect = document.getElementById('designationSelect');
     const dInput = document.getElementById('nomMateriel');
 
     function updateDesignations() {
-      const cat = categorySelect.value;
+      const cat = categorySelect.value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
       dSelect.innerHTML = '<option value="">-- Sélectionner une désignation --</option>';
       dSelect.value = '';
       dInput.value = '';
-      if (designationMap[cat]) {
-        designationMap[cat].forEach(d => {
+      if (normalizedMap[cat]) {
+        normalizedMap[cat].forEach(d => {
           const opt = document.createElement('option');
           opt.value = d;
           opt.textContent = d;

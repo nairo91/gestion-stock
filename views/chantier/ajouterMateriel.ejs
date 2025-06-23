@@ -439,20 +439,29 @@ select#emplacementId.form-control {
         "RUBAN 3M 2700K 720LM/M IP20",
         "ALIM 15W IP20 24VDC"
       ]
-    };
-      console.log(designationMap);
+      };
+
+      // Normalize keys for case/accents to ensure reliable lookup
+      const normalizedMap = {};
+      Object.keys(designationMap).forEach(k => {
+        const nk = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        normalizedMap[nk] = designationMap[k];
+      });
 
     const categorySelect = document.getElementById('categorieSelect');
     const designationSelect = document.getElementById('designationSelect');
     const designationInput = document.getElementById('designationInput');
 
     function updateDesignations() {
-      const cat = categorySelect.value;
+      const cat = categorySelect.value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
       designationSelect.innerHTML = '<option value="">-- Sélectionner une désignation --</option>';
       designationSelect.value = '';
       designationInput.value = '';
-      if (designationMap[cat]) {
-        designationMap[cat].forEach(d => {
+      if (normalizedMap[cat]) {
+        normalizedMap[cat].forEach(d => {
           const opt = document.createElement('option');
           opt.value = d;
           opt.textContent = d;
