@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 const multer = require('multer');
-const path = require('path');
+const { storage } = require('../config/cloudinary.config');
 
 const Materiel = require('../models/Materiel');
 const Photo = require('../models/Photo');
@@ -15,16 +15,8 @@ const MaterielChantier = require('../models/MaterielChantier');
 
 const { ensureAuthenticated, checkAdmin } = require('./materiel');
 
-// Configuration Multer pour les uploads de photos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage: storage });
+// Configuration Multer + Cloudinary pour les photos
+const upload = multer({ storage });
 
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
@@ -168,11 +160,8 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     // 2) Gérer les photos, si fournies
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const relativePath = path
-          .join('uploads', file.filename)
-          .replace(/\\/g, '/');
         await Photo.create({
-          chemin: relativePath,
+          chemin: file.path,
           materielId: nouveauMateriel.id
         });
       }
@@ -469,11 +458,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     // Photo
     if (req.file) {
       await Photo.destroy({ where: { materielId: mc.materiel.id } });
-      const chemin = path
-        .join('uploads', req.file.filename)
-        .replace(/\\/g, '/');
       await Photo.create({
-        chemin,
+        chemin: req.file.path,
         materielId: mc.materiel.id
       });
     }
@@ -547,11 +533,8 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
 
     // Gérer la photo si fournie
     if (req.file) {
-      const chemin = path
-        .join('uploads', req.file.filename)
-        .replace(/\\/g, '/');
       await Photo.create({
-        chemin,
+        chemin: req.file.path,
         materielId: nouveauMateriel.id
       });
     }
