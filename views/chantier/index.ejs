@@ -180,7 +180,8 @@
 
           <th>Référence</th>
           <th>Categorie</th>
-          <th>Description / Fournisseur</th>
+          <th>Description</th>
+          <th>Fournisseur</th>
           <th>Emplacement</th>
           <th>Rack</th>
           <th>Compartiment</th>
@@ -253,8 +254,12 @@
                 <% } else { %>
                   -
                 <% } %>
+              </td>
+              <td>
                 <% if(mc.materiel && mc.materiel.fournisseur) { %>
-                  <br><small class="text-muted">Fournisseur: <%= mc.materiel.fournisseur %></small>
+                  <%= mc.materiel.fournisseur %>
+                <% } else { %>
+                  -
                 <% } %>
               </td>
 
@@ -330,7 +335,7 @@
           <% }); %>
         <% } else { %>
           <tr>
-            <td colspan="5" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
+            <td colspan="13" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
           </tr>
         <% } %>
       </tbody>
