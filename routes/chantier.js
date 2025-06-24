@@ -456,10 +456,15 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
 
     // Photo
+    console.log(req.file);
     if (req.file) {
+      const chemin = req.file.path || req.file.secure_url;
+      if (!chemin) {
+        return res.send("Erreur photo...");
+      }
       await Photo.destroy({ where: { materielId: mc.materiel.id } });
       await Photo.create({
-        chemin: req.file.path,
+        chemin,
         materielId: mc.materiel.id
       });
     }
@@ -532,9 +537,14 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
     });
 
     // Gérer la photo si fournie
+    console.log(req.file);
     if (req.file) {
+      const chemin = req.file.path || req.file.secure_url;
+      if (!chemin) {
+        return res.send("Erreur photo...");
+      }
       await Photo.create({
-        chemin: req.file.path,
+        chemin,
         materielId: nouveauMateriel.id
       });
     }
