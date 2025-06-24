@@ -15,19 +15,22 @@
   <label for="categorieSelect" class="form-label">Catégorie</label>
   <select class="form-select" name="categorie" id="categorieSelect" required>
     <option value="">-- Choisir une catégorie --</option>
-    <option value="agencement" <%= mc.materiel.categorie === 'AGENCEMENT' ? 'selected' : '' %>>AGENCEMENT</option>
-    <option value="cvc" <%= mc.materiel.categorie === 'CVC' ? 'selected' : '' %>>CVC</option>
-    <option value="conso" <%= mc.materiel.categorie === 'Conso' ? 'selected' : '' %>>Conso</option>
-    <option value="menuiserie" <%= mc.materiel.categorie === 'MENUISERIE' ? 'selected' : '' %>>MENUISERIE</option>
-    <option value="menuiserie ext" <%= mc.materiel.categorie === 'MENUISERIE EXT' ? 'selected' : '' %>>MENUISERIE EXT</option>
-    <option value="mobilier" <%= mc.materiel.categorie === 'MOBILIER' ? 'selected' : '' %>>MOBILIER</option>
-    <option value="peinture" <%= mc.materiel.categorie === 'PEINTURE' ? 'selected' : '' %>>PEINTURE</option>
-    <option value="platrerie" <%= mc.materiel.categorie === 'PLÂTRERIE' ? 'selected' : '' %>>PLÂTRERIE</option>
-    <option value="sol" <%= mc.materiel.categorie === 'SOL' ? 'selected' : '' %>>SOL</option>
-    <option value="st" <%= mc.materiel.categorie === 'ST' ? 'selected' : '' %>>ST</option>
-    <option value="stockage dechets" <%= mc.materiel.categorie === 'Stockage Déchets' ? 'selected' : '' %>>Stockage Déchets</option>
-    <option value="plomberie" <%= mc.materiel.categorie === 'plomberie' ? 'selected' : '' %>>plomberie</option>
-    <option value="electricite" <%= mc.materiel.categorie === 'électricité' ? 'selected' : '' %>>ÉLECTRICITÉ</option>
+    <%
+      const currentCat = (mc.materiel.categorie || '').toLowerCase();
+    %>
+    <option value="agencement" <%= currentCat === 'agencement' ? 'selected' : '' %>>AGENCEMENT</option>
+    <option value="cvc" <%= currentCat === 'cvc' ? 'selected' : '' %>>CVC</option>
+    <option value="conso" <%= currentCat === 'conso' ? 'selected' : '' %>>Conso</option>
+    <option value="menuiserie" <%= currentCat === 'menuiserie' ? 'selected' : '' %>>MENUISERIE</option>
+    <option value="menuiserie ext" <%= currentCat === 'menuiserie ext' ? 'selected' : '' %>>MENUISERIE EXT</option>
+    <option value="mobilier" <%= currentCat === 'mobilier' ? 'selected' : '' %>>MOBILIER</option>
+    <option value="peinture" <%= currentCat === 'peinture' ? 'selected' : '' %>>PEINTURE</option>
+    <option value="platrerie" <%= currentCat === 'platrerie' ? 'selected' : '' %>>PLÂTRERIE</option>
+    <option value="sol" <%= currentCat === 'sol' ? 'selected' : '' %>>SOL</option>
+    <option value="st" <%= currentCat === 'st' ? 'selected' : '' %>>ST</option>
+    <option value="stockage dechets" <%= currentCat === 'stockage dechets' ? 'selected' : '' %>>Stockage Déchets</option>
+    <option value="plomberie" <%= currentCat === 'plomberie' ? 'selected' : '' %>>plomberie</option>
+    <option value="electricite" <%= currentCat === 'electricite' || currentCat === 'électricité' ? 'selected' : '' %>>ÉLECTRICITÉ</option>
   </select>
 </div>
 
@@ -165,6 +168,13 @@
       const fSelect = document.getElementById("fournisseurSelect");
       const fInput = document.getElementById("fournisseurInput");
       if (fSelect) {
+        if (fInput && fInput.value) {
+          Array.from(fSelect.options).forEach(opt => {
+            if (opt.value.toLowerCase() === fInput.value.toLowerCase()) {
+              opt.selected = true;
+            }
+          });
+        }
         fSelect.addEventListener("change", () => {
           fInput.value = fSelect.value;
         });

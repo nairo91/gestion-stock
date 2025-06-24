@@ -149,19 +149,25 @@
 
     function updateDesignations() {
       const cat = categorySelect.value.toLowerCase();
-      console.log("cat:", cat);
-      console.log("designationMap:", designationMap);
-      console.log("designationMap[cat]:", designationMap[cat]);
+      const currentValue = designationInput ? designationInput.value : '';
+
       designationSelect.innerHTML = '<option value="">-- Sélectionner une désignation --</option>';
-      designationSelect.value = '';
-      if (designationInput) designationInput.value = '';
+
       if (designationMap[cat]) {
         designationMap[cat].forEach(d => {
           const opt = document.createElement('option');
           opt.value = d;
           opt.textContent = d;
+          if (currentValue && currentValue === d) {
+            opt.selected = true;
+          }
           designationSelect.appendChild(opt);
         });
+
+        // Si l'option existe, la valeur du select prévaut
+        if (designationSelect.value) {
+          if (designationInput) designationInput.value = designationSelect.value;
+        }
       }
     }
 
