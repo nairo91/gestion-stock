@@ -397,6 +397,13 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       rack, compartiment, niveau
     } = req.body;
 
+    if (
+      !quantite || isNaN(parseInt(quantite, 10)) || parseInt(quantite, 10) < 0 ||
+      !nomMateriel || !nomMateriel.trim() || !categorie
+    ) {
+      return res.status(400).send("Les champs quantité, désignation et catégorie sont obligatoires.");
+    }
+
     const mc = await MaterielChantier.findByPk(req.params.id, {
       include: [
         { model: Materiel, as: 'materiel' },
