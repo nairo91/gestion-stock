@@ -178,6 +178,20 @@
         fSelect.addEventListener("change", () => {
           fInput.value = fSelect.value;
         });
+        if (fInput) {
+          fInput.addEventListener("blur", () => {
+            const val = fInput.value.trim();
+            if (!val) return;
+            const exists = Array.from(fSelect.options).some(opt => opt.value.toLowerCase() === val.toLowerCase());
+            if (!exists) {
+              const option = document.createElement("option");
+              option.value = val;
+              option.textContent = val;
+              fSelect.appendChild(option);
+            }
+            fSelect.value = val;
+          });
+        }
       }
 
       initDesignationDropdown("categorieSelect", "designationSelect", "nomMateriel");

@@ -213,7 +213,7 @@
                 <% if (mc.materiel && mc.materiel.photo) { %>
                   <img
                     src="/uploads/<%= mc.materiel.photo %>"
-                    alt="Photo"
+                    alt="Photo de <%= mc.materiel.nom %>"
                     width="80"
                     style="cursor: pointer;"
                     data-bs-toggle="modal"
@@ -237,7 +237,7 @@
                         <div class="modal-body text-center">
                           <img
                             src="/uploads/<%= mc.materiel.photo %>"
-                            alt="Photo grand format"
+                            alt="Photo de <%= mc.materiel.nom %>"
                             class="img-fluid rounded"
                           >
                         </div>

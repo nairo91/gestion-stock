@@ -296,6 +296,20 @@ select#emplacementId.form-control {
         fournisseurSelect.addEventListener('change', () => {
           fournisseurInput.value = fournisseurSelect.value;
         });
+        if (fournisseurInput) {
+          fournisseurInput.addEventListener('blur', () => {
+            const val = fournisseurInput.value.trim();
+            if (!val) return;
+            const exists = Array.from(fournisseurSelect.options).some(opt => opt.value.toLowerCase() === val.toLowerCase());
+            if (!exists) {
+              const option = document.createElement('option');
+              option.value = val;
+              option.textContent = val;
+              fournisseurSelect.appendChild(option);
+            }
+            fournisseurSelect.value = val;
+          });
+        }
       }
       initDesignationDropdown('categorieSelect', 'designationSelect', 'designationInput');
       });
