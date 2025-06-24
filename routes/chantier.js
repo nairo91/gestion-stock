@@ -47,7 +47,9 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       order.push(['createdAt', triAjout.toUpperCase()]);
     }
     if (triModification === 'asc' || triModification === 'desc') {
-      order.push(['updatedAt', triModification.toUpperCase()]);
+      // On trie sur la date de mise à jour du matériel associé afin
+      // de refléter les dernières modifications effectuées
+      order.push([{ model: Materiel, as: 'materiel' }, 'updatedAt', triModification.toUpperCase()]);
     }
 
     const materielChantiers = await MaterielChantier.findAll({
