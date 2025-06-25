@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
+const { storage, cloudinary } = require('../config/cloudinary.config');
 const { Op } = require('sequelize');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
@@ -24,15 +24,7 @@ function checkAdmin(req, res, next) {
   return res.send("Accès refusé : vous n'êtes pas administrateur.");
 }
 
-// Configuration Multer pour upload photos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
+// Configuration Multer pour upload photos sur Cloudinary
 const upload = multer({ storage });
 
 /* ======================
@@ -286,11 +278,9 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
     // Enregistrement des photos
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const relativePath = path
-          .join('uploads', file.filename)
-          .replace(/\\/g, '/');
+        const url = file.path || file.secure_url;
         await Photo.create({
-          chemin: relativePath,
+          chemin: url,
           materielId: nouveauMateriel.id
         });
       }

@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 const multer = require('multer');
-const path = require('path');
+const { storage, cloudinary } = require('../config/cloudinary.config');
 
 const Materiel = require('../models/Materiel');
 const Photo = require('../models/Photo');
@@ -25,16 +25,8 @@ function checkAdmin(req, res, next) {
   return res.send("Accès refusé : vous n'êtes pas administrateur.");
 }
 
-// Configuration Multer pour les uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage: storage });
+// Configuration Multer pour les uploads sur Cloudinary
+const upload = multer({ storage });
 
 /* --- DASHBOARD & GESTION DU STOCK VÉHICULE --- */
 
@@ -112,11 +104,9 @@ router.post('/ajouter', ensureAuthenticated,checkAdmin, upload.array('photos', 5
 
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const relativePath = path
-          .join('uploads', file.filename)
-          .replace(/\\/g, '/');
+        const url = file.path || file.secure_url;
         await Photo.create({
-          chemin: relativePath,
+          chemin: url,
           materielId: nouveauMateriel.id
         });
       }

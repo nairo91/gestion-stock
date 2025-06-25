@@ -213,7 +213,7 @@
               </td>
               <td>
                 <% if (mc.materiel && mc.materiel.photos && mc.materiel.photos.length > 0) { %>
-                  <img src="/<%= mc.materiel.photos[0].chemin.replace(/\\/g, '/') %>" width="80" alt="Photo de <%= mc.materiel.nom %>"
+                  <img src="<%= mc.materiel.photos[0].chemin %>" width="80" alt="Photo de <%= mc.materiel.nom %>"
                        style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#photoModal<%= mc.id %>">
                   <!-- Modale -->
                   <div class="modal fade" id="photoModal<%= mc.id %>" tabindex="-1" aria-labelledby="photoModalLabel<%= mc.id %>" aria-hidden="true">
@@ -224,7 +224,7 @@
                           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
                         <div class="modal-body text-center">
-                          <img src="/<%= mc.materiel.photos[0].chemin.replace(/\\/g, '/') %>" alt="Photo grand format" class="img-fluid rounded">
+                          <img src="<%= mc.materiel.photos[0].chemin %>" alt="Photo grand format" class="img-fluid rounded">
                         </div>
                       </div>
                     </div>
