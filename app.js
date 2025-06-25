@@ -12,21 +12,26 @@ const helmet        = require('helmet');
 
 const app = express();
 
-// Sécurité : protection des en-têtes HTTP
-app.use(helmet());
-
-// Génération d’un nonce et définition d'une politique de sécurité CSP
+// Génération d’un nonce utilisé dans certaines vues
 app.use((req, res, next) => {
-  const nonce = crypto.randomBytes(16).toString('base64');
-  res.locals.nonce = nonce;
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; " + 
-    "script-src 'self' https://cdn.jsdelivr.net 'nonce-" + nonce + "'; " +
-    "style-src 'self' 'unsafe-inline';"
-  );
+  res.locals.nonce = crypto.randomBytes(16).toString('base64');
   next();
 });
+
+// Sécurité : protection des en-têtes HTTP avec CSP
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+        connectSrc: ["'self'", 'https://res.cloudinary.com'],
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+      },
+    },
+  })
+);
 
 // EJS comme moteur de template
 app.set('view engine', 'ejs');
