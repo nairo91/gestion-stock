@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { Op, fn, col, where } = require('sequelize');
 const multer = require('multer');
-const path = require('path');
+const { storage, cloudinary } = require('../config/cloudinary.config');
 
 const Materiel = require('../models/Materiel');
 const Photo = require('../models/Photo');
@@ -15,16 +15,8 @@ const MaterielChantier = require('../models/MaterielChantier');
 
 const { ensureAuthenticated, checkAdmin } = require('./materiel');
 
-// Configuration Multer pour les uploads de photos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage: storage });
+// Configuration Multer pour les uploads de photos sur Cloudinary
+const upload = multer({ storage });
 
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
@@ -177,11 +169,9 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     // 2) Gérer les photos, si fournies
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const relativePath = path
-          .join('uploads', file.filename)
-          .replace(/\\/g, '/');
+        const url = file.path || file.secure_url;
         await Photo.create({
-          chemin: relativePath,
+          chemin: url,
           materielId: nouveauMateriel.id
         });
       }
@@ -477,12 +467,15 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
 
     // Photo
     if (req.file) {
-      await Photo.destroy({ where: { materielId: mc.materiel.id } });
-      const chemin = path
-        .join('uploads', req.file.filename)
-        .replace(/\\/g, '/');
+      const existingPhoto = await Photo.findOne({ where: { materielId: mc.materiel.id } });
+      if (existingPhoto) {
+        const publicId = existingPhoto.chemin.split('/').pop().split('.')[0];
+        try { await cloudinary.uploader.destroy(publicId); } catch (e) { console.error(e); }
+        await existingPhoto.destroy();
+      }
+      const url = req.file.path || req.file.secure_url;
       await Photo.create({
-        chemin,
+        chemin: url,
         materielId: mc.materiel.id
       });
     }
@@ -556,11 +549,9 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
 
     // Gérer la photo si fournie
     if (req.file) {
-      const chemin = path
-        .join('uploads', req.file.filename)
-        .replace(/\\/g, '/');
+      const url = req.file.path || req.file.secure_url;
       await Photo.create({
-        chemin,
+        chemin: url,
         materielId: nouveauMateriel.id
       });
     }
