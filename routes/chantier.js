@@ -2,7 +2,7 @@
 const Emplacement = require('../models/Emplacement');
 const express = require('express');
 const router = express.Router();
-const { Op } = require('sequelize');
+const { Op, fn, col, where } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
 
@@ -34,9 +34,18 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     const whereChantier = chantierId ? { chantierId: chantierId } : {};
     const whereMateriel = {};
 
-    if (nomMateriel) whereMateriel.nom = { [Op.like]: `%${nomMateriel}%` };
-    if (categorie) whereMateriel.categorie = { [Op.like]: `%${categorie}%` };
-    if (description) whereMateriel.description = { [Op.like]: `%${description}%` };
+    if (nomMateriel) {
+      whereMateriel.nom = { [Op.like]: `%${nomMateriel}%` };
+    }
+    if (categorie) {
+      whereMateriel.categorie = where(
+        fn('LOWER', col('categorie')),
+        { [Op.like]: `%${categorie.toLowerCase()}%` }
+      );
+    }
+    if (description) {
+      whereMateriel.description = { [Op.like]: `%${description}%` };
+    }
 
 
     const order = [];
