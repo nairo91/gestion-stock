@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { Op, fn, col, where } = require('sequelize');
 const multer = require('multer');
-const path = require('path');
+const { storage } = require('../config/cloudinary.config');
 
 const Materiel = require('../models/Materiel');
 const Photo = require('../models/Photo');
@@ -15,16 +15,8 @@ const MaterielChantier = require('../models/MaterielChantier');
 
 const { ensureAuthenticated, checkAdmin } = require('./materiel');
 
-// Configuration Multer pour les uploads de photos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '..', 'uploads'));
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage: storage });
+// Configuration Multer + Cloudinary pour les photos
+const upload = multer({ storage });
 
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
@@ -62,41 +54,34 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     }
 
     const materielChantiers = await MaterielChantier.findAll({
-  where: whereChantier,
-  include: [
-    { model: Chantier, as: 'chantier' },
-    {
-      model: Materiel,
-      as: 'materiel',
-      where: whereMateriel,
+      where: whereChantier,
       include: [
-        { model: Photo, as: 'photos' },
-       {
-  model: Emplacement,
-  as: 'emplacement',
-  where: emplacement
-    ? { nom: { [Op.like]: `%${emplacement}%` } }
-    : undefined,
-  include: [
-    {
-      model: Emplacement,
-      as: 'parent',
-      include: [
-        { model: Emplacement, as: 'parent' } // 2 niveaux de profondeur
-      ]
-    }
-  ]
-}
-
-      ]
-    }
-  ],
-
-  order: order.length > 0 ? order : undefined
-
-
-
-});
+        { model: Chantier, as: 'chantier' },
+        {
+          model: Materiel,
+          as: 'materiel',
+          where: whereMateriel,
+          include: [
+            { model: Photo, as: 'photos' },
+            {
+              model: Emplacement,
+              as: 'emplacement',
+              where: emplacement
+                ? { nom: { [Op.like]: `%${emplacement}%` } }
+                : undefined,
+              include: [
+                {
+                  model: Emplacement,
+                  as: 'parent',
+                  include: [{ model: Emplacement, as: 'parent' }]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      order: order.length > 0 ? order : undefined
+    });
 
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
@@ -177,11 +162,8 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     // 2) Gérer les photos, si fournies
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const relativePath = path
-          .join('uploads', file.filename)
-          .replace(/\\/g, '/');
         await Photo.create({
-          chemin: relativePath,
+          chemin: file.path,
           materielId: nouveauMateriel.id
         });
       }
@@ -476,11 +458,13 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
 
     // Photo
+    console.log(req.file);
     if (req.file) {
+      const chemin = req.file.path || req.file.secure_url;
+      if (!chemin) {
+        return res.send("Erreur photo...");
+      }
       await Photo.destroy({ where: { materielId: mc.materiel.id } });
-      const chemin = path
-        .join('uploads', req.file.filename)
-        .replace(/\\/g, '/');
       await Photo.create({
         chemin,
         materielId: mc.materiel.id
@@ -555,10 +539,12 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
     });
 
     // Gérer la photo si fournie
+    console.log(req.file);
     if (req.file) {
-      const chemin = path
-        .join('uploads', req.file.filename)
-        .replace(/\\/g, '/');
+      const chemin = req.file.path || req.file.secure_url;
+      if (!chemin) {
+        return res.send("Erreur photo...");
+      }
       await Photo.create({
         chemin,
         materielId: nouveauMateriel.id
