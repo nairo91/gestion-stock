@@ -1,5 +1,5 @@
-// app.js
 require('dotenv').config();
+// app.js
 
 const express       = require('express');
 const crypto        = require('crypto');
