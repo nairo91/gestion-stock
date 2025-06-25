@@ -44,7 +44,7 @@
 
         <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
             <p><strong>🖼️ Photo :</strong></p>
-            <img src="<%= mc.materiel.photos[0].chemin %>" alt="Photo du matériel">
+            <img src="<%= mc.materiel.photos[0].chemin %>" alt="Photo de <%= mc.materiel.nom %>">
           <% } else { %>
             <p><strong>🖼️ Photo :</strong> -</p>
           <% } %>

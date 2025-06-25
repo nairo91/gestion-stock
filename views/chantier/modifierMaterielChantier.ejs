@@ -121,11 +121,11 @@
       <div id="preview-container" class="mt-3">
         <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
           <p>Photo actuelle :</p>
-          <img src="<%= mc.materiel.photos[0].chemin %>" alt="Photo actuelle" style="max-width: 300px; border: 1px solid #ccc;">
+          <img src="<%= mc.materiel.photos[0].chemin %>" alt="Photo actuelle de <%= mc.materiel.nom %>" style="max-width: 300px; border: 1px solid #ccc;">
         <% } %>
         
         <!--<p class="mt-2">Aperçu de la nouvelle photo :</p>-->
-        <img id="preview-image" src="#" alt="Aperçu" style="max-width: 300px; display: none; border: 1px solid #ccc;" />
+        <img id="preview-image" src="#" alt="Aperçu de la nouvelle photo" style="max-width: 300px; display: none; border: 1px solid #ccc;" />
       </div>
 
       <button type="submit" class="btn btn-success mt-4">Enregistrer</button>
