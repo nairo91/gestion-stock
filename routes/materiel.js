@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const { storage, cloudinary } = require('../config/cloudinary.config');
-const { Op } = require('sequelize');
+const { Op, fn, col, where } = require('sequelize');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
@@ -198,7 +198,10 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       whereClause.reference = { [Op.like]: `%${reference}%` };
     }
     if (categorie && categorie.trim() !== '') {
-      whereClause.categorie = categorie;
+      whereClause.categorie = where(
+        fn('LOWER', col('categorie')),
+        { [Op.like]: `%${categorie.toLowerCase()}%` }
+      );
     }
     if (rack && rack.trim() !== '') {
       whereClause.rack = rack;
