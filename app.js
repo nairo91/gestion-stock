@@ -83,8 +83,8 @@ sequelize.sync({ alter: true })
 
 // Proxy pour récupérer les images Cloudinary avec les bons headers
 
-app.get('/img-proxy/:public_id', (req, res, next) => {
-  const publicId = req.params.public_id;
+app.get('/img-proxy/*', (req, res, next) => {
+  const publicId = req.params[0];
   const url = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${publicId}`;
 
   https.get(url, response => {
