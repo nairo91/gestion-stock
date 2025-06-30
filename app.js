@@ -9,6 +9,7 @@ const flash         = require('connect-flash');
 const passport      = require('passport');
 const path          = require('path');
 const helmet        = require('helmet');
+const https         = require('https');
 
 const app = express();
 
@@ -82,21 +83,23 @@ sequelize.sync({ alter: true })
 
 // Proxy pour récupérer les images Cloudinary avec les bons headers
 
-app.get('/img-proxy/:public_id', async (req, res, next) => {
-  try {
-    const publicId = req.params.public_id;
-    const url = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${publicId}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      return res.sendStatus(response.status);
+app.get('/img-proxy/:public_id', (req, res, next) => {
+  const publicId = req.params.public_id;
+  const url = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${publicId}`;
+
+  https.get(url, response => {
+    if (response.statusCode && response.statusCode >= 400) {
+      res.sendStatus(response.statusCode);
+      return;
     }
-    res.setHeader('Content-Type', response.headers.get('Content-Type'));
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    const buffer = await response.arrayBuffer();
-    res.send(Buffer.from(buffer));
-  } catch (err) {
+
+    response.pipe(res);
+  }).on('error', err => {
     next(err);
-  }
+  });
 });
 
 // Déclaration des routes principales
