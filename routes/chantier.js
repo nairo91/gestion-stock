@@ -2,7 +2,7 @@
 const Emplacement = require('../models/Emplacement');
 const express = require('express');
 const router = express.Router();
-const { Op } = require('sequelize');
+const { Op, fn, col, where } = require('sequelize');
 const multer = require('multer');
 const { storage, cloudinary } = require('../config/cloudinary.config');
 
@@ -27,13 +27,22 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     const whereMateriel = {};
 
   if (nomMateriel) {
-    whereMateriel.nom = { [Op.iLike]: `%${nomMateriel}%` };
+    whereMateriel.nom = where(
+      fn('unaccent', fn('lower', col('nom'))),
+      { [Op.iLike]: fn('unaccent', fn('lower', `%${nomMateriel}%`)) }
+    );
   }
   if (categorie) {
-    whereMateriel.categorie = { [Op.iLike]: `%${categorie}%` };
+    whereMateriel.categorie = where(
+      fn('unaccent', fn('lower', col('categorie'))),
+      { [Op.iLike]: fn('unaccent', fn('lower', `%${categorie}%`)) }
+    );
   }
   if (description) {
-    whereMateriel.description = { [Op.iLike]: `%${description}%` };
+    whereMateriel.description = where(
+      fn('unaccent', fn('lower', col('description'))),
+      { [Op.iLike]: fn('unaccent', fn('lower', `%${description}%`)) }
+    );
   }
 
 
@@ -64,7 +73,10 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   model: Emplacement,
   as: 'emplacement',
     where: emplacement
-      ? { nom: { [Op.iLike]: `%${emplacement}%` } }
+      ? where(
+          fn('unaccent', fn('lower', col('nom'))),
+          { [Op.iLike]: fn('unaccent', fn('lower', `%${emplacement}%`)) }
+        )
       : undefined,
   include: [
     {
