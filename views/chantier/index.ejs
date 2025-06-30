@@ -217,12 +217,13 @@
               </td>
               <td>
                 <% if (mc.materiel && mc.materiel.photos && mc.materiel.photos.length > 0) { %>
-                  <% const publicId = mc.materiel.photos[0].chemin
-                    .replace(/^https?:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//, '')
-                    .replace(/\.[^.]+$/, ''); %>
-                  <img 
-                    src="/img-proxy/<%= publicId %>" 
-                    width="80" 
+                  <% const photoUrl = mc.materiel.photos[0].chemin;
+                     const publicId = photoUrl
+                      .replace(/^https?:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//, '')
+                      .replace(/\.[^.]+$/, ''); %>
+                  <img
+                    src="/img-proxy/<%= publicId %>"
+                    width="80"
                     alt="Photo de <%= mc.materiel.nom %>"
                     style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#photoModal<%= mc.id %>">
                   <!-- Modale -->

@@ -81,12 +81,15 @@ sequelize.sync({ alter: true })
 
 app.get('/img-proxy/:public_id', async (req, res, next) => {
   try {
-    const url = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${req.params.public_id}`;
-    const resp = await fetch(url);
-    if (!resp.ok) return res.sendStatus(resp.status);
-    const buffer = await resp.arrayBuffer();
-    res.setHeader('Content-Type', resp.headers.get('Content-Type'));
+    const publicId = req.params.public_id;
+    const url = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${publicId}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      return res.sendStatus(response.status);
+    }
+    res.setHeader('Content-Type', response.headers.get('Content-Type'));
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    const buffer = await response.arrayBuffer();
     res.send(Buffer.from(buffer));
   } catch (err) {
     next(err);
