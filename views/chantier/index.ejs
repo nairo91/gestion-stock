@@ -217,8 +217,7 @@
               </td>
               <td>
                 <% if (mc.materiel && mc.materiel.photos && mc.materiel.photos.length > 0) { %>
-                  <% const photoUrl = mc.materiel.photos[0].chemin;
-                     const publicId = photoUrl
+                  <% const publicId = mc.materiel.photos[0].chemin
                       .replace(/^https?:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//, '')
                       .replace(/\.[^.]+$/, ''); %>
                   <img
