@@ -75,9 +75,12 @@ app.use(setCrossOriginHeaders);
 const { sequelize } = require('./models');
 
 
+
 sequelize.sync({ alter: true })
   .then(() => console.log('✅ Base de données synchronisée'))
   .catch(err => console.error('❌ Erreur de synchronisation', err));
+
+// Proxy pour récupérer les images Cloudinary avec les bons headers
 
 app.get('/img-proxy/:public_id', async (req, res, next) => {
   try {
