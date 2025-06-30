@@ -12,6 +12,14 @@ const helmet        = require('helmet');
 
 const app = express();
 
+// Middleware COEP/COOP
+const setCrossOriginHeaders = (req, res, next) => {
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+};
+
 // Génération d’un nonce utilisé dans certaines vues
 app.use((req, res, next) => {
   res.locals.nonce = crypto.randomBytes(16).toString('base64');
@@ -59,6 +67,9 @@ app.use((req, res, next) => {
   res.locals.user = req.user;
   next();
 });
+
+// Headers COEP/COOP
+app.use(setCrossOriginHeaders);
 
 // Base de données Sequelize + modèles supplémentaires
 const { sequelize } = require('./models');
