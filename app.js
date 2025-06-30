@@ -79,6 +79,20 @@ sequelize.sync({ alter: true })
   .then(() => console.log('✅ Base de données synchronisée'))
   .catch(err => console.error('❌ Erreur de synchronisation', err));
 
+app.get('/img-proxy/:public_id', async (req, res, next) => {
+  try {
+    const url = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${req.params.public_id}`;
+    const resp = await fetch(url);
+    if (!resp.ok) return res.sendStatus(resp.status);
+    const buffer = await resp.arrayBuffer();
+    res.setHeader('Content-Type', resp.headers.get('Content-Type'));
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Déclaration des routes principales
 app.use('/', require('./routes/index'));
 app.use('/auth', require('./routes/auth'));
