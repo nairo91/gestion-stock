@@ -392,7 +392,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
   try {
     const {
       quantite, nomMateriel, categorie, fournisseur, emplacementId,
-      rack, compartiment, niveau
+      rack, compartiment, niveau, reference
     } = req.body;
 
     if (
@@ -420,6 +420,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldCompartiment = mc.materiel.compartiment;
     const oldFournisseur = mc.materiel.fournisseur;
     const oldNiveau = mc.materiel.niveau;
+    const oldReference = mc.materiel.reference;
 
     const newQte = parseInt(quantite, 10);
     const newNom = nomMateriel.trim();
@@ -429,6 +430,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newCompartiment = compartiment;
     const newFournisseur = fournisseur;
     const newNiveau = niveau ? parseInt(niveau) : null;
+    const newReference = reference;
 
     if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
     if (oldNom !== newNom) changementsDetail.push(`Nom: ${oldNom} ➔ ${newNom}`);
@@ -438,6 +440,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldFournisseur !== newFournisseur) changementsDetail.push(`Fournisseur: ${oldFournisseur || '-'} ➔ ${newFournisseur || '-'}`);
     if (oldCompartiment !== newCompartiment) changementsDetail.push(`Compartiment: ${oldCompartiment || '-'} ➔ ${newCompartiment || '-'}`);
     if (oldNiveau !== newNiveau) changementsDetail.push(`Niveau: ${oldNiveau || '-'} ➔ ${newNiveau || '-'}`);
+    if (oldReference !== newReference) changementsDetail.push(`Référence: ${oldReference || '-'} ➔ ${newReference || '-'}`);
 
     // Mise à jour
     mc.quantite = newQte;
@@ -448,6 +451,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     mc.materiel.rack = newRack;
     mc.materiel.compartiment = newCompartiment;
     mc.materiel.niveau = newNiveau;
+    mc.materiel.reference = newReference;
 
     await mc.materiel.save();
     await mc.save();
