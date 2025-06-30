@@ -217,11 +217,14 @@
               </td>
               <td>
                 <% if (mc.materiel && mc.materiel.photos && mc.materiel.photos.length > 0) { %>
-                  <% const publicId = mc.materiel.photos[0].chemin
-                      .replace(/^https?:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//, '')
-                      .replace(/\.[^.]+$/, ''); %>
+                  <% const fullPath = mc.materiel.photos[0].chemin
+                       .replace(
+                         `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/`,
+                         ''
+                       );
+                  %>
                   <img
-                    src="/img-proxy/<%= publicId %>"
+                    src="/img-proxy/<%= fullPath %>"
                     width="80"
                     alt="Photo de <%= mc.materiel.nom %>"
                     style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#photoModal<%= mc.id %>">
@@ -234,7 +237,7 @@
                           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
                         <div class="modal-body text-center">
-                          <img src="/img-proxy/<%= publicId %>" alt="Photo de <%= mc.materiel.nom %>" class="img-fluid rounded">
+                          <img src="/img-proxy/<%= fullPath %>" alt="Photo de <%= mc.materiel.nom %>" class="img-fluid rounded">
                         </div>
                       </div>
                     </div>
