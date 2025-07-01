@@ -116,7 +116,7 @@
       "Pot balai court à poser Référence:274 00",
       "PACK BATI SUPPORT COMPLET Geberit + cuvette Renova Compact 203245000"
     ],
-    electricite: [
+    electricité: [
       "INTERRUPTEUR A BADGE - CM0010 complet",
       "Interrupteur double Surface Céliane blanc compris : boite d'encastrement simple, support, interrupteur double, enjoliveur & plaque finition",
       "Interrupteur simple Surface Céliane blanc compris : boite d'encastrement, support, interrupteur, enjoliveur & plaque finition",
