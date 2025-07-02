@@ -30,7 +30,10 @@
     <option value="st" <%= currentCat === 'st' ? 'selected' : '' %>>ST</option>
     <option value="stockage dechets" <%= currentCat === 'stockage dechets' ? 'selected' : '' %>>Stockage Déchets</option>
     <option value="plomberie" <%= currentCat === 'plomberie' ? 'selected' : '' %>>plomberie</option>
-    <option value="Electricité" <%= currentCat === 'electricite' || currentCat === 'électricité' ? 'selected' : '' %>>ÉLECTRICITÉ</option>
+    <option value="Electricité"
+      <%= ['electricite', 'électricité', 'electricité'].includes(currentCat) ? 'selected' : '' %>>
+        ÉLECTRICITÉ
+    </option>
     <option value="climatisation" <%= currentCat === 'climatisation' ? 'selected' : '' %>>CLIMATISATION</option>
   </select>
 </div>
