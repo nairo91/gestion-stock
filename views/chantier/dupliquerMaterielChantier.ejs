@@ -8,7 +8,7 @@
 <body>
   <div class="container mt-4">
     <h2>Dupliquer un Matériel Chantier</h2>
-    <form action="/chantier/materielChantier/dupliquer/<%= mc.id %>" method="POST"><form action="/chantier/materielChantier/dupliquer/<%= mc.id %>" method="POST" enctype="multipart/form-data">
+    <form action="/chantier/materielChantier/dupliquer/<%= mc.id %>" method="POST" enctype="multipart/form-data">
   <div class="mb-3">
         <label for="nom" class="form-label">Nom du Matériel</label>
         <input type="text" name="nom" id="nom" class="form-control" value="<%= mc.materiel.nom %>" required>
@@ -32,14 +32,14 @@
       <div class="mb-3">
         <label for="categorieSelect" class="form-label">Catégorie</label>
         <select name="categorie" id="categorieSelect" class="form-control" required>
-          <option value="Electricité" <%= mc.materiel.categorie === 'Electricité' ? 'selected' : '' %>>Electricité</option>
-          <option value="Plomberie" <%= mc.materiel.categorie === 'Plomberie' ? 'selected' : '' %>>Plomberie</option>
-          <option value="Climatisation" <%= mc.materiel.categorie === 'Climatisation' ? 'selected' : '' %>>Climatisation</option>
-          <option value="Chauffage" <%= mc.materiel.categorie === 'Chauffage' ? 'selected' : '' %>>Chauffage</option>
-          <option value="Revêtement mural / Revêtement Sol" <%= mc.materiel.categorie === 'Revêtement mural / Revêtement Sol' ? 'selected' : '' %>>Revêtement mural / Revêtement Sol</option>
-          <option value="Maçonnerie" <%= mc.materiel.categorie === 'Maçonnerie' ? 'selected' : '' %>>Maçonnerie</option>
-          <option value="Menuiserie" <%= mc.materiel.categorie === 'Menuiserie' ? 'selected' : '' %>>Menuiserie</option>
-          <option value="Autre" <%= mc.materiel.categorie === 'Autre' ? 'selected' : '' %>>Autre</option>
+          <option value="Electricité">Electricité</option>
+          <option value="Plomberie">Plomberie</option>
+          <option value="Climatisation">Climatisation</option>
+          <option value="Chauffage">Chauffage</option>
+          <option value="Revêtement mural / Revêtement Sol">Revêtement mural / Revêtement Sol</option>
+          <option value="Maçonnerie">Maçonnerie</option>
+          <option value="Menuiserie">Menuiserie</option>
+          <option value="Autre">Autre</option>
         </select>
       </div>
       <div class="mb-3">
@@ -71,5 +71,19 @@
     </form>
   </div>
   <script src="/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const select = document.getElementById('categorieSelect');
+      const currentCat = "<%= mc.materiel.categorie %>";
+      if (currentCat) {
+        const hasOption = Array.from(select.options).some(opt => opt.value === currentCat);
+        if (!hasOption) {
+          const opt = new Option(currentCat, currentCat);
+          select.add(opt, 0);
+        }
+        select.value = currentCat;
+      }
+    });
+  </script>
 </body>
 </html>
