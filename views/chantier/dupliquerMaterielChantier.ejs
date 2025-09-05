@@ -30,6 +30,37 @@
         <input type="number" step="0.01" name="prix" id="prix" class="form-control" value="<%= mc.materiel.prix || '' %>" required>
       </div>
       <div class="mb-3">
+        <label for="fournisseur" class="form-label">Fournisseur</label>
+        <input type="text" name="fournisseur" id="fournisseurInput" class="form-control" value="<%= mc.materiel.fournisseur || '' %>">
+        <select id="fournisseurSelect" class="form-select mt-2">
+          <option value="">-- Sélectionner un fournisseur --</option>
+          <option value="4 Pieds">4 Pieds</option>
+          <option value="BRICOMAN">BRICOMAN</option>
+          <option value="CEDEO">CEDEO</option>
+          <option value="FORBO">FORBO</option>
+          <option value="FOUSSIER">FOUSSIER</option>
+          <option value="France'AIR">France'AIR</option>
+          <option value="HUSSEIN">HUSSEIN</option>
+          <option value="JM EXIM">JM EXIM</option>
+          <option value="José">José</option>
+          <option value="KINEDO">KINEDO</option>
+          <option value="LES RIPEURS">LES RIPEURS</option>
+          <option value="MPI">MPI</option>
+          <option value="ODF">ODF</option>
+          <option value="PIXELO">PIXELO</option>
+          <option value="RICHARDSON">RICHARDSON</option>
+          <option value="SANITINO">SANITINO</option>
+          <option value="SONEPAR">SONEPAR</option>
+          <option value="SOTEXPRO">SOTEXPRO</option>
+          <option value="STMI">STMI</option>
+          <option value="TARGETTI">TARGETTI</option>
+          <option value="TEMPO">TEMPO</option>
+          <option value="Wurth">Wurth</option>
+          <option value="pure-com">pure-com</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div class="mb-3">
         <label for="categorieSelect" class="form-label">Catégorie</label>
         <select name="categorie" id="categorieSelect" class="form-control" required>
           <option value="Electricité">Electricité</option>
@@ -82,6 +113,35 @@
           select.add(opt, 0);
         }
         select.value = currentCat;
+      }
+
+      const fournisseurSelect = document.getElementById('fournisseurSelect');
+      const fournisseurInput = document.getElementById('fournisseurInput');
+      if (fournisseurSelect) {
+        if (fournisseurInput && fournisseurInput.value) {
+          Array.from(fournisseurSelect.options).forEach(opt => {
+            if (opt.value.toLowerCase() === fournisseurInput.value.toLowerCase()) {
+              opt.selected = true;
+            }
+          });
+        }
+        fournisseurSelect.addEventListener('change', () => {
+          fournisseurInput.value = fournisseurSelect.value;
+        });
+        if (fournisseurInput) {
+          fournisseurInput.addEventListener('blur', () => {
+            const val = fournisseurInput.value.trim();
+            if (!val) return;
+            const exists = Array.from(fournisseurSelect.options).some(opt => opt.value.toLowerCase() === val.toLowerCase());
+            if (!exists) {
+              const option = document.createElement('option');
+              option.value = val;
+              option.textContent = val;
+              fournisseurSelect.appendChild(option);
+            }
+            fournisseurSelect.value = val;
+          });
+        }
       }
     });
   </script>

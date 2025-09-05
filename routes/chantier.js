@@ -535,7 +535,7 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
 
 router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
-    const { nom, reference, quantite, description, prix, categorie, chantierId, emplacementId } = req.body;
+    const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId } = req.body;
 
     // Créer le matériel
     const nouveauMateriel = await Materiel.create({
@@ -544,6 +544,7 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
       description,
       prix: parseFloat(prix),
       categorie,
+      fournisseur,
       quantite: 0,
       emplacementId: emplacementId ? parseInt(emplacementId) : null
     });
