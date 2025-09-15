@@ -64,6 +64,10 @@
         <input type="text" name="reference" id="reference" class="form-control" value="<%= mc.materiel.reference || '' %>">
       </div>
       <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea name="description" id="description" class="form-control"><%= mc.materiel.description || '' %></textarea>
+      </div>
+      <div class="mb-3">
         <label for="emplacementId" class="form-label">Nouvel emplacement</label>
         <select name="emplacementId" id="emplacementId" class="form-control">
           <option value="">-- Aucun --</option>

@@ -392,7 +392,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
   try {
     const {
       quantite, nomMateriel, categorie, fournisseur, emplacementId,
-      rack, compartiment, niveau, reference
+      rack, compartiment, niveau, reference, description
     } = req.body;
 
     if (
@@ -421,6 +421,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldFournisseur = mc.materiel.fournisseur;
     const oldNiveau = mc.materiel.niveau;
     const oldReference = mc.materiel.reference;
+    const oldDescription = mc.materiel.description;
 
     const newQte = parseInt(quantite, 10);
     const newNom = nomMateriel.trim();
@@ -431,6 +432,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newFournisseur = fournisseur;
     const newNiveau = niveau ? parseInt(niveau) : null;
     const newReference = reference;
+    const newDescription = description;
 
     if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
     if (oldNom !== newNom) changementsDetail.push(`Nom: ${oldNom} ➔ ${newNom}`);
@@ -441,6 +443,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldCompartiment !== newCompartiment) changementsDetail.push(`Compartiment: ${oldCompartiment || '-'} ➔ ${newCompartiment || '-'}`);
     if (oldNiveau !== newNiveau) changementsDetail.push(`Niveau: ${oldNiveau || '-'} ➔ ${newNiveau || '-'}`);
     if (oldReference !== newReference) changementsDetail.push(`Référence: ${oldReference || '-'} ➔ ${newReference || '-'}`);
+    if (oldDescription !== newDescription) changementsDetail.push(`Description: ${oldDescription || '-'} ➔ ${newDescription || '-'}`);
 
     // Mise à jour
     mc.quantite = newQte;
@@ -452,6 +455,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     mc.materiel.compartiment = newCompartiment;
     mc.materiel.niveau = newNiveau;
     mc.materiel.reference = newReference;
+    mc.materiel.description = newDescription;
 
     await mc.materiel.save();
     await mc.save();
