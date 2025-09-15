@@ -21,14 +21,18 @@
         <label for="quantite" class="form-label">Quantité</label>
         <input type="number" name="quantite" id="quantite" class="form-control" value="<%= mc.quantite %>" required>
       </div>
-      <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
-        <textarea name="description" id="description" class="form-control"><%= mc.materiel.description || '' %></textarea>
-      </div>
-      <div class="mb-3">
-        <label for="prix" class="form-label">Prix</label>
-        <input type="number" step="0.01" name="prix" id="prix" class="form-control" value="<%= mc.materiel.prix || '' %>">
-      </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea name="description" id="description" class="form-control"><%= mc.materiel.description || '' %></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="remarque" class="form-label">Remarque</label>
+      <textarea name="remarque" id="remarque" class="form-control"></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="prix" class="form-label">Prix</label>
+      <input type="number" step="0.01" name="prix" id="prix" class="form-control" value="<%= mc.materiel.prix || '' %>">
+    </div>
       <div class="mb-3">
         <label for="fournisseur" class="form-label">Fournisseur</label>
         <input type="text" name="fournisseur" id="fournisseurInput" class="form-control" value="<%= mc.materiel.fournisseur || '' %>">
