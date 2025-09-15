@@ -24,6 +24,19 @@ const MaterielChantier = sequelize.define(
       },
     },
 
+    quantitePrevue: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
+    },
+
+    dateLivraisonPrevue: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
     remarque: {
       type: DataTypes.TEXT,
       allowNull: true,

@@ -160,8 +160,10 @@ router.post('/ajouter-categorie', ensureAuthenticated, checkAdmin, async (req, r
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau, remarque } = req.body;
+    const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau, remarque } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
+    const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
+    const datePrevue = dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null;
 
     await Categorie.findOrCreate({ where: { nom: categorie } });
 
@@ -199,6 +201,8 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
       chantierId: parseInt(chantierId, 10),
       materielId: nouveauMateriel.id,
       quantite: qte,
+      quantitePrevue: qtePrevue,
+      dateLivraisonPrevue: datePrevue,
       remarque: remarque || null
     });
 
@@ -413,7 +417,7 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
 router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
       const {
-        quantite, nomMateriel, categorie, fournisseur, emplacementId,
+        quantite, quantitePrevue, dateLivraisonPrevue, nomMateriel, categorie, fournisseur, emplacementId,
         rack, compartiment, niveau, reference, description, prix, remarque
       } = req.body;
 
@@ -428,6 +432,12 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newQte = (quantite === undefined || quantite === '')
       ? mc.quantite
       : parseInt(quantite, 10);
+    const newQtePrevue = (quantitePrevue === undefined || quantitePrevue === '')
+      ? mc.quantitePrevue
+      : parseInt(quantitePrevue, 10);
+    const newDatePrevue = (dateLivraisonPrevue === undefined || dateLivraisonPrevue === '')
+      ? mc.dateLivraisonPrevue
+      : new Date(dateLivraisonPrevue);
 
     if (
       isNaN(newQte) || newQte < 0 ||
@@ -450,6 +460,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldDescription = mc.materiel.description;
       const oldPrix = mc.materiel.prix;
       const oldRemarque = mc.remarque;
+    const oldQtePrevue = mc.quantitePrevue;
+    const oldDatePrevue = mc.dateLivraisonPrevue;
 
     const newNom = nomMateriel.trim();
     const newCategorie = categorie;
@@ -476,9 +488,14 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldDescription !== newDescription) changementsDetail.push(`Description: ${oldDescription || '-'} ➔ ${newDescription || '-'}`);
       if (oldPrix !== newPrix) changementsDetail.push(`Prix: ${oldPrix || '-'} ➔ ${newPrix || '-'}`);
       if (oldRemarque !== newRemarque) changementsDetail.push(`Remarque: ${oldRemarque || '-'} ➔ ${newRemarque || '-'}`);
+    if (oldQtePrevue !== newQtePrevue) changementsDetail.push(`Quantité prévue: ${oldQtePrevue || '-'} ➔ ${newQtePrevue || '-'}`);
+    if ( (oldDatePrevue ? oldDatePrevue.toISOString().split('T')[0] : '') !== (newDatePrevue ? newDatePrevue.toISOString().split('T')[0] : '') )
+      changementsDetail.push(`Date prévue: ${oldDatePrevue ? oldDatePrevue.toISOString().split('T')[0] : '-'} ➔ ${newDatePrevue ? newDatePrevue.toISOString().split('T')[0] : '-'}`);
 
     // Mise à jour
     mc.quantite = newQte;
+    mc.quantitePrevue = newQtePrevue;
+    mc.dateLivraisonPrevue = newDatePrevue;
     mc.materiel.nom = newNom;
     mc.materiel.categorie = newCategorie;
     mc.materiel.emplacementId = newEmplacement;
@@ -574,8 +591,10 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
 
 router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
-      const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId, remarque } = req.body;
+      const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, chantierId, emplacementId, remarque } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
+    const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
+    const datePrevue = dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null;
 
     await Categorie.findOrCreate({ where: { nom: categorie } });
 
@@ -605,6 +624,8 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
         chantierId: parseInt(chantierId),
         materielId: nouveauMateriel.id,
         quantite: parseInt(quantite),
+        quantitePrevue: qtePrevue,
+        dateLivraisonPrevue: datePrevue,
         remarque: remarque || null
       });
 
