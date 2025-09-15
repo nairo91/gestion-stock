@@ -26,7 +26,7 @@ const upload = multer({ storage });
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-    const { chantierId, nomMateriel, categorie, emplacement, description, triNom, triAjout, triModification } = req.query;
+    const { chantierId, nomMateriel, categorie, emplacement, description, triNom, triAjout, triModification, recherche } = req.query;
 
     const whereChantier = chantierId ? { chantierId: chantierId } : {};
     const whereMateriel = {};
@@ -55,7 +55,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       order.push([{ model: Materiel, as: 'materiel' }, 'updatedAt', triModification.toUpperCase()]);
     }
 
-    const materielChantiers = await MaterielChantier.findAll({
+    let materielChantiers = await MaterielChantier.findAll({
   where: whereChantier,
   include: [
     { model: Chantier, as: 'chantier' },
@@ -92,6 +92,14 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
 });
 
+    if (recherche) {
+      const terme = recherche.toLowerCase();
+      materielChantiers = materielChantiers.filter(mc => {
+        const contenu = JSON.stringify(mc.get({ plain: true })).toLowerCase();
+        return contenu.includes(terme);
+      });
+    }
+
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
@@ -108,7 +116,8 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   description,
   triNom,
   triAjout,
-  triModification
+  triModification,
+  recherche
 });
 
   } catch (err) {
