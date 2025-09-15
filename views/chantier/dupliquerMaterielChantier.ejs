@@ -62,16 +62,19 @@
       </div>
       <div class="mb-3">
         <label for="categorieSelect" class="form-label">Catégorie</label>
+        <% const cats = categories || []; %>
         <select name="categorie" id="categorieSelect" class="form-control" required>
-          <option value="Electricité">Electricité</option>
-          <option value="Plomberie">Plomberie</option>
-          <option value="Climatisation">Climatisation</option>
-          <option value="Chauffage">Chauffage</option>
-          <option value="Revêtement mural / Revêtement Sol">Revêtement mural / Revêtement Sol</option>
-          <option value="Maçonnerie">Maçonnerie</option>
-          <option value="Menuiserie">Menuiserie</option>
-          <option value="Autre">Autre</option>
+          <option value="" disabled>-- Choisir Catégorie --</option>
+          <% cats.forEach(function(cat){ %>
+            <option value="<%= cat %>" <%= mc.materiel.categorie === cat ? 'selected' : '' %>><%= cat %></option>
+          <% }) %>
+          <% if (mc.materiel.categorie && !cats.includes(mc.materiel.categorie)) { %>
+            <option value="<%= mc.materiel.categorie %>" selected><%= mc.materiel.categorie %></option>
+          <% } %>
         </select>
+        <% if (user && user.role === 'admin') { %>
+          <button type="button" id="addCategoryBtn" class="btn btn-secondary btn-sm mt-2">Ajouter Catégorie</button>
+        <% } %>
       </div>
       <div class="mb-3">
         <label for="chantierId" class="form-label">Chantier</label>
@@ -142,6 +145,30 @@
             fournisseurSelect.value = val;
           });
         }
+      }
+      const addBtn = document.getElementById('addCategoryBtn');
+      if (addBtn) {
+        addBtn.addEventListener('click', async () => {
+          const nom = prompt('Nouvelle catégorie :');
+          if (!nom) return;
+          const body = new URLSearchParams();
+          body.append('nom', nom);
+          const resp = await fetch('/chantier/ajouter-categorie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+          });
+          if (resp.ok) {
+            const select = document.getElementById('categorieSelect');
+            const option = document.createElement('option');
+            option.value = nom;
+            option.textContent = nom;
+            select.appendChild(option);
+            select.value = nom;
+          } else {
+            alert("Erreur lors de l'ajout de la catégorie");
+          }
+        });
       }
     });
   </script>

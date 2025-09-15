@@ -13,30 +13,19 @@
 
       <div class="mb-3">
   <label for="categorieSelect" class="form-label">Catégorie</label>
+  <% const cats = categories || []; %>
   <select class="form-select" name="categorie" id="categorieSelect" required>
     <option value="">-- Choisir une catégorie --</option>
-    <%
-      const currentCat = (mc.materiel.categorie || '').toLowerCase();
-    %>
-    <option value="agencement" <%= currentCat === 'agencement' ? 'selected' : '' %>>AGENCEMENT</option>
-    <option value="cvc" <%= currentCat === 'cvc' ? 'selected' : '' %>>CVC</option>
-    <option value="conso" <%= currentCat === 'conso' ? 'selected' : '' %>>Conso</option>
-    <option value="menuiserie" <%= currentCat === 'menuiserie' ? 'selected' : '' %>>MENUISERIE</option>
-    <option value="menuiserie ext" <%= currentCat === 'menuiserie ext' ? 'selected' : '' %>>MENUISERIE EXT</option>
-    <option value="mobilier" <%= currentCat === 'mobilier' ? 'selected' : '' %>>MOBILIER</option>
-    <option value="peinture" <%= currentCat === 'peinture' ? 'selected' : '' %>>PEINTURE</option>
-    <option value="revetement mural / revetement sol" <%= currentCat === 'revetement mural / revetement sol' ? 'selected' : '' %>>REVÊTEMENT MURAL / REVÊTEMENT SOL</option>
-    <option value="platrerie" <%= currentCat === 'platrerie' ? 'selected' : '' %>>PLÂTRERIE</option>
-    <option value="sol" <%= currentCat === 'sol' ? 'selected' : '' %>>SOL</option>
-    <option value="st" <%= currentCat === 'st' ? 'selected' : '' %>>ST</option>
-    <option value="stockage dechets" <%= currentCat === 'stockage dechets' ? 'selected' : '' %>>Stockage Déchets</option>
-    <option value="plomberie" <%= currentCat === 'plomberie' ? 'selected' : '' %>>plomberie</option>
-    <option value="Electricité"
-      <%= ['electricite', 'électricité', 'electricité'].includes(currentCat) ? 'selected' : '' %>>
-        ÉLECTRICITÉ
-    </option>
-    <option value="climatisation" <%= currentCat === 'climatisation' ? 'selected' : '' %>>CLIMATISATION</option>
+    <% cats.forEach(function(cat){ %>
+      <option value="<%= cat %>" <%= mc.materiel.categorie === cat ? 'selected' : '' %>><%= cat %></option>
+    <% }) %>
+    <% if (mc.materiel.categorie && !cats.includes(mc.materiel.categorie)) { %>
+      <option value="<%= mc.materiel.categorie %>" selected><%= mc.materiel.categorie %></option>
+    <% } %>
   </select>
+  <% if (user && user.role === 'admin') { %>
+    <button type="button" id="addCategoryBtn" class="btn btn-secondary btn-sm mt-2">Ajouter Catégorie</button>
+  <% } %>
 </div>
 
       <div class="mb-3">
@@ -211,6 +200,30 @@
         }
       }
 
+      const addBtn = document.getElementById('addCategoryBtn');
+      if (addBtn) {
+        addBtn.addEventListener('click', async () => {
+          const nom = prompt('Nouvelle catégorie :');
+          if (!nom) return;
+          const body = new URLSearchParams();
+          body.append('nom', nom);
+          const resp = await fetch('/chantier/ajouter-categorie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+          });
+          if (resp.ok) {
+            const select = document.getElementById('categorieSelect');
+            const option = document.createElement('option');
+            option.value = nom;
+            option.textContent = nom;
+            select.appendChild(option);
+            select.value = nom;
+          } else {
+            alert("Erreur lors de l'ajout de la catégorie");
+          }
+        });
+      }
       initDesignationDropdown("categorieSelect", "designationSelect", "nomMateriel");
     });
   </script>
