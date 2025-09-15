@@ -12,22 +12,12 @@ const Historique = require('../models/Historique');
 const User = require('../models/User');
 const Chantier = require('../models/Chantier');
 const MaterielChantier = require('../models/MaterielChantier');
-const fs = require('fs');
-const path = require('path');
 const { ensureAuthenticated, checkAdmin } = require('./materiel');
+const Categorie = require('../models/Categorie');
 
-const categoriesFile = path.join(__dirname, '../config/categories.json');
-
-function loadCategories() {
-  try {
-    return JSON.parse(fs.readFileSync(categoriesFile, 'utf-8'));
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveCategories(cats) {
-  fs.writeFileSync(categoriesFile, JSON.stringify(cats, null, 2));
+async function loadCategories() {
+  const cats = await Categorie.findAll({ order: [['nom', 'ASC']] });
+  return cats.map(c => c.nom);
 }
 
 // Configuration Multer pour les uploads de photos sur Cloudinary
@@ -105,12 +95,12 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
-    const categories = loadCategories();
+    const categories = await loadCategories();
     res.render('chantier/index', {
-  materielChantiers,
-  chantiers,
-  emplacements,
-  categories,
+      materielChantiers,
+      chantiers,
+      emplacements,
+      categories,
   chantierId,
   nomMateriel,
   categorie,
@@ -133,7 +123,7 @@ router.get('/ajouterMateriel', ensureAuthenticated, checkAdmin, async (req, res)
   try {
     const chantiers = await Chantier.findAll();
     const emplacementsBruts = await Emplacement.findAll({ include: [{ model: Emplacement, as: 'parent' }] });
-    const categories = loadCategories();
+    const categories = await loadCategories();
 
 function construireCheminComplet(emplacement) {
   let chemin = emplacement.nom;
@@ -159,16 +149,12 @@ const emplacements = emplacementsBruts.map(e => ({
   }
 });
 
-router.post('/ajouter-categorie', ensureAuthenticated, checkAdmin, (req, res) => {
+router.post('/ajouter-categorie', ensureAuthenticated, checkAdmin, async (req, res) => {
   const { nom } = req.body;
   if (!nom || !nom.trim()) {
     return res.status(400).json({ success: false });
   }
-  const categories = loadCategories();
-  if (!categories.includes(nom)) {
-    categories.push(nom);
-    saveCategories(categories);
-  }
+  await Categorie.findOrCreate({ where: { nom } });
   res.json({ success: true, nom });
 });
 
@@ -176,6 +162,8 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
   try {
     const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau, remarque } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
+
+    await Categorie.findOrCreate({ where: { nom: categorie } });
 
     // 1) Créer le matériel avec quantite=0 dans la table Materiel
    const nouveauMateriel = await Materiel.create({
@@ -410,7 +398,7 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
     });
 
     const emplacements = await Emplacement.findAll();
-    const categories = loadCategories();
+    const categories = await loadCategories();
 
     if (!mc) return res.send("Enregistrement introuvable.");
 
@@ -465,6 +453,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
 
     const newNom = nomMateriel.trim();
     const newCategorie = categorie;
+    await Categorie.findOrCreate({ where: { nom: newCategorie } });
     const newEmplacement = emplacementId ? parseInt(emplacementId) : null;
     const newRack = rack;
     const newCompartiment = compartiment;
@@ -578,7 +567,7 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
   });
   const chantiers = await Chantier.findAll();
   const emplacements = await Emplacement.findAll();
-  const categories = loadCategories();
+  const categories = await loadCategories();
   res.render('chantier/dupliquerMaterielChantier', { mc, chantiers, emplacements, categories });
 });
 
@@ -587,6 +576,8 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
   try {
       const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId, remarque } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
+
+    await Categorie.findOrCreate({ where: { nom: categorie } });
 
     // Créer le matériel
     const nouveauMateriel = await Materiel.create({
