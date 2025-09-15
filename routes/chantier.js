@@ -698,20 +698,40 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
     const startX = doc.x;
     let y = doc.y;
 
-    const drawCell = (text, x, y, width) => {
-      doc.rect(x, y, width, 30).stroke();
-      doc.fontSize(8).text(text || '-', x + 2, y + 4, { width: width - 4 });
+    // Calcule la hauteur nécessaire pour une ligne
+    const computeRowHeight = (row) => {
+      const heights = row.map((text, i) =>
+        doc.heightOfString(String(text || '-'), { width: colWidths[i] - 4, align: 'left' })
+      );
+      return Math.max(...heights) + 8; // padding
+    };
+
+    // Dessine une ligne du tableau
+    const drawRow = (row, y, { header = false, index = 0 } = {}) => {
+      const rowHeight = Math.max(computeRowHeight(row), 20);
+      let x = startX;
+      row.forEach((text, i) => {
+        const bgColor = header ? '#eeeeee' : index % 2 === 1 ? '#f9f9f9' : null;
+        if (bgColor) {
+          doc.rect(x, y, colWidths[i], rowHeight).fill(bgColor);
+        }
+        doc.rect(x, y, colWidths[i], rowHeight).stroke();
+        doc.font(header ? 'Helvetica-Bold' : 'Helvetica');
+        doc.fontSize(8).fillColor('black').text(String(text || '-'), x + 2, y + 4, {
+          width: colWidths[i] - 4,
+        });
+        x += colWidths[i];
+      });
+      return rowHeight;
     };
 
     // En-têtes
-    let x = startX;
-    headers.forEach((h, i) => {
-      drawCell(h, x, y, colWidths[i]);
-      x += colWidths[i];
-    });
+    let rowHeight = drawRow(headers, y, { header: true });
+    y += rowHeight;
 
-    y += 30;
+    const bottom = doc.page.height - doc.page.margins.bottom;
 
+    let rowIndex = 0;
     for (const m of materiels) {
       const mat = m.materiel;
       const chantier = m.chantier;
@@ -737,18 +757,15 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         m.quantite != null ? String(m.quantite) : '0'
       ];
 
-      x = startX;
-      values.forEach((val, i) => {
-        drawCell(val, x, y, colWidths[i]);
-        x += colWidths[i];
-      });
-
-      y += 30;
-
-      if (y > 750) {
+      rowHeight = Math.max(computeRowHeight(values), 20);
+      if (y + rowHeight > bottom) {
         doc.addPage();
-        y = 40;
+        y = doc.page.margins.top;
       }
+
+      drawRow(values, y, { index: rowIndex });
+      y += rowHeight;
+      rowIndex++;
     }
 
     doc.end();
