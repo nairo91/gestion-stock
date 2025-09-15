@@ -273,10 +273,15 @@ select#emplacementId.form-control {
 
 
 
-      <div class="mb-3">
-        <label for="photos" class="form-label">Photos</label>
-        <input type="file" name="photos" id="photos" class="form-control" multiple>
-      </div>
+        <div class="mb-3">
+          <label for="remarque" class="form-label">Remarque</label>
+          <textarea name="remarque" id="remarque" class="form-control"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="photos" class="form-label">Photos</label>
+          <input type="file" name="photos" id="photos" class="form-control" multiple>
+        </div>
       <button type="submit" class="btn btn-success">Ajouter au chantier</button>
     </form>
     <p><a href="/chantier" class="btn btn-secondary mt-3">Retour au Dashboard Chantier</a></p>

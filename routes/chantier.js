@@ -174,7 +174,7 @@ router.post('/ajouter-categorie', ensureAuthenticated, checkAdmin, (req, res) =>
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau } = req.body;
+    const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau, remarque } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
 
     // 1) Créer le matériel avec quantite=0 dans la table Materiel
@@ -210,7 +210,8 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     await MaterielChantier.create({
       chantierId: parseInt(chantierId, 10),
       materielId: nouveauMateriel.id,
-      quantite: qte
+      quantite: qte,
+      remarque: remarque || null
     });
 
     // 4) AJOUT : Récupérer le chantier pour inclure son nom
@@ -299,11 +300,12 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
             mc.quantite += deliveredQuantity;
             await mc.save();
           } else {
-            await MaterielChantier.create({
-              chantierId: parseInt(chantierId, 10),
-              materielId: item.materielId,
-              quantite: deliveredQuantity
-            });
+              await MaterielChantier.create({
+                chantierId: parseInt(chantierId, 10),
+                materielId: item.materielId,
+                quantite: deliveredQuantity,
+                remarque: item.remarque || null
+              });
           }
 
           // Décrémenter le stock du dépôt
@@ -422,10 +424,10 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
 
 router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
-    const {
-      quantite, nomMateriel, categorie, fournisseur, emplacementId,
-      rack, compartiment, niveau, reference, description, prix
-    } = req.body;
+      const {
+        quantite, nomMateriel, categorie, fournisseur, emplacementId,
+        rack, compartiment, niveau, reference, description, prix, remarque
+      } = req.body;
 
     const mc = await MaterielChantier.findByPk(req.params.id, {
       include: [
@@ -458,7 +460,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldNiveau = mc.materiel.niveau;
     const oldReference = mc.materiel.reference;
     const oldDescription = mc.materiel.description;
-    const oldPrix = mc.materiel.prix;
+      const oldPrix = mc.materiel.prix;
+      const oldRemarque = mc.remarque;
 
     const newNom = nomMateriel.trim();
     const newCategorie = categorie;
@@ -469,7 +472,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newNiveau = niveau ? parseInt(niveau) : null;
     const newReference = reference;
     const newDescription = description;
-    const newPrix = prix ? parseFloat(prix) : null;
+      const newPrix = prix ? parseFloat(prix) : null;
+      const newRemarque = remarque && remarque.trim() ? remarque.trim() : null;
 
     if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
     if (oldNom !== newNom) changementsDetail.push(`Nom: ${oldNom} ➔ ${newNom}`);
@@ -481,7 +485,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldNiveau !== newNiveau) changementsDetail.push(`Niveau: ${oldNiveau || '-'} ➔ ${newNiveau || '-'}`);
     if (oldReference !== newReference) changementsDetail.push(`Référence: ${oldReference || '-'} ➔ ${newReference || '-'}`);
     if (oldDescription !== newDescription) changementsDetail.push(`Description: ${oldDescription || '-'} ➔ ${newDescription || '-'}`);
-    if (oldPrix !== newPrix) changementsDetail.push(`Prix: ${oldPrix || '-'} ➔ ${newPrix || '-'}`);
+      if (oldPrix !== newPrix) changementsDetail.push(`Prix: ${oldPrix || '-'} ➔ ${newPrix || '-'}`);
+      if (oldRemarque !== newRemarque) changementsDetail.push(`Remarque: ${oldRemarque || '-'} ➔ ${newRemarque || '-'}`);
 
     // Mise à jour
     mc.quantite = newQte;
@@ -494,7 +499,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     mc.materiel.niveau = newNiveau;
     mc.materiel.reference = newReference;
     mc.materiel.description = newDescription;
-    mc.materiel.prix = newPrix;
+      mc.materiel.prix = newPrix;
+      mc.remarque = newRemarque;
 
     await mc.materiel.save();
     await mc.save();
@@ -579,7 +585,7 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
 
 router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
-    const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId } = req.body;
+      const { nom, reference, quantite, description, prix, categorie, fournisseur, chantierId, emplacementId, remarque } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
 
     // Créer le matériel
@@ -604,11 +610,12 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
     }
 
     // Ajouter dans le chantier
-    await MaterielChantier.create({
-      chantierId: parseInt(chantierId),
-      materielId: nouveauMateriel.id,
-      quantite: parseInt(quantite)
-    });
+      await MaterielChantier.create({
+        chantierId: parseInt(chantierId),
+        materielId: nouveauMateriel.id,
+        quantite: parseInt(quantite),
+        remarque: remarque || null
+      });
 
     res.redirect('/chantier');
   } catch (err) {

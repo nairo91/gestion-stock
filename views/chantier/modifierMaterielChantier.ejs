@@ -113,15 +113,20 @@
         <input type="text" name="compartiment" id="compartiment" class="form-control" value="<%= mc.materiel.compartiment || '' %>">
       </div>
 
-      <div class="mb-3">
-        <label for="niveau" class="form-label">Niveau</label>
-        <input type="number" name="niveau" id="niveau" class="form-control" value="<%= mc.materiel.niveau || '' %>">
-      </div>
+  <div class="mb-3">
+    <label for="niveau" class="form-label">Niveau</label>
+    <input type="number" name="niveau" id="niveau" class="form-control" value="<%= mc.materiel.niveau || '' %>">
+  </div>
 
-      <div class="mb-3">
-        <label for="photo" class="form-label">Nouvelle photo (remplace l’ancienne)</label>
-        <input type="file" name="photo" id="photo" accept="image/*" class="form-control">
-      </div>
+  <div class="mb-3">
+    <label for="remarque" class="form-label">Remarque</label>
+    <textarea name="remarque" id="remarque" class="form-control"><%= mc.remarque || '' %></textarea>
+  </div>
+
+  <div class="mb-3">
+    <label for="photo" class="form-label">Nouvelle photo (remplace l’ancienne)</label>
+    <input type="file" name="photo" id="photo" accept="image/*" class="form-control">
+  </div>
 
       <div id="preview-container" class="mt-3">
         <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>

@@ -101,7 +101,8 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
                 await MaterielChantier.create({
                   chantierId: parseInt(chantierId, 10),
                   materielId: materiel.id,
-                  quantite: deliveredQuantity
+                  quantite: deliveredQuantity,
+                  remarque: null
                 });
               }
 

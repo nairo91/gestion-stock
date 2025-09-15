@@ -23,6 +23,11 @@ const MaterielChantier = sequelize.define(
         min: 0,
       },
     },
+
+    remarque: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   },
   {
     tableName: 'materiel_chantiers',
