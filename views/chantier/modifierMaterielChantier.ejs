@@ -47,7 +47,7 @@
         <label for="quantite" class="form-label">Nouvelle quantité</label>
         <div class="d-flex align-items-center gap-2">
           <button type="button" class="btn btn-outline-secondary" onclick="changerQuantite(-1)">-</button>
-          <input type="number" name="quantite" id="quantite" class="form-control" value="<%= mc.quantite %>" min="0" required>
+          <input type="number" name="quantite" id="quantite" class="form-control" value="<%= mc.quantite %>" min="0">
           <button type="button" class="btn btn-outline-secondary" onclick="changerQuantite(1)">+</button>
         </div>
       </div>

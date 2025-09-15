@@ -395,13 +395,6 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       rack, compartiment, niveau, reference, description, prix
     } = req.body;
 
-    if (
-      !quantite || isNaN(parseInt(quantite, 10)) || parseInt(quantite, 10) < 0 ||
-      !nomMateriel || !nomMateriel.trim() || !categorie
-    ) {
-      return res.status(400).send("Les champs quantité, désignation et catégorie sont obligatoires.");
-    }
-
     const mc = await MaterielChantier.findByPk(req.params.id, {
       include: [
         { model: Materiel, as: 'materiel' },
@@ -409,6 +402,17 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       ]
     });
     if (!mc) return res.send("Enregistrement non trouvé.");
+
+    const newQte = (quantite === undefined || quantite === '')
+      ? mc.quantite
+      : parseInt(quantite, 10);
+
+    if (
+      isNaN(newQte) || newQte < 0 ||
+      !nomMateriel || !nomMateriel.trim() || !categorie
+    ) {
+      return res.status(400).send("Les champs désignation et catégorie sont obligatoires.");
+    }
 
     const changementsDetail = [];
 
@@ -424,7 +428,6 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldDescription = mc.materiel.description;
     const oldPrix = mc.materiel.prix;
 
-    const newQte = parseInt(quantite, 10);
     const newNom = nomMateriel.trim();
     const newCategorie = categorie;
     const newEmplacement = emplacementId ? parseInt(emplacementId) : null;
