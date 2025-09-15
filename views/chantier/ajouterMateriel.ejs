@@ -169,22 +169,13 @@ select#emplacementId.form-control {
         <label for="categorieSelect" class="form-label">Catégorie</label>
         <select name="categorie" id="categorieSelect" class="form-control" required>
             <option value="" disabled selected>-- Choisir Catégorie --</option>
-            <option value="agencement">AGENCEMENT</option>
-            <option value="cvc">CVC</option>
-            <option value="conso">Conso</option>
-            <option value="menuiserie">MENUISERIE</option>
-            <option value="menuiserie ext">MENUISERIE EXT</option>
-            <option value="mobilier">MOBILIER</option>
-            <option value="peinture">PEINTURE</option>
-            <option value="revetement mural / revetement sol">REVÊTEMENT MURAL / REVÊTEMENT SOL</option>
-            <option value="platrerie">PLÂTRERIE</option>
-            <option value="sol">SOL</option>
-            <option value="st">ST</option>
-            <option value="stockage dechets">Stockage Déchets</option>
-            <option value="plomberie">plomberie</option>
-            <option value="Electricité">ÉLECTRICITÉ</option>
-            <option value="climatisation">CLIMATISATION</option>
+            <% (categories || []).forEach(function(cat){ %>
+              <option value="<%= cat %>"><%= cat %></option>
+            <% }) %>
         </select>
+        <% if (user && user.role === 'admin') { %>
+          <button type="button" id="addCategoryBtn" class="btn btn-secondary btn-sm mt-2">Ajouter Catégorie</button>
+        <% } %>
       </div>
       <div class="mb-3">
         <label for="designationSelect" class="form-label">Désignation</label>
@@ -313,6 +304,30 @@ select#emplacementId.form-control {
             fournisseurSelect.value = val;
           });
         }
+      }
+      const addBtn = document.getElementById('addCategoryBtn');
+      if (addBtn) {
+        addBtn.addEventListener('click', async () => {
+          const nom = prompt('Nouvelle catégorie :');
+          if (!nom) return;
+          const body = new URLSearchParams();
+          body.append('nom', nom);
+          const resp = await fetch('/chantier/ajouter-categorie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+          });
+          if (resp.ok) {
+            const select = document.getElementById('categorieSelect');
+            const option = document.createElement('option');
+            option.value = nom;
+            option.textContent = nom;
+            select.appendChild(option);
+            select.value = nom;
+          } else {
+            alert("Erreur lors de l'ajout de la catégorie");
+          }
+        });
       }
       initDesignationDropdown('categorieSelect', 'designationSelect', 'designationInput');
       });

@@ -12,8 +12,23 @@ const Historique = require('../models/Historique');
 const User = require('../models/User');
 const Chantier = require('../models/Chantier');
 const MaterielChantier = require('../models/MaterielChantier');
-
+const fs = require('fs');
+const path = require('path');
 const { ensureAuthenticated, checkAdmin } = require('./materiel');
+
+const categoriesFile = path.join(__dirname, '../config/categories.json');
+
+function loadCategories() {
+  try {
+    return JSON.parse(fs.readFileSync(categoriesFile, 'utf-8'));
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCategories(cats) {
+  fs.writeFileSync(categoriesFile, JSON.stringify(cats, null, 2));
+}
 
 // Configuration Multer pour les uploads de photos sur Cloudinary
 const upload = multer({ storage });
@@ -116,6 +131,7 @@ router.get('/ajouterMateriel', ensureAuthenticated, checkAdmin, async (req, res)
   try {
     const chantiers = await Chantier.findAll();
     const emplacementsBruts = await Emplacement.findAll({ include: [{ model: Emplacement, as: 'parent' }] });
+    const categories = loadCategories();
 
 function construireCheminComplet(emplacement) {
   let chemin = emplacement.nom;
@@ -134,11 +150,24 @@ const emplacements = emplacementsBruts.map(e => ({
 }));
 
     // On passe chantiers et emplacements en une seule réponse
-    res.render('chantier/ajouterMateriel', { chantiers, emplacements });
+    res.render('chantier/ajouterMateriel', { chantiers, emplacements, categories });
   } catch (err) {
     console.error(err);
     res.send("Erreur lors du chargement du formulaire d'ajout de matériel dans un chantier.");
   }
+});
+
+router.post('/ajouter-categorie', ensureAuthenticated, checkAdmin, (req, res) => {
+  const { nom } = req.body;
+  if (!nom || !nom.trim()) {
+    return res.status(400).json({ success: false });
+  }
+  const categories = loadCategories();
+  if (!categories.includes(nom)) {
+    categories.push(nom);
+    saveCategories(categories);
+  }
+  res.json({ success: true, nom });
 });
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
@@ -377,10 +406,11 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
     });
 
     const emplacements = await Emplacement.findAll();
+    const categories = loadCategories();
 
     if (!mc) return res.send("Enregistrement introuvable.");
 
-    res.render('chantier/modifierMaterielChantier', { mc, emplacements });
+    res.render('chantier/modifierMaterielChantier', { mc, emplacements, categories });
   } catch (err) {
     console.error(err);
     res.send("Erreur lors du chargement de la page    de modification.");
@@ -540,7 +570,8 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
   });
   const chantiers = await Chantier.findAll();
   const emplacements = await Emplacement.findAll();
-  res.render('chantier/dupliquerMaterielChantier', { mc, chantiers, emplacements });
+  const categories = loadCategories();
+  res.render('chantier/dupliquerMaterielChantier', { mc, chantiers, emplacements, categories });
 });
 
 
