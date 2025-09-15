@@ -12,6 +12,7 @@ const MaterielChantier = require('./MaterielChantier');
 const MaterielDelivery = require('./MaterielDelivery');
 const Historique       = require('./Historique');
 const Emplacement      = require('./Emplacement');
+const Categorie        = require('./Categorie');
 
 // 📦 Regroupement de tous les modèles
 const models = {
@@ -25,6 +26,7 @@ const models = {
   MaterielDelivery,
   Historique,
   Emplacement,
+  Categorie,
 };
 
 // Associations manuelles
@@ -72,4 +74,5 @@ module.exports = {
   MaterielDelivery,
   Historique,
   Emplacement,
+  Categorie,
 };
