@@ -68,6 +68,10 @@
         <textarea name="description" id="description" class="form-control"><%= mc.materiel.description || '' %></textarea>
       </div>
       <div class="mb-3">
+        <label for="prix" class="form-label">Prix</label>
+        <input type="number" step="0.01" name="prix" id="prix" class="form-control" value="<%= mc.materiel.prix || '' %>">
+      </div>
+      <div class="mb-3">
         <label for="emplacementId" class="form-label">Nouvel emplacement</label>
         <select name="emplacementId" id="emplacementId" class="form-control">
           <option value="">-- Aucun --</option>
