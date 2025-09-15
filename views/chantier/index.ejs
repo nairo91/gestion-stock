@@ -182,6 +182,8 @@
           <th>Compartiment</th>
           <th>Niveau</th>
           <th>Qte</th>
+          <th>Qte prévue</th>
+          <th>Date prévue</th>
 
         </tr>
       </thead>
@@ -292,6 +294,8 @@
 
 
               <td><%= mc.quantite %></td>
+              <td><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
+              <td><%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %></td>
               <td>
 
                 <% if (user && user.role === 'admin') { %>

@@ -21,10 +21,21 @@
         <label for="quantite" class="form-label">Quantité</label>
         <input type="number" name="quantite" id="quantite" class="form-control" value="<%= mc.quantite %>" required>
       </div>
-    <div class="mb-3">
-      <label for="description" class="form-label">Description</label>
-      <textarea name="description" id="description" class="form-control"><%= mc.materiel.description || '' %></textarea>
-    </div>
+      <div class="mb-3">
+        <label for="quantitePrevue" class="form-label">Quantité prévue</label>
+        <input type="number" name="quantitePrevue" id="quantitePrevue" class="form-control" value="<%= mc.quantitePrevue || '' %>">
+      </div>
+      <div class="mb-3">
+        <label for="dateLivraisonPrevue" class="form-label">Date de livraison prévue</label>
+        <div class="input-group">
+          <span class="input-group-text">📅</span>
+          <input type="date" name="dateLivraisonPrevue" id="dateLivraisonPrevue" class="form-control" value="<%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '' %>">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea name="description" id="description" class="form-control"><%= mc.materiel.description || '' %></textarea>
+      </div>
     <div class="mb-3">
       <label for="remarque" class="form-label">Remarque</label>
       <textarea name="remarque" id="remarque" class="form-control"></textarea>
