@@ -105,10 +105,12 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
+    const categories = loadCategories();
     res.render('chantier/index', {
   materielChantiers,
   chantiers,
   emplacements,
+  categories,
   chantierId,
   nomMateriel,
   categorie,

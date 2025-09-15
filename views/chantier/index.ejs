@@ -131,20 +131,9 @@
   <label for="categorieSelect" class="form-label">Catégorie</label>
   <select class="form-select" name="categorie" id="categorieSelect">
     <option value="">-- Toutes les catégories --</option>
-    <option value="Plomberie" <%= categorie === 'Plomberie' ? 'selected' : '' %>>Plomberie</option>
-    <option value="Electricité" <%= categorie === 'Electricité' ? 'selected' : '' %>>Electricité</option>
-    <option value="Climatisation" <%= categorie === 'Climatisation' ? 'selected' : '' %>>Climatisation</option>
-    <option value="Chauffage" <%= categorie === 'Chauffage' ? 'selected' : '' %>>Chauffage</option>
-    <option value="Revêtement mural" <%= categorie === 'Revêtement mural' ? 'selected' : '' %>>Revêtement mural</option>
-    <option value="Revêtement mural / Revêtement Sol" <%= categorie === 'Revêtement mural / Revêtement Sol' ? 'selected' : '' %>>Revêtement mural / Revêtement Sol</option>
-    <option value="Maçonnerie" <%= categorie === 'Maçonnerie' ? 'selected' : '' %>>Maçonnerie</option>
-    <option value="Menuiserie" <%= categorie === 'Menuiserie' ? 'selected' : '' %>>Menuiserie</option>
-      <option value="Mobilier" <%= categorie === 'Mobilier' ? 'selected' : '' %>>Mobilier</option>
-    <option value="Peinture" <%= categorie === 'Peinture' ? 'selected' : '' %>>Peinture</option>
-    <option value="Agencement" <%= categorie === 'Agencement' ? 'selected' : '' %>>Agencement</option>
-    <option value="Fixation/Visserie" <%= categorie === 'Fixation/Visserie' ? 'selected' : '' %>>Fixation/Visserie</option>
- 
-    <option value="Autre" <%= categorie === 'Autre' ? 'selected' : '' %>>Autre</option>
+    <% (categories || []).forEach(function(cat){ %>
+      <option value="<%= cat %>" <%= categorie === cat ? 'selected' : '' %>><%= cat %></option>
+    <% }); %>
   </select>
 </div>
 
