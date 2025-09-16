@@ -24,7 +24,10 @@
     <% } %>
   </select>
   <% if (user && user.role === 'admin') { %>
-    <button type="button" id="addCategoryBtn" class="btn btn-secondary btn-sm mt-2">Ajouter Catégorie</button>
+    <div class="d-flex flex-wrap gap-2 mt-2">
+      <button type="button" id="addCategoryBtn" class="btn btn-secondary btn-sm">Ajouter Catégorie</button>
+      <button type="button" id="deleteCategoryBtn" class="btn btn-danger btn-sm">Supprimer Catégorie</button>
+    </div>
   <% } %>
 </div>
 
@@ -237,6 +240,41 @@
             select.value = nom;
           } else {
             alert("Erreur lors de l'ajout de la catégorie");
+          }
+        });
+      }
+      const deleteBtn = document.getElementById('deleteCategoryBtn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+          const selectCat = document.getElementById('categorieSelect');
+          if (!selectCat) return;
+          const valeur = selectCat.value;
+          if (!valeur) {
+            alert('Veuillez sélectionner une catégorie à supprimer.');
+            return;
+          }
+          if (!confirm(`Supprimer la catégorie "${valeur}" ? Elle sera retirée de tous les matériels.`)) {
+            return;
+          }
+          const body = new URLSearchParams();
+          body.append('nom', valeur);
+          const resp = await fetch('/chantier/supprimer-categorie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+          });
+          if (resp.ok) {
+            Array.from(selectCat.options).forEach(opt => {
+              if (opt.value === valeur) opt.remove();
+            });
+            selectCat.value = '';
+            if (selectCat.value) {
+              selectCat.selectedIndex = -1;
+            }
+            selectCat.dispatchEvent(new Event('change'));
+          } else {
+            const data = await resp.json().catch(() => null);
+            alert(data?.message || "Erreur lors de la suppression de la catégorie");
           }
         });
       }
