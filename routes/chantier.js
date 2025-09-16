@@ -17,21 +17,21 @@ const Categorie = require('../models/Categorie');
 const Designation = require('../models/Designation');
 const { sequelize } = require('../config/database');
 
-async function loadCategories() {
-  const cats = await Categorie.findAll({ order: [['nom', 'ASC']] });
-  return cats.map(c => c.nom);
-}
+async function fetchMaterielChantiersWithFilters(query, { includePhotos = true } = {}) {
+  const {
+    chantierId,
+    nomMateriel,
+    categorie,
+    emplacement,
+    description,
+    triNom,
+    triAjout,
+    triModification,
+    recherche
+  } = query;
 
-// Configuration Multer pour les uploads de photos sur Cloudinary
-const upload = multer({ storage });
-
-/* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
-router.get('/', ensureAuthenticated, async (req, res) => {
-  try {
-    const { chantierId, nomMateriel, categorie, emplacement, description, triNom, triAjout, triModification, recherche } = req.query;
-
-    const whereChantier = chantierId ? { chantierId: chantierId } : {};
-    const whereMateriel = {};
+  const whereChantier = chantierId ? { chantierId } : {};
+  const whereMateriel = {};
 
   if (nomMateriel) {
     whereMateriel.nom = { [Op.iLike]: `%${nomMateriel}%` };
@@ -43,65 +43,84 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     whereMateriel.description = { [Op.iLike]: `%${description}%` };
   }
 
+  const order = [];
+  if (triNom === 'asc' || triNom === 'desc') {
+    order.push([{ model: Materiel, as: 'materiel' }, 'nom', triNom.toUpperCase()]);
+  }
+  if (triAjout === 'asc' || triAjout === 'desc') {
+    order.push(['createdAt', triAjout.toUpperCase()]);
+  }
+  if (triModification === 'asc' || triModification === 'desc') {
+    order.push([{ model: Materiel, as: 'materiel' }, 'updatedAt', triModification.toUpperCase()]);
+  }
 
-    const order = [];
-    if (triNom === 'asc' || triNom === 'desc') {
-      order.push([{ model: Materiel, as: 'materiel' }, 'nom', triNom.toUpperCase()]);
-    }
-    if (triAjout === 'asc' || triAjout === 'desc') {
-      order.push(['createdAt', triAjout.toUpperCase()]);
-    }
-    if (triModification === 'asc' || triModification === 'desc') {
-      // On trie sur la date de mise à jour du matériel associé afin
-      // de refléter les dernières modifications effectuées
-      order.push([{ model: Materiel, as: 'materiel' }, 'updatedAt', triModification.toUpperCase()]);
-    }
+  const emplacementInclude = {
+    model: Emplacement,
+    as: 'emplacement',
+    where: emplacement ? { nom: { [Op.iLike]: `%${emplacement}%` } } : undefined,
+    include: [
+      {
+        model: Emplacement,
+        as: 'parent',
+        include: [{ model: Emplacement, as: 'parent' }]
+      }
+    ]
+  };
 
-    let materielChantiers = await MaterielChantier.findAll({
-  where: whereChantier,
-  include: [
-    { model: Chantier, as: 'chantier' },
-    {
-      model: Materiel,
-      as: 'materiel',
-      where: whereMateriel,
-      include: [
-        { model: Photo, as: 'photos' },
-       {
-  model: Emplacement,
-  as: 'emplacement',
-    where: emplacement
-      ? { nom: { [Op.iLike]: `%${emplacement}%` } }
-      : undefined,
-  include: [
-    {
-      model: Emplacement,
-      as: 'parent',
-      include: [
-        { model: Emplacement, as: 'parent' } // 2 niveaux de profondeur
-      ]
-    }
-  ]
+  const materielInclude = {
+    model: Materiel,
+    as: 'materiel',
+    where: whereMateriel,
+    include: [
+      ...(includePhotos ? [{ model: Photo, as: 'photos' }] : []),
+      emplacementInclude
+    ]
+  };
+
+  let materielChantiers = await MaterielChantier.findAll({
+    where: whereChantier,
+    include: [
+      { model: Chantier, as: 'chantier' },
+      materielInclude
+    ],
+    order: order.length > 0 ? order : undefined
+  });
+
+  if (recherche) {
+    const terme = recherche.toLowerCase();
+    materielChantiers = materielChantiers.filter(mc => {
+      const contenu = JSON.stringify(mc.get({ plain: true })).toLowerCase();
+      return contenu.includes(terme);
+    });
+  }
+
+  return materielChantiers;
 }
 
-      ]
-    }
-  ],
+async function loadCategories() {
+  const cats = await Categorie.findAll({ order: [['nom', 'ASC']] });
+  return cats.map(c => c.nom);
+}
 
-  order: order.length > 0 ? order : undefined
+// Configuration Multer pour les uploads de photos sur Cloudinary
+const upload = multer({ storage });
 
+/* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
+router.get('/', ensureAuthenticated, async (req, res) => {
+  try {
+    const {
+      chantierId,
+      nomMateriel,
+      categorie,
+      emplacement,
+      description,
+      triNom,
+      triAjout,
+      triModification,
+      recherche
+    } = req.query;
 
-
-});
-
-    if (recherche) {
-      const terme = recherche.toLowerCase();
-      materielChantiers = materielChantiers.filter(mc => {
-        const contenu = JSON.stringify(mc.get({ plain: true })).toLowerCase();
-        return contenu.includes(terme);
-      });
-    }
-
+    const materielChantiers = await fetchMaterielChantiersWithFilters(req.query, { includePhotos: true });
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
@@ -111,16 +130,16 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       chantiers,
       emplacements,
       categories,
-  chantierId,
-  nomMateriel,
-  categorie,
-  emplacement,
-  description,
-  triNom,
-  triAjout,
-  triModification,
-  recherche
-});
+      chantierId,
+      nomMateriel,
+      categorie,
+      emplacement,
+      description,
+      triNom,
+      triAjout,
+      triModification,
+      recherche
+    });
 
   } catch (err) {
     console.error(err);
@@ -809,8 +828,150 @@ router.get('/materielChantier/info/:id', ensureAuthenticated, async (req, res) =
   res.render('chantier/infoMaterielChantier', { mc, historique });
 });
 
-// 📦 Export PDF structuré et lisible
+// 📦 Exportations professionnelles
+const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
+
+function construireCheminEmplacement(emplacement) {
+  const chemin = [];
+  let courant = emplacement;
+  while (courant) {
+    chemin.unshift(courant.nom);
+    courant = courant.parent;
+  }
+  return chemin.join(' > ');
+}
+
+router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const materielChantiers = await fetchMaterielChantiersWithFilters(req.query, { includePhotos: false });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.created = new Date();
+    workbook.modified = new Date();
+    workbook.creator = 'Gestion Stock';
+    workbook.lastModifiedBy = req.user ? req.user.email || req.user.username || 'Utilisateur' : 'Utilisateur';
+
+    const worksheet = workbook.addWorksheet('Inventaire chantier', {
+      views: [{ state: 'frozen', ySplit: 1 }]
+    });
+
+    worksheet.columns = [
+      { header: 'Chantier', key: 'chantier', width: 30 },
+      { header: 'Matériel', key: 'materiel', width: 28 },
+      { header: 'Référence', key: 'reference', width: 18 },
+      { header: 'Catégorie', key: 'categorie', width: 18 },
+      { header: 'Description', key: 'description', width: 40 },
+      { header: 'Emplacement', key: 'emplacement', width: 30 },
+      { header: 'Rack', key: 'rack', width: 12 },
+      { header: 'Compartiment', key: 'compartiment', width: 18 },
+      { header: 'Niveau', key: 'niveau', width: 10 },
+      { header: 'Quantité', key: 'quantite', width: 12 },
+      { header: 'Quantité prévue', key: 'quantitePrevue', width: 18 },
+      { header: 'Date prévue', key: 'datePrevue', width: 16 }
+    ];
+
+    worksheet.getRow(1).height = 28;
+    worksheet.getRow(1).eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF1F4E78' }
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF10304A' } },
+        left: { style: 'thin', color: { argb: 'FF10304A' } },
+        bottom: { style: 'thin', color: { argb: 'FF10304A' } },
+        right: { style: 'thin', color: { argb: 'FF10304A' } }
+      };
+    });
+
+    const altFill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE7EFF7' }
+    };
+    const neutralFill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFFFFF' }
+    };
+
+    materielChantiers.forEach(mc => {
+      const mat = mc.materiel || {};
+      const chantier = mc.chantier;
+      const emplacement = mat.emplacement;
+
+      worksheet.addRow({
+        chantier: chantier ? `${chantier.nom}${chantier.localisation ? ' - ' + chantier.localisation : ''}` : 'N/A',
+        materiel: mat.nom || 'N/A',
+        reference: mat.reference || '-',
+        categorie: mat.categorie || '-',
+        description: mat.description || '-',
+        emplacement: emplacement ? construireCheminEmplacement(emplacement) : '-',
+        rack: mat.rack || '-',
+        compartiment: mat.compartiment || '-',
+        niveau: mat.niveau != null ? mat.niveau : '-',
+        quantite: mc.quantite != null ? Number(mc.quantite) : null,
+        quantitePrevue: mc.quantitePrevue != null ? Number(mc.quantitePrevue) : null,
+        datePrevue: mc.dateLivraisonPrevue ? new Date(mc.dateLivraisonPrevue) : null
+      });
+    });
+
+    worksheet.autoFilter = {
+      from: 'A1',
+      to: 'L1'
+    };
+
+    worksheet.columns.forEach(column => {
+      column.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+    });
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) {
+        return;
+      }
+
+      row.height = Math.max(row.height || 18, 22);
+      const fill = rowNumber % 2 === 0 ? altFill : neutralFill;
+
+      row.eachCell(cell => {
+        const columnKey = cell._column && cell._column.key;
+        cell.fill = fill;
+        cell.border = {
+          top: { style: 'hair', color: { argb: 'FFB4C6E7' } },
+          left: { style: 'hair', color: { argb: 'FFB4C6E7' } },
+          bottom: { style: 'hair', color: { argb: 'FFB4C6E7' } },
+          right: { style: 'hair', color: { argb: 'FFB4C6E7' } }
+        };
+        if (columnKey === 'quantite' || columnKey === 'quantitePrevue') {
+          cell.numFmt = '#,##0';
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        if (columnKey === 'datePrevue' && cell.value) {
+          cell.numFmt = 'yyyy-mm-dd';
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+      });
+    });
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', 'attachment; filename="stock_chantiers.xlsx"');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Erreur lors de la génération de l\'export Excel', error);
+    res.status(500).send("Erreur lors de l'export Excel du stock chantier.");
+  }
+});
+
+// 📄 Export PDF structuré et lisible
 
 router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
