@@ -13,6 +13,7 @@ const MaterielDelivery = require('./MaterielDelivery');
 const Historique       = require('./Historique');
 const Emplacement      = require('./Emplacement');
 const Categorie        = require('./Categorie');
+const Designation      = require('./Designation');
 
 // 📦 Regroupement de tous les modèles
 const models = {
@@ -27,6 +28,7 @@ const models = {
   Historique,
   Emplacement,
   Categorie,
+  Designation,
 };
 
 // Associations manuelles
@@ -56,9 +58,16 @@ User.hasMany(Historique,       { foreignKey: 'userId', as: 'historiques' });
 
 Chantier.hasMany(Emplacement,  { foreignKey: 'chantierId', as: 'emplacements' });
 
+Categorie.hasMany(Designation, {
+  foreignKey: 'categorieId',
+  as: 'designations',
+  onDelete: 'CASCADE',
+});
+
 // 🔁 Appel des .associate() avec tous les modèles déjà définis
 if (typeof Materiel.associate === 'function') Materiel.associate(models);
 if (typeof Emplacement.associate === 'function') Emplacement.associate(models);
+if (typeof Designation.associate === 'function') Designation.associate(models);
 
 /* Export global */
 module.exports = {
@@ -75,4 +84,5 @@ module.exports = {
   Historique,
   Emplacement,
   Categorie,
+  Designation,
 };

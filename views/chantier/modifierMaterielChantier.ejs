@@ -61,6 +61,13 @@
     <option value="">-- Sélectionner une désignation --</option>
   </select>
   <input type="text" class="form-control mt-2" id="nomMateriel" name="nomMateriel" value="<%= mc.materiel.nom %>" placeholder="Autre désignation">
+  <% if (user && user.role === 'admin') { %>
+    <div class="d-flex flex-wrap gap-2 mt-2">
+      <button type="button" id="addDesignationBtn" class="btn btn-secondary btn-sm">Ajouter une désignation à la catégorie</button>
+      <button type="button" id="deleteDesignationBtn" class="btn btn-danger btn-sm">Supprimer une désignation de la catégorie</button>
+    </div>
+    <div class="form-text d-none" id="designationFeedback"></div>
+  <% } %>
 </div>
       <div class="mb-3">
         <label for="reference" class="form-label">Référence</label>
@@ -259,6 +266,7 @@
             option.textContent = nom;
             categorieSelect.appendChild(option);
             categorieSelect.value = nom;
+            categorieSelect.dispatchEvent(new Event('change'));
           } else {
             alert("Erreur lors de l'ajout de la catégorie");
           }
@@ -345,7 +353,11 @@
           pendingCategoryValue = null;
         });
       }
-      initDesignationDropdown("categorieSelect", "designationSelect", "nomMateriel");
+      initDesignationDropdown("categorieSelect", "designationSelect", "nomMateriel", {
+        addButtonId: "addDesignationBtn",
+        deleteButtonId: "deleteDesignationBtn",
+        feedbackId: "designationFeedback"
+      });
     });
   </script>
   <script src="/js/designations.js" nonce="<%= nonce %>"></script>
