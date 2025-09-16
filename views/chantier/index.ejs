@@ -84,12 +84,32 @@
   <a href="/chantier/ajouter-chantier" class="btn btn-success">Créer un nouveau chantier</a>
   <a href="/chantier/historique" class="btn btn-warning">Voir l'historique chantier</a>
   <a href="/emplacements" class="btn btn-info">Gérer les emplacements</a>
- 
-  <a href="/chantier/export-pdf" class="btn btn-danger mb-3">📄 Exporter en PDF</a>
+
+  <%
+    const exportParams = [];
+    const pushParam = (key, value) => {
+      if (value !== undefined && value !== null && value !== '') {
+        exportParams.push(`${key}=${encodeURIComponent(value)}`);
+      }
+    };
+    pushParam('chantierId', chantierId);
+    pushParam('nomMateriel', nomMateriel);
+    pushParam('categorie', categorie);
+    pushParam('emplacement', emplacement);
+    pushParam('description', description);
+    pushParam('triNom', triNom);
+    pushParam('triAjout', triAjout);
+    pushParam('triModification', triModification);
+    pushParam('recherche', recherche);
+    const exportQuery = exportParams.length ? `?${exportParams.join('&')}` : '';
+  %>
+
+  <a href="/chantier/export-pdf<%= exportQuery %>" class="btn btn-danger mb-3">📄 Exporter en PDF</a>
+  <a href="/chantier/export-excel<%= exportQuery %>" class="btn btn-primary mb-3">📊 Exporter en Excel</a>
 
 
 <% } %>
-  
+
 
   <a href="/materiel" class="btn btn-secondary">Retour</a>
 </div>
