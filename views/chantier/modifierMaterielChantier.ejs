@@ -28,7 +28,6 @@
       <button type="button" id="addCategoryBtn" class="btn btn-secondary btn-sm">Ajouter Catégorie</button>
       <button type="button" id="deleteCategoryBtn" class="btn btn-danger btn-sm">Supprimer Catégorie</button>
     </div>
-    <%- include('chantier/partials/deleteCategoryModal') %>
   <% } %>
 </div>
 
@@ -189,7 +188,6 @@
   }
 </script>
   <script src="/js/bootstrap.bundle.min.js"></script>
-  <script src="/js/categoryDeletionModal.js"></script>
   <script nonce="<%= nonce %>">
     document.addEventListener("DOMContentLoaded", function () {
       const fSelect = document.getElementById("fournisseurSelect");
@@ -245,22 +243,38 @@
           }
         });
       }
-      if (typeof setupCategoryDeletionModal === 'function') {
-        setupCategoryDeletionModal({
-          triggerId: 'deleteCategoryBtn',
-          selectId: 'categorieSelect',
-          modalId: 'deleteCategoryModal',
-          confirmBtnId: 'confirmDeleteCategoryBtn',
-          nameSelector: '[data-category-name]',
-          onSuccess: ({ value, select }) => {
-            Array.from(select.options).forEach(opt => {
-              if (opt.value === value) opt.remove();
+      const deleteBtn = document.getElementById('deleteCategoryBtn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+          const selectCat = document.getElementById('categorieSelect');
+          if (!selectCat) return;
+          const valeur = selectCat.value;
+          if (!valeur) {
+            alert('Veuillez sélectionner une catégorie à supprimer.');
+            return;
+          }
+          if (!confirm(`Supprimer la catégorie "${valeur}" ? Elle sera retirée de tous les matériels.`)) {
+            return;
+          }
+          const body = new URLSearchParams();
+          body.append('nom', valeur);
+          const resp = await fetch('/chantier/supprimer-categorie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+          });
+          if (resp.ok) {
+            Array.from(selectCat.options).forEach(opt => {
+              if (opt.value === valeur) opt.remove();
             });
-            select.value = '';
-            if (select.value) {
-              select.selectedIndex = -1;
+            selectCat.value = '';
+            if (selectCat.value) {
+              selectCat.selectedIndex = -1;
             }
-            select.dispatchEvent(new Event('change'));
+            selectCat.dispatchEvent(new Event('change'));
+          } else {
+            const data = await resp.json().catch(() => null);
+            alert(data?.message || "Erreur lors de la suppression de la catégorie");
           }
         });
       }
