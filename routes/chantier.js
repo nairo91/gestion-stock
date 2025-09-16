@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 const multer = require('multer');
+const path = require('path');
 const { storage, cloudinary } = require('../config/cloudinary.config');
 
 const Materiel = require('../models/Materiel');
@@ -986,6 +987,31 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename=stock_chantiers.pdf');
     res.setHeader('Content-Type', 'application/pdf');
     doc.pipe(res);
+
+    const logoPath = path.join(__dirname, '..', 'public', 'images', 'logo.png');
+
+    const addWatermark = () => {
+      try {
+        const boundingWidth = doc.page.width * 0.5;
+        const boundingHeight = doc.page.height * 0.5;
+        const x = (doc.page.width - boundingWidth) / 2;
+        const y = (doc.page.height - boundingHeight) / 2;
+
+        doc.save();
+        doc.opacity(0.12);
+        doc.image(logoPath, x, y, {
+          fit: [boundingWidth, boundingHeight],
+          align: 'center',
+          valign: 'center'
+        });
+        doc.restore();
+      } catch (error) {
+        console.error("Erreur lors de l'ajout du filigrane du logo :", error);
+      }
+    };
+
+    addWatermark();
+    doc.on('pageAdded', addWatermark);
 
     doc.fontSize(18).text('Inventaire Matériel par Chantier', { align: 'center' });
     doc.moveDown(1.5);
