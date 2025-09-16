@@ -122,18 +122,38 @@
       <a href="/chantier" class="btn btn-secondary ms-2">Annuler</a>
     </form>
   </div>
+
+  <% if (user && user.role === 'admin') { %>
+    <div class="modal fade" id="confirmDeleteCategoryModal" tabindex="-1" aria-labelledby="confirmDeleteCategoryLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="confirmDeleteCategoryLabel">Confirmer la suppression</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+          <div class="modal-body">
+            <p id="confirmDeleteCategoryMessage" class="mb-0"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteCategoryBtn">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
   <script src="/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const select = document.getElementById('categorieSelect');
+      const categorieSelect = document.getElementById('categorieSelect');
       const currentCat = "<%= mc.materiel.categorie %>";
-      if (currentCat) {
-        const hasOption = Array.from(select.options).some(opt => opt.value === currentCat);
+      if (currentCat && categorieSelect) {
+        const hasOption = Array.from(categorieSelect.options).some(opt => opt.value === currentCat);
         if (!hasOption) {
           const opt = new Option(currentCat, currentCat);
-          select.add(opt, 0);
+          categorieSelect.add(opt, 0);
         }
-        select.value = currentCat;
+        categorieSelect.value = currentCat;
       }
 
       const fournisseurSelect = document.getElementById('fournisseurSelect');
@@ -177,50 +197,96 @@
             body: body.toString()
           });
           if (resp.ok) {
-            const select = document.getElementById('categorieSelect');
+            if (!categorieSelect) return;
             const option = document.createElement('option');
             option.value = nom;
             option.textContent = nom;
-            select.appendChild(option);
-            select.value = nom;
+            categorieSelect.appendChild(option);
+            categorieSelect.value = nom;
           } else {
             alert("Erreur lors de l'ajout de la catégorie");
           }
         });
       }
       const deleteBtn = document.getElementById('deleteCategoryBtn');
-      if (deleteBtn) {
-        deleteBtn.addEventListener('click', async () => {
-          const selectCat = document.getElementById('categorieSelect');
-          if (!selectCat) return;
-          const valeur = selectCat.value;
-          if (!valeur) {
-            alert('Veuillez sélectionner une catégorie à supprimer.');
-            return;
-          }
-          if (!confirm(`Supprimer la catégorie "${valeur}" ? Elle sera retirée de tous les matériels.`)) {
-            return;
-          }
-          const body = new URLSearchParams();
-          body.append('nom', valeur);
+      const modalElement = document.getElementById('confirmDeleteCategoryModal');
+      const confirmDeleteMessage = document.getElementById('confirmDeleteCategoryMessage');
+      const confirmDeleteBtn = document.getElementById('confirmDeleteCategoryBtn');
+      const deleteCategoryModal = modalElement && typeof bootstrap !== 'undefined'
+        ? new bootstrap.Modal(modalElement)
+        : null;
+      let pendingCategoryValue = null;
+
+      async function requestCategoryDeletion(valeur) {
+        if (!categorieSelect) return false;
+        const body = new URLSearchParams();
+        body.append('nom', valeur);
+        try {
           const resp = await fetch('/chantier/supprimer-categorie', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: body.toString()
           });
           if (resp.ok) {
-            Array.from(selectCat.options).forEach(opt => {
+            Array.from(categorieSelect.options).forEach(opt => {
               if (opt.value === valeur) opt.remove();
             });
-            selectCat.value = '';
-            if (selectCat.value) {
-              selectCat.selectedIndex = -1;
+            categorieSelect.value = '';
+            if (categorieSelect.value) {
+              categorieSelect.selectedIndex = -1;
             }
-            selectCat.dispatchEvent(new Event('change'));
+            categorieSelect.dispatchEvent(new Event('change'));
+            return true;
           } else {
             const data = await resp.json().catch(() => null);
             alert(data?.message || "Erreur lors de la suppression de la catégorie");
           }
+        } catch (error) {
+          console.error(error);
+          alert("Erreur lors de la suppression de la catégorie");
+        }
+        return false;
+      }
+
+      if (deleteBtn && categorieSelect) {
+        deleteBtn.addEventListener('click', async () => {
+          const valeur = categorieSelect.value;
+          if (!valeur) {
+            alert('Veuillez sélectionner une catégorie à supprimer.');
+            return;
+          }
+          if (deleteCategoryModal && confirmDeleteBtn && confirmDeleteMessage) {
+            pendingCategoryValue = valeur;
+            confirmDeleteMessage.textContent = `Supprimer la catégorie "${valeur}" ? Elle sera retirée de tous les matériels.`;
+            deleteCategoryModal.show();
+          } else {
+            if (!confirm(`Supprimer la catégorie "${valeur}" ? Elle sera retirée de tous les matériels.`)) {
+              return;
+            }
+            await requestCategoryDeletion(valeur);
+          }
+        });
+      }
+
+      if (confirmDeleteBtn && deleteCategoryModal) {
+        confirmDeleteBtn.addEventListener('click', async () => {
+          if (!pendingCategoryValue) return;
+          const originalText = confirmDeleteBtn.textContent;
+          confirmDeleteBtn.disabled = true;
+          confirmDeleteBtn.textContent = 'Suppression...';
+          const success = await requestCategoryDeletion(pendingCategoryValue);
+          confirmDeleteBtn.disabled = false;
+          confirmDeleteBtn.textContent = originalText;
+          if (success) {
+            pendingCategoryValue = null;
+            deleteCategoryModal.hide();
+          }
+        });
+      }
+
+      if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', () => {
+          pendingCategoryValue = null;
         });
       }
     });
