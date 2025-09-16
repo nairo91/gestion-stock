@@ -14,6 +14,7 @@ const Chantier = require('../models/Chantier');
 const MaterielChantier = require('../models/MaterielChantier');
 const { ensureAuthenticated, checkAdmin } = require('./materiel');
 const Categorie = require('../models/Categorie');
+const { sequelize } = require('../config/database');
 
 async function loadCategories() {
   const cats = await Categorie.findAll({ order: [['nom', 'ASC']] });
@@ -165,6 +166,37 @@ router.post('/ajouter-categorie', ensureAuthenticated, checkAdmin, async (req, r
   }
   await Categorie.findOrCreate({ where: { nom } });
   res.json({ success: true, nom });
+});
+
+router.post('/supprimer-categorie', ensureAuthenticated, checkAdmin, async (req, res) => {
+  const rawNom = req.body.nom || '';
+  const nom = rawNom.trim();
+  if (!nom) {
+    return res.status(400).json({ success: false, message: 'Nom de catégorie invalide.' });
+  }
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    let categorie = await Categorie.findOne({ where: { nom: rawNom }, transaction });
+    if (!categorie && nom !== rawNom) {
+      categorie = await Categorie.findOne({ where: { nom }, transaction });
+    }
+    if (!categorie) {
+      await transaction.rollback();
+      return res.status(404).json({ success: false, message: "Catégorie introuvable." });
+    }
+
+    await Materiel.update({ categorie: null }, { where: { categorie: categorie.nom }, transaction });
+    await categorie.destroy({ transaction });
+
+    await transaction.commit();
+    res.json({ success: true, nom: categorie.nom });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erreur lors de la suppression de la catégorie', error);
+    res.status(500).json({ success: false, message: "Erreur lors de la suppression de la catégorie." });
+  }
 });
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
