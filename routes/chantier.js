@@ -14,6 +14,7 @@ const Chantier = require('../models/Chantier');
 const MaterielChantier = require('../models/MaterielChantier');
 const { ensureAuthenticated, checkAdmin } = require('./materiel');
 const Categorie = require('../models/Categorie');
+const Designation = require('../models/Designation');
 const { sequelize } = require('../config/database');
 
 async function loadCategories() {
@@ -196,6 +197,113 @@ router.post('/supprimer-categorie', ensureAuthenticated, checkAdmin, async (req,
     await transaction.rollback();
     console.error('Erreur lors de la suppression de la catégorie', error);
     res.status(500).json({ success: false, message: "Erreur lors de la suppression de la catégorie." });
+  }
+});
+
+router.get('/designations', ensureAuthenticated, async (req, res) => {
+  try {
+    const designations = await Designation.findAll({
+      include: [{ model: Categorie, as: 'categorie' }],
+      order: [
+        [{ model: Categorie, as: 'categorie' }, 'nom', 'ASC'],
+        ['nom', 'ASC'],
+      ],
+    });
+
+    const map = {};
+    designations.forEach(item => {
+      if (!item || !item.categorie) return;
+      const catName = item.categorie.nom;
+      if (!map[catName]) {
+        map[catName] = [];
+      }
+      if (!map[catName].some(existing => existing.toLowerCase() === item.nom.toLowerCase())) {
+        map[catName].push(item.nom);
+      }
+    });
+
+    res.json({ success: true, designations: map });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des désignations', error);
+    res.status(500).json({ success: false, message: "Erreur lors de la récupération des désignations." });
+  }
+});
+
+router.post('/ajouter-designation', ensureAuthenticated, checkAdmin, async (req, res) => {
+  const rawCategorie = req.body.categorie || '';
+  const rawDesignation = req.body.designation || '';
+  const categorieNom = rawCategorie.trim();
+  const designationNom = rawDesignation.trim();
+
+  if (!categorieNom || !designationNom) {
+    return res.status(400).json({ success: false, message: 'Catégorie ou désignation invalide.' });
+  }
+
+  try {
+    const [categorie] = await Categorie.findOrCreate({ where: { nom: categorieNom } });
+    const [designation, created] = await Designation.findOrCreate({
+      where: { nom: designationNom, categorieId: categorie.id },
+      defaults: { nom: designationNom, categorieId: categorie.id },
+    });
+
+    res.json({
+      success: true,
+      designation: {
+        nom: designation.nom,
+        categorie: categorie.nom,
+        created,
+      },
+    });
+  } catch (error) {
+    console.error("Erreur lors de l'ajout de la désignation", error);
+    res.status(500).json({ success: false, message: "Erreur lors de l'ajout de la désignation." });
+  }
+});
+
+router.post('/supprimer-designation', ensureAuthenticated, checkAdmin, async (req, res) => {
+  const rawCategorie = req.body.categorie || '';
+  const rawDesignation = req.body.designation || '';
+  const categorieNom = rawCategorie.trim();
+  const designationNom = rawDesignation.trim();
+
+  if (!categorieNom || !designationNom) {
+    return res.status(400).json({ success: false, message: 'Catégorie ou désignation invalide.' });
+  }
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    let categorie = await Categorie.findOne({ where: { nom: rawCategorie }, transaction });
+    if (!categorie && categorieNom !== rawCategorie) {
+      categorie = await Categorie.findOne({ where: { nom: categorieNom }, transaction });
+    }
+    if (!categorie) {
+      await transaction.rollback();
+      return res.status(404).json({ success: false, message: 'Catégorie introuvable.' });
+    }
+
+    const designation = await Designation.findOne({
+      where: { nom: designationNom, categorieId: categorie.id },
+      transaction,
+    });
+
+    if (!designation) {
+      await transaction.rollback();
+      return res.status(404).json({ success: false, message: 'Désignation introuvable.' });
+    }
+
+    await designation.destroy({ transaction });
+    await transaction.commit();
+
+    res.json({
+      success: true,
+      designation: designation.nom,
+      categorie: categorie.nom,
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erreur lors de la suppression de la désignation', error);
+    res.status(500).json({ success: false, message: "Erreur lors de la suppression de la désignation." });
   }
 });
 

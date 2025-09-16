@@ -1,5 +1,5 @@
 (() => {
-  const designationMap = {
+  const staticDesignationMap = {
     agencement: [
       "Data: 09-05-2025 / Oportunitate de referință: 0035 /Versiune: 3"
     ],
@@ -142,47 +142,282 @@
     ]
   };
 
-  function initDesignationDropdown(catId, desigId, inputId) {
+  const dynamicDesignationMap = {};
+  let dynamicDesignationsPromise = null;
+  const DEFAULT_OPTION = '<option value="">-- Sélectionner une désignation --</option>';
+
+  function normalizeCategory(value) {
+    return (value || '').toString().trim().toLowerCase();
+  }
+
+  function mergeDesignations(category) {
+    const normalized = normalizeCategory(category);
+    const statics = staticDesignationMap[normalized] ? [...staticDesignationMap[normalized]] : [];
+    const dynamics = dynamicDesignationMap[normalized] ? [...dynamicDesignationMap[normalized]] : [];
+    const combined = [...statics];
+
+    dynamics.forEach(item => {
+      if (!combined.some(existing => existing.toLowerCase() === item.toLowerCase())) {
+        combined.push(item);
+      }
+    });
+
+    return combined;
+  }
+
+  async function loadDynamicDesignations() {
+    if (!dynamicDesignationsPromise) {
+      dynamicDesignationsPromise = fetch('/chantier/designations', {
+        headers: { Accept: 'application/json' },
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Réponse invalide du serveur.');
+          }
+          return response.json();
+        })
+        .then(data => {
+          Object.keys(dynamicDesignationMap).forEach(key => delete dynamicDesignationMap[key]);
+          if (data && data.designations) {
+            Object.entries(data.designations).forEach(([categorie, valeurs]) => {
+              const key = normalizeCategory(categorie);
+              if (!key) return;
+              dynamicDesignationMap[key] = Array.isArray(valeurs) ? [...valeurs] : [];
+            });
+          }
+          return dynamicDesignationMap;
+        })
+        .catch(error => {
+          console.error('Erreur lors du chargement des désignations dynamiques', error);
+          return dynamicDesignationMap;
+        });
+    }
+    return dynamicDesignationsPromise;
+  }
+
+  function showFeedback(element, message, type = 'success') {
+    if (!element) {
+      alert(message);
+      return;
+    }
+
+    const typeClasses = {
+      success: 'text-success',
+      error: 'text-danger',
+      info: 'text-info',
+    };
+
+    element.textContent = message;
+    element.classList.remove('text-success', 'text-danger', 'text-info', 'd-none');
+    element.classList.add(typeClasses[type] || typeClasses.success);
+
+    if (element._timeoutId) {
+      clearTimeout(element._timeoutId);
+    }
+    element._timeoutId = setTimeout(() => {
+      element.classList.add('d-none');
+    }, 4000);
+  }
+
+  function syncInputWithSelect(selectEl, inputEl) {
+    if (!selectEl || !inputEl) return;
+    inputEl.value = selectEl.value;
+  }
+
+  function updateDynamicCache(categorie, designation, action = 'add') {
+    const key = normalizeCategory(categorie);
+    if (!key || !designation) return;
+
+    if (!dynamicDesignationMap[key]) {
+      dynamicDesignationMap[key] = [];
+    }
+
+    if (action === 'add') {
+      if (!dynamicDesignationMap[key].some(item => item.toLowerCase() === designation.toLowerCase())) {
+        dynamicDesignationMap[key].push(designation);
+      }
+    } else if (action === 'remove') {
+      dynamicDesignationMap[key] = dynamicDesignationMap[key].filter(
+        item => item.toLowerCase() !== designation.toLowerCase()
+      );
+    }
+  }
+
+  function initDesignationDropdown(catId, desigId, inputId, options = {}) {
     const categorySelect = document.getElementById(catId);
     const designationSelect = document.getElementById(desigId);
     const designationInput = document.getElementById(inputId);
+    const addButton = options.addButtonId ? document.getElementById(options.addButtonId) : null;
+    const deleteButton = options.deleteButtonId ? document.getElementById(options.deleteButtonId) : null;
+    const feedbackEl = options.feedbackId ? document.getElementById(options.feedbackId) : null;
 
-    function updateDesignations() {
-      const cat = categorySelect.value.toLowerCase();
-      const currentValue = designationInput ? designationInput.value : '';
+    if (!designationSelect) {
+      return;
+    }
 
-      designationSelect.innerHTML = '<option value="">-- Sélectionner une désignation --</option>';
+    const updateDesignations = async () => {
+      await loadDynamicDesignations();
+      const categoryValue = categorySelect ? categorySelect.value : '';
+      const previousValue = designationInput ? designationInput.value : designationSelect.value;
+      const designations = mergeDesignations(categoryValue);
 
-      if (designationMap[cat]) {
-        designationMap[cat].forEach(d => {
-          const opt = document.createElement('option');
-          opt.value = d;
-          opt.textContent = d;
-          if (currentValue && currentValue === d) {
-            opt.selected = true;
-          }
-          designationSelect.appendChild(opt);
-        });
+      designationSelect.innerHTML = DEFAULT_OPTION;
+      designations.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        designationSelect.appendChild(option);
+      });
 
-        // Si l'option existe, la valeur du select prévaut
-        if (designationSelect.value) {
-          if (designationInput) designationInput.value = designationSelect.value;
+      if (previousValue) {
+        const matchingOption = Array.from(designationSelect.options).find(
+          opt => opt.value === previousValue
+        );
+        if (matchingOption) {
+          designationSelect.value = previousValue;
         }
       }
-    }
+    };
 
     if (categorySelect) {
-      categorySelect.addEventListener('change', updateDesignations);
-      updateDesignations();
-    }
-
-    if (designationSelect && designationInput) {
-      designationSelect.addEventListener('change', () => {
-        designationInput.value = designationSelect.value;
+      categorySelect.addEventListener('change', () => {
+        updateDesignations();
       });
     }
 
-    const form = designationSelect?.closest('form');
+    designationSelect.addEventListener('change', () => {
+      if (designationInput) {
+        syncInputWithSelect(designationSelect, designationInput);
+      }
+    });
+
+    loadDynamicDesignations().then(() => {
+      updateDesignations();
+    });
+
+    if (designationInput && !designationInput.value) {
+      designationInput.value = designationSelect.value;
+    }
+
+    if (addButton) {
+      addButton.addEventListener('click', async () => {
+        if (!categorySelect || !categorySelect.value) {
+          showFeedback(
+            feedbackEl,
+            "Veuillez sélectionner une catégorie avant d'ajouter une désignation.",
+            'error'
+          );
+          return;
+        }
+
+        const valeur = designationInput ? designationInput.value.trim() : '';
+        if (!valeur) {
+          showFeedback(
+            feedbackEl,
+            'Saisissez la désignation à enregistrer dans le champ texte.',
+            'error'
+          );
+          return;
+        }
+
+        const body = new URLSearchParams();
+        body.append('categorie', categorySelect.value);
+        body.append('designation', valeur);
+
+        try {
+          const response = await fetch('/chantier/ajouter-designation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+          });
+
+          const payload = await response.json();
+          if (!response.ok || !payload.success) {
+            const message = payload && payload.message ? payload.message : "Impossible d'ajouter cette désignation.";
+            throw new Error(message);
+          }
+
+          updateDynamicCache(payload.designation.categorie, payload.designation.nom, 'add');
+          designationSelect.value = payload.designation.nom;
+          if (designationInput) {
+            designationInput.value = payload.designation.nom;
+          }
+
+          showFeedback(
+            feedbackEl,
+            payload.designation.created
+              ? `Désignation « ${payload.designation.nom} » ajoutée pour la catégorie « ${payload.designation.categorie} ».`
+              : `La désignation « ${payload.designation.nom} » est déjà enregistrée pour cette catégorie.`,
+            payload.designation.created ? 'success' : 'info'
+          );
+
+          updateDesignations();
+        } catch (error) {
+          console.error('Erreur lors de la sauvegarde de la désignation', error);
+          showFeedback(
+            feedbackEl,
+            error.message || "Erreur lors de l'ajout de la désignation.",
+            'error'
+          );
+        }
+      });
+    }
+
+    if (deleteButton) {
+      deleteButton.addEventListener('click', async () => {
+        if (!categorySelect || !categorySelect.value) {
+          showFeedback(feedbackEl, 'Sélectionnez d\'abord une catégorie.', 'error');
+          return;
+        }
+
+        const valeur = designationSelect.value;
+        if (!valeur) {
+          showFeedback(feedbackEl, 'Sélectionnez la désignation à supprimer dans la liste.', 'error');
+          return;
+        }
+
+        const body = new URLSearchParams();
+        body.append('categorie', categorySelect.value);
+        body.append('designation', valeur);
+
+        try {
+          const response = await fetch('/chantier/supprimer-designation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+          });
+
+          const payload = await response.json();
+          if (!response.ok || !payload.success) {
+            const message = payload && payload.message ? payload.message : 'Impossible de supprimer cette désignation.';
+            throw new Error(message);
+          }
+
+          updateDynamicCache(payload.categorie, valeur, 'remove');
+          if (designationInput && designationInput.value === valeur) {
+            designationInput.value = '';
+          }
+
+          designationSelect.value = '';
+          updateDesignations();
+
+          showFeedback(
+            feedbackEl,
+            `Désignation « ${valeur} » supprimée de la catégorie « ${payload.categorie} ».`,
+            'success'
+          );
+        } catch (error) {
+          console.error('Erreur lors de la suppression de la désignation', error);
+          showFeedback(
+            feedbackEl,
+            error.message || 'Erreur lors de la suppression de la désignation.',
+            'error'
+          );
+        }
+      });
+    }
+
+    const form = designationSelect.closest('form');
     if (form && designationInput) {
       form.addEventListener('submit', () => {
         if (designationSelect.value) {
