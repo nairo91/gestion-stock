@@ -18,6 +18,18 @@ const Categorie = require('../models/Categorie');
 const Designation = require('../models/Designation');
 const { sequelize } = require('../config/database');
 
+const CHANTIER_FILTER_KEYS = [
+  'chantierId',
+  'nomMateriel',
+  'categorie',
+  'emplacement',
+  'description',
+  'triNom',
+  'triAjout',
+  'triModification',
+  'recherche'
+];
+
 async function fetchMaterielChantiersWithFilters(query, { includePhotos = true } = {}) {
   const {
     chantierId,
@@ -109,19 +121,43 @@ const upload = multer({ storage });
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
-    const {
-      chantierId,
-      nomMateriel,
-      categorie,
-      emplacement,
-      description,
-      triNom,
-      triAjout,
-      triModification,
-      recherche
-    } = req.query;
+    if (req.query.reset === '1') {
+      delete req.session.chantierFilters;
+      return res.redirect('/chantier');
+    }
 
-    const materielChantiers = await fetchMaterielChantiersWithFilters(req.query, { includePhotos: true });
+    const hasQueryFilterKeys = CHANTIER_FILTER_KEYS.some(key => key in req.query);
+    const sanitizeValue = value => (typeof value === 'string' ? value.trim() : value);
+
+    let activeFilters;
+
+    if (hasQueryFilterKeys) {
+      activeFilters = CHANTIER_FILTER_KEYS.reduce((acc, key) => {
+        const value = req.query[key];
+        acc[key] = value !== undefined && value !== null ? sanitizeValue(value) : '';
+        return acc;
+      }, {});
+
+      const hasMeaningfulValue = CHANTIER_FILTER_KEYS.some(key => {
+        const value = activeFilters[key];
+        return value !== undefined && value !== null && value !== '';
+      });
+
+      if (hasMeaningfulValue) {
+        req.session.chantierFilters = activeFilters;
+      } else {
+        delete req.session.chantierFilters;
+      }
+    } else if (req.session.chantierFilters) {
+      activeFilters = { ...req.session.chantierFilters };
+    } else {
+      activeFilters = CHANTIER_FILTER_KEYS.reduce((acc, key) => {
+        acc[key] = '';
+        return acc;
+      }, {});
+    }
+
+    const materielChantiers = await fetchMaterielChantiersWithFilters(activeFilters, { includePhotos: true });
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
@@ -131,15 +167,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       chantiers,
       emplacements,
       categories,
-      chantierId,
-      nomMateriel,
-      categorie,
-      emplacement,
-      description,
-      triNom,
-      triAjout,
-      triModification,
-      recherche
+      ...activeFilters
     });
 
   } catch (err) {
