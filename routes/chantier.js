@@ -1013,50 +1013,101 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
     addWatermark();
     doc.on('pageAdded', addWatermark);
 
+    doc.opacity(1);
+    doc.fillColor('black');
+
     doc.fontSize(18).text('Inventaire Matériel par Chantier', { align: 'center' });
     doc.moveDown(1.5);
 
-    // Colonnes du tableau
+    const availableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const columnRatios = [0.15, 0.15, 0.1, 0.1, 0.2, 0.12, 0.05, 0.05, 0.04, 0.04];
+    const colWidths = [];
+    let usedWidth = 0;
+    columnRatios.forEach((ratio, index) => {
+      if (index === columnRatios.length - 1) {
+        colWidths.push(availableWidth - usedWidth);
+      } else {
+        const width = Math.floor(availableWidth * ratio);
+        colWidths.push(width);
+        usedWidth += width;
+      }
+    });
+
     const headers = [
       'Chantier', 'Matériel', 'Référence', 'Catégorie',
       'Description', 'Emplacement', 'Rack', 'Compartiment', 'Niveau', 'Quantité'
     ];
-    const colWidths = [80, 90, 70, 60, 110, 90, 35, 50, 40, 40];
-    const startX = doc.x;
+
+    const tableLeft = doc.page.margins.left;
     let y = doc.y;
-
-    // Calcule la hauteur nécessaire pour une ligne
-    const computeRowHeight = (row) => {
-      const heights = row.map((text, i) =>
-        doc.heightOfString(String(text || '-'), { width: colWidths[i] - 4, align: 'left' })
-      );
-      return Math.max(...heights) + 8; // padding
-    };
-
-    // Dessine une ligne du tableau
-    const drawRow = (row, y, { header = false, index = 0 } = {}) => {
-      const rowHeight = Math.max(computeRowHeight(row), 20);
-      let x = startX;
-      row.forEach((text, i) => {
-        const bgColor = header ? '#eeeeee' : index % 2 === 1 ? '#f9f9f9' : null;
-        if (bgColor) {
-          doc.rect(x, y, colWidths[i], rowHeight).fill(bgColor);
-        }
-        doc.rect(x, y, colWidths[i], rowHeight).stroke();
-        doc.font(header ? 'Helvetica-Bold' : 'Helvetica');
-        doc.fontSize(8).fillColor('black').text(String(text || '-'), x + 2, y + 4, {
-          width: colWidths[i] - 4,
-        });
-        x += colWidths[i];
-      });
-      return rowHeight;
-    };
-
-    // En-têtes
-    let rowHeight = drawRow(headers, y, { header: true });
-    y += rowHeight;
-
     const bottom = doc.page.height - doc.page.margins.bottom;
+    const cellPadding = 6;
+    const headerFontSize = 9;
+    const bodyFontSize = 8;
+
+    const getRowHeight = (row, { header = false } = {}) => {
+      doc.save();
+      doc.font(header ? 'Helvetica-Bold' : 'Helvetica');
+      doc.fontSize(header ? headerFontSize : bodyFontSize);
+      const heights = row.map((text, i) => {
+        const content = text != null && text !== '' ? String(text) : '-';
+        return doc.heightOfString(content, {
+          width: colWidths[i] - cellPadding * 2,
+          align: 'left'
+        });
+      });
+      doc.restore();
+      const maxHeight = heights.length ? Math.max(...heights) : 0;
+      return Math.max(maxHeight + cellPadding * 2, header ? 24 : 20);
+    };
+
+    const drawRow = (row, yPosition, { header = false, index = 0, rowHeight } = {}) => {
+      const height = rowHeight ?? getRowHeight(row, { header });
+      let x = tableLeft;
+
+      row.forEach((text, i) => {
+        const value = text != null && text !== '' ? String(text) : '-';
+        const width = colWidths[i];
+        const background = header
+          ? '#ECEFF7'
+          : index % 2 === 1
+            ? '#F8F9FB'
+            : null;
+
+        if (background) {
+          doc.save();
+          doc.fillColor(background);
+          doc.rect(x, yPosition, width, height).fill();
+          doc.restore();
+        }
+
+        doc.save();
+        doc.lineWidth(0.5);
+        doc.strokeColor('#CDD4E0');
+        doc.rect(x, yPosition, width, height).stroke();
+        doc.restore();
+
+        doc.save();
+        doc.font(header ? 'Helvetica-Bold' : 'Helvetica');
+        doc.fontSize(header ? headerFontSize : bodyFontSize);
+        doc.fillColor('#000000');
+        doc.text(value, x + cellPadding, yPosition + cellPadding, {
+          width: width - cellPadding * 2,
+          height: height - cellPadding * 2,
+          align: 'left',
+          lineBreak: true,
+          ellipsis: true
+        });
+        doc.restore();
+
+        x += width;
+      });
+
+      return height;
+    };
+
+    const headerHeight = getRowHeight(headers, { header: true });
+    y += drawRow(headers, y, { header: true, rowHeight: headerHeight });
 
     let rowIndex = 0;
     for (const m of materiels) {
@@ -1084,14 +1135,16 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         m.quantite != null ? String(m.quantite) : '0'
       ];
 
-      rowHeight = Math.max(computeRowHeight(values), 20);
+      const rowHeight = getRowHeight(values, { header: false });
       if (y + rowHeight > bottom) {
         doc.addPage();
+        doc.opacity(1);
+        doc.fillColor('black');
         y = doc.page.margins.top;
+        y += drawRow(headers, y, { header: true, rowHeight: headerHeight });
       }
 
-      drawRow(values, y, { index: rowIndex });
-      y += rowHeight;
+      y += drawRow(values, y, { index: rowIndex, rowHeight });
       rowIndex++;
     }
 
