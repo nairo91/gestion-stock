@@ -14,6 +14,21 @@ const User = require('../models/User');
 const MaterielDelivery = require('../models/MaterielDelivery'); // si utilisé
 const { sendLowStockNotification } = require('../utils/mailer') || {};
 
+const buildEmplacement = (materiel) => {
+  const parts = [];
+  if (materiel.rack) parts.push(materiel.rack);
+  if (materiel.compartiment) parts.push(materiel.compartiment);
+  if (
+    materiel.niveau !== null &&
+    materiel.niveau !== undefined &&
+    materiel.niveau !== ''
+  ) {
+    parts.push(String(materiel.niveau));
+  }
+  if (materiel.position) parts.push(materiel.position);
+  return parts.join('-');
+};
+
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
   res.redirect('/auth/login');
@@ -48,9 +63,7 @@ router.get('/export/csv', ensureAuthenticated, async (req, res) => {
         { id: 'quantite', title: 'Quantité' },
         { id: 'description', title: 'Description' },
         { id: 'prix', title: 'Prix' },
-        { id: 'rack', title: 'Rack' },
-        { id: 'compartiment', title: 'Compartiment' },
-        { id: 'niveau', title: 'Niveau' },
+        { id: 'emplacement', title: 'Emplacement stock' },
         { id: 'photos', title: 'Photos' }
       ]
     });
@@ -60,9 +73,7 @@ router.get('/export/csv', ensureAuthenticated, async (req, res) => {
       quantite: m.quantite,
       description: m.description,
       prix: m.prix,
-      rack: m.rack,
-      compartiment: m.compartiment,
-      niveau: m.niveau,
+      emplacement: buildEmplacement(m),
       photos: (m.photos && m.photos.length > 0)
         ? m.photos.map(p => p.chemin).join('; ')
         : ''
@@ -96,9 +107,7 @@ router.get('/export/excel', ensureAuthenticated, async (req, res) => {
       { header: 'Quantité', key: 'quantite', width: 10 },
       { header: 'Description', key: 'description', width: 30 },
       { header: 'Prix', key: 'prix', width: 10 },
-      { header: 'Rack', key: 'rack', width: 15 },
-      { header: 'Compartiment', key: 'compartiment', width: 15 },
-      { header: 'Niveau', key: 'niveau', width: 10 },
+      { header: 'Emplacement stock', key: 'emplacement', width: 20 },
       { header: 'Photos', key: 'photos', width: 30 }
     ];
     materiels.forEach(m => {
@@ -108,9 +117,7 @@ router.get('/export/excel', ensureAuthenticated, async (req, res) => {
         quantite: m.quantite,
         description: m.description,
         prix: m.prix,
-        rack: m.rack,
-        compartiment: m.compartiment,
-        niveau: m.niveau,
+        emplacement: buildEmplacement(m),
         photos: (m.photos && m.photos.length > 0)
           ? m.photos.map(p => p.chemin).join('; ')
           : ''
@@ -149,9 +156,8 @@ router.get('/export/pdf', ensureAuthenticated, async (req, res) => {
       doc.fontSize(12).text(`Quantité: ${m.quantite}`);
       doc.fontSize(12).text(`Description: ${m.description}`);
       doc.fontSize(12).text(`Prix: ${m.prix} €`);
-      doc.fontSize(12).text(`Rack: ${m.rack || 'Non défini'}`);
-      doc.fontSize(12).text(`Compartiment: ${m.compartiment || 'Non défini'}`);
-      doc.fontSize(12).text(`Niveau: ${m.niveau || 'Non défini'}`);
+      const emplacement = buildEmplacement(m) || 'Non défini';
+      doc.fontSize(12).text(`Emplacement: ${emplacement}`);
       if (m.photos && m.photos.length > 0) {
         doc.fontSize(12).text(`Photos: ${m.photos.map(p => p.chemin).join(', ')}`);
       }
@@ -180,7 +186,8 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       categorie,
       rack,
       compartiment,
-      niveau
+      niveau,
+      position
     } = req.query;
 
     let whereClause = {
@@ -211,6 +218,9 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     }
     if (niveau && niveau.trim() !== '') {
       whereClause.niveau = parseInt(niveau, 10);
+    }
+    if (position && position.trim() !== '') {
+      whereClause.position = position;
     }
     if (minPrix || maxPrix) {
       whereClause.prix = {};
@@ -260,7 +270,8 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
       categorie,
       rack,
       compartiment,
-      niveau
+      niveau,
+      position
     } = req.body;
 
     const nouveauMateriel = await Materiel.create({
@@ -271,9 +282,10 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
       description,
       prix: parseFloat(prix),
       categorie,
-      rack,
-      compartiment,
+      rack: rack || null,
+      compartiment: compartiment || null,
       niveau: niveau ? parseInt(niveau, 10) : null,
+      position: position || null,
       vehiculeId: null,
       chantierId: null
     });

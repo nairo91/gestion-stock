@@ -16,6 +16,7 @@ const Materiel = sequelize.define(
     rack: { type: DataTypes.STRING },
     compartiment: { type: DataTypes.STRING },
     niveau: { type: DataTypes.INTEGER },
+    position: { type: DataTypes.STRING },
     vehiculeId: { type: DataTypes.INTEGER },
     chantierId: { type: DataTypes.INTEGER },
     emplacementId: { type: DataTypes.INTEGER }
