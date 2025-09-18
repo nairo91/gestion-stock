@@ -10,7 +10,7 @@ const Materiel = sequelize.define(
     barcode: { type: DataTypes.STRING, unique: true },
     quantite: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     description: { type: DataTypes.TEXT },
-    prix: { type: DataTypes.DECIMAL(10, 2) },
+    prix: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     categorie: { type: DataTypes.STRING },
     fournisseur: { type: DataTypes.STRING },
     rack: { type: DataTypes.STRING },

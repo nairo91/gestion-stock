@@ -342,7 +342,6 @@
                 <th>Catégorie</th>
                 <th>Emplacement stock</th>
                 <th>Description</th>
-                <th>Prix</th>
                 <th>Photos</th>
                 <th>Actions</th>
               </tr>
@@ -361,7 +360,6 @@
                   <td><%= m.categorie %></td>
                   <td><%= formatEmplacement(m) %></td>
                   <td><%= m.description %></td>
-                  <td><%= m.prix %> €</td>
                   <td>
                       <% if (m.photos && m.photos.length > 0) { %>
                         <% m.photos.forEach(function(photo) { %>
@@ -406,7 +404,6 @@
           <% const mobileEmplacement = formatEmplacement(m); %>
           <li><strong>Emplacement :</strong> <%= mobileEmplacement %></li>
           <li><strong>Description :</strong> <%= m.description %></li>
-          <li><strong>Prix :</strong> <%= m.prix %> €</li>
           <li>
               <strong>Photos :</strong>
               <% if (m.photos.length) { %>
