@@ -254,7 +254,9 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 ====================== */
 router.get('/ajouter', ensureAuthenticated, checkAdmin, (req, res) => {
   // Si un code-barres a été scanné, on peut le pré-remplir
-  const { barcode } = req.query;
+  const { barcode: barcodeQuery } = req.query;
+  const barcode =
+    typeof barcodeQuery === 'string' ? barcodeQuery.trim() : barcodeQuery;
   res.render('materiel/ajouter', { barcode });
 });
 
@@ -267,19 +269,46 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
       rack,
       compartiment,
       position,
+      barcode,
       ...rest
     } = req.body;
 
-    const prixValue = prix && prix.trim() !== '' ? parseFloat(prix) : null;
+    const trimString = value =>
+      typeof value === 'string' ? value.trim() : value;
+
+    const normalizeOptionalString = value => {
+      const trimmedValue = trimString(value);
+      if (trimmedValue === undefined || trimmedValue === null || trimmedValue === '') {
+        return null;
+      }
+      return trimmedValue;
+    };
+
+    const sanitizedRest = Object.fromEntries(
+      Object.entries(rest).map(([key, value]) => [key, trimString(value)])
+    );
+
+    const prixTrimmed = trimString(prix);
+    const prixValue =
+      prixTrimmed !== undefined && prixTrimmed !== '' ? parseFloat(prixTrimmed) : null;
+
+    const niveauTrimmed = trimString(niveau);
+    const niveauValue =
+      niveauTrimmed !== undefined && niveauTrimmed !== ''
+        ? parseInt(niveauTrimmed, 10)
+        : null;
+
+    const barcodeValue = normalizeOptionalString(barcode);
 
     const nouveauMateriel = await Materiel.create({
-      ...rest,
+      ...sanitizedRest,
       quantite: parseInt(quantite, 10),
       prix: prixValue,
-      rack: rack || null,
-      compartiment: compartiment || null,
-      niveau: niveau ? parseInt(niveau, 10) : null,
-      position: position || null,
+      rack: normalizeOptionalString(rack),
+      compartiment: normalizeOptionalString(compartiment),
+      niveau: niveauValue,
+      position: normalizeOptionalString(position),
+      barcode: barcodeValue,
       vehiculeId: null,
       chantierId: null
     });
@@ -441,7 +470,8 @@ router.get('/scanner', ensureAuthenticated, (req, res) => {
 // Traite le code scanné
 router.post('/scan', ensureAuthenticated, async (req, res) => {
   try {
-    const { barcode } = req.body;
+    const rawBarcode = req.body ? req.body.barcode : undefined;
+    const barcode = typeof rawBarcode === 'string' ? rawBarcode.trim() : rawBarcode;
     if (!barcode) {
       return res.json({ error: 'Aucun code reçu.' });
     }

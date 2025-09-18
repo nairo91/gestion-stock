@@ -7,7 +7,7 @@ const Materiel = sequelize.define(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     nom: { type: DataTypes.STRING, allowNull: false },
     reference: { type: DataTypes.STRING },
-    barcode: { type: DataTypes.STRING, unique: true },
+    barcode: { type: DataTypes.STRING, allowNull: true, unique: true },
     quantite: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     description: { type: DataTypes.TEXT },
     prix: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
