@@ -1026,7 +1026,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         const y = (doc.page.height - boundingHeight) / 2;
 
         doc.save();
-        doc.opacity(0.12);
+        doc.opacity(0.05);
         doc.image(logoPath, x, y, {
           fit: [boundingWidth, boundingHeight],
           align: 'center',
@@ -1038,8 +1038,22 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
       }
     };
 
-    addWatermark();
-    doc.on('pageAdded', addWatermark);
+    let watermarkPending = true;
+
+    const scheduleWatermark = () => {
+      watermarkPending = true;
+    };
+
+    const ensureWatermark = () => {
+      if (!watermarkPending) {
+        return;
+      }
+      addWatermark();
+      watermarkPending = false;
+    };
+
+    scheduleWatermark();
+    doc.on('pageAdded', scheduleWatermark);
 
     doc.opacity(1);
     doc.fillColor('black');
@@ -1094,7 +1108,6 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
       let x = tableLeft;
 
       row.forEach((text, i) => {
-        const value = text != null && text !== '' ? String(text) : '-';
         const width = colWidths[i];
         const background = header
           ? '#ECEFF7'
@@ -1108,6 +1121,17 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
           doc.rect(x, yPosition, width, height).fill();
           doc.restore();
         }
+
+        x += width;
+      });
+
+      ensureWatermark();
+
+      x = tableLeft;
+
+      row.forEach((text, i) => {
+        const value = text != null && text !== '' ? String(text) : '-';
+        const width = colWidths[i];
 
         doc.save();
         doc.lineWidth(0.5);
@@ -1166,6 +1190,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
       const rowHeight = getRowHeight(values, { header: false });
       if (y + rowHeight > bottom) {
         doc.addPage();
+        scheduleWatermark();
         doc.opacity(1);
         doc.fillColor('black');
         y = doc.page.margins.top;
