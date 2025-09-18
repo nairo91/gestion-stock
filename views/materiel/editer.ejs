@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modifier un Matériel</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Style personnalisé -->
+  <style>
+    .form-select {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      &::-ms-expand {
+        display: none;
+      }
+      background-color: #fff;
+      color: #2d3436;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      background-image: url("/images/arrow-light.png");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 20px auto;
+      padding-right: 2rem;
+    }
+    body {
+      background-color: #f5f6fa;
+      color: #2d3436;
+    }
+    .card-custom {
+      border: none;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background-color: #fff;
+      margin-top: 2rem;
+    }
+    .card-header-custom {
+      background: linear-gradient(45deg, #0984e3, #74b9ff);
+      color: #fff;
+      padding: 1rem 1.5rem;
+      border-top-left-radius: 0.75rem;
+      border-top-right-radius: 0.75rem;
+    }
+    .card-body-custom {
+      padding: 1.5rem;
+    }
+    .form-label {
+      font-weight: 500;
+    }
+    .btn-submit {
+      background-color: #0984e3;
+      border: none;
+      transition: background-color 0.3s;
+    }
+    .btn-submit:hover {
+      background-color: #0776c2;
+    }
+    .existing-photo {
+      width: 140px;
+    }
+    .existing-photo img {
+      max-height: 100px;
+      object-fit: cover;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card card-custom">
+      <div class="card-header card-header-custom">
+        <h2 class="mb-0">Modifier le matériel</h2>
+      </div>
+      <div class="card-body card-body-custom">
+        <form action="/materiel/editer/<%= materiel.id %>" method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="nom" class="form-label">Nom</label>
+            <input type="text" name="nom" id="nom" class="form-control" value="<%= materiel.nom || '' %>" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="reference" class="form-label">Référence</label>
+            <input type="text" name="reference" id="reference" class="form-control" value="<%= materiel.reference || '' %>">
+          </div>
+
+          <div class="mb-3">
+            <label for="barcode" class="form-label">Code-barres / QR</label>
+            <input type="text" name="barcode" id="barcode" class="form-control" value="<%= materiel.barcode || '' %>">
+          </div>
+
+          <div class="mb-3">
+            <label for="quantite" class="form-label">Quantité</label>
+            <input type="number" name="quantite" id="quantite" class="form-control" value="<%= materiel.quantite %>" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea name="description" id="description" class="form-control" rows="3"><%= materiel.description || '' %></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="prix" class="form-label">Prix</label>
+            <input type="number" step="0.01" name="prix" id="prix" class="form-control" placeholder="Optionnel" value="<%= materiel.prix !== null && materiel.prix !== undefined ? materiel.prix : '' %>">
+          </div>
+
+          <div class="mb-3">
+            <label for="categorie" class="form-label">Catégorie</label>
+            <select name="categorie" id="categorie" class="form-select" required>
+              <option value="Plomberie" <%= materiel.categorie === 'Plomberie' ? 'selected' : '' %>>Plomberie</option>
+              <option value="Electricité" <%= materiel.categorie === 'Electricité' ? 'selected' : '' %>>Electricité</option>
+              <option value="Climatisation" <%= materiel.categorie === 'Climatisation' ? 'selected' : '' %>>Climatisation</option>
+              <option value="Chauffage" <%= materiel.categorie === 'Chauffage' ? 'selected' : '' %>>Chauffage</option>
+              <option value="Revêtement mural / Revêtement Sol" <%= materiel.categorie === 'Revêtement mural / Revêtement Sol' ? 'selected' : '' %>>Revêtement mural / Revêtement Sol</option>
+              <option value="Enduit" <%= materiel.categorie === 'Enduit' ? 'selected' : '' %>>Enduit</option>
+              <option value="Maçonnerie" <%= materiel.categorie === 'Maçonnerie' ? 'selected' : '' %>>Maçonnerie</option>
+              <option value="Ventilation" <%= materiel.categorie === 'Ventilation' ? 'selected' : '' %>>Ventilation</option>
+              <option value="Menuiserie" <%= materiel.categorie === 'Menuiserie' ? 'selected' : '' %>>Menuiserie</option>
+              <option value="Electroportatif" <%= materiel.categorie === 'Electroportatif' ? 'selected' : '' %>>Electroportatif</option>
+              <option value="Autre" <%= !materiel.categorie || materiel.categorie === 'Autre' ? 'selected' : '' %>>Autre</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="rack" class="form-label">Rack</label>
+            <select name="rack" id="rack" class="form-select">
+              <option value="" <%= !materiel.rack ? 'selected' : '' %>>-- Choisir un rack --</option>
+              <option value="RM1" <%= materiel.rack === 'RM1' ? 'selected' : '' %>>RM1</option>
+              <option value="RM2" <%= materiel.rack === 'RM2' ? 'selected' : '' %>>RM2</option>
+              <option value="RM3" <%= materiel.rack === 'RM3' ? 'selected' : '' %>>RM3</option>
+              <option value="RM4" <%= materiel.rack === 'RM4' ? 'selected' : '' %>>RM4</option>
+              <option value="RM5" <%= materiel.rack === 'RM5' ? 'selected' : '' %>>RM5</option>
+              <option value="RM6" <%= materiel.rack === 'RM6' ? 'selected' : '' %>>RM6</option>
+              <option value="RM7" <%= materiel.rack === 'RM7' ? 'selected' : '' %>>RM7</option>
+              <option value="RM8" <%= materiel.rack === 'RM8' ? 'selected' : '' %>>RM8</option>
+              <option value="RM9" <%= materiel.rack === 'RM9' ? 'selected' : '' %>>RM9</option>
+              <option value="RM10" <%= materiel.rack === 'RM10' ? 'selected' : '' %>>RM10</option>
+              <option value="GL" <%= materiel.rack === 'GL' ? 'selected' : '' %>>GL</option>
+              <option value="RK" <%= materiel.rack === 'RK' ? 'selected' : '' %>>RK</option>
+              <option value="Mezza" <%= materiel.rack === 'Mezza' ? 'selected' : '' %>>Mezza</option>
+              <option value="Contenaire" <%= materiel.rack === 'Contenaire' ? 'selected' : '' %>>Contenaire</option>
+            </select>
+          </div>
+
+          <div id="compartiment-group" class="mb-3" style="display:none;">
+            <label for="compartiment" class="form-label">Compartiment</label>
+            <select name="compartiment" id="compartiment" class="form-select"></select>
+          </div>
+
+          <div id="niveau-group" class="mb-3" style="display:none;">
+            <label for="niveau" class="form-label">Étage</label>
+            <select name="niveau" id="niveau" class="form-select"></select>
+          </div>
+
+          <div id="position-group" class="mb-3" style="display:none;">
+            <label for="position" class="form-label">Position</label>
+            <select name="position" id="position" class="form-select">
+              <option value="">-- Choisir une position --</option>
+              <option value="P1" <%= materiel.position === 'P1' ? 'selected' : '' %>>P1</option>
+              <option value="P2" <%= materiel.position === 'P2' ? 'selected' : '' %>>P2</option>
+              <option value="P3" <%= materiel.position === 'P3' ? 'selected' : '' %>>P3</option>
+            </select>
+          </div>
+
+          <% if (materiel.photos && materiel.photos.length > 0) { %>
+            <div class="mb-3">
+              <label class="form-label">Photos existantes</label>
+              <div class="d-flex flex-wrap gap-3">
+                <% materiel.photos.forEach(photo => { %>
+                  <div class="existing-photo border p-2 text-center rounded">
+                    <a href="/<%= photo.chemin.replace(/\\/g, '/') %>" target="_blank">
+                      <img src="/<%= photo.chemin.replace(/\\/g, '/') %>" alt="Photo" class="img-fluid mb-2">
+                    </a>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="photosToDelete[]" value="<%= photo.id %>" id="photo-<%= photo.id %>">
+                      <label class="form-check-label" for="photo-<%= photo.id %>">Supprimer</label>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+              <small class="text-muted">Cochez les photos à supprimer.</small>
+            </div>
+          <% } %>
+
+          <div class="mb-3">
+            <label for="photos" class="form-label">Ajouter de nouvelles photos</label>
+            <input type="file" name="photos" id="photos" multiple class="form-control">
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-submit btn-lg">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <a href="/materiel" class="btn btn-secondary">Retour au Dashboard</a>
+    </div>
+  </div>
+  <script src="/js/bootstrap.bundle.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const rackSelect = document.getElementById('rack');
+    const compartimentSelect = document.getElementById('compartiment');
+    const niveauSelect = document.getElementById('niveau');
+    const positionSelect = document.getElementById('position');
+    const compartimentGroup = document.getElementById('compartiment-group');
+    const niveauGroup = document.getElementById('niveau-group');
+    const positionGroup = document.getElementById('position-group');
+
+    function resetSelect(selectEl, placeholderText) {
+      selectEl.innerHTML = '';
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = placeholderText;
+      selectEl.appendChild(option);
+      selectEl.value = '';
+    }
+
+    function populate(selectEl, values) {
+      values.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    function updateFields() {
+      const rack = rackSelect.value;
+
+      resetSelect(compartimentSelect, '-- Choisir un compartiment --');
+      resetSelect(niveauSelect, '-- Choisir un étage --');
+      compartimentGroup.style.display = 'none';
+      niveauGroup.style.display = 'none';
+      positionSelect.value = '';
+      positionGroup.style.display = 'none';
+
+      if (!rack) {
+        return;
+      }
+
+      switch (rack) {
+        case 'RM1':
+        case 'RM2':
+        case 'RM3':
+        case 'RM4':
+        case 'RM5':
+        case 'RM6':
+        case 'RM7':
+        case 'RM8':
+        case 'RM9':
+        case 'RM10':
+          populate(compartimentSelect, ['A', 'B', 'C']);
+          compartimentGroup.style.display = 'block';
+          populate(niveauSelect, ['1', '2', '3', '4', '5']);
+          niveauGroup.style.display = 'block';
+          positionGroup.style.display = 'block';
+          break;
+        case 'GL':
+          populate(niveauSelect, ['0', '1', '2', '3', '4', '5', '6']);
+          niveauGroup.style.display = 'block';
+          break;
+        case 'RK': {
+          const letters = Array.from({ length: 16 }, (_, i) =>
+            String.fromCharCode('A'.charCodeAt(0) + i)
+          );
+          populate(compartimentSelect, letters);
+          compartimentGroup.style.display = 'block';
+          populate(niveauSelect, ['0', '1', '2', '3']);
+          niveauGroup.style.display = 'block';
+          break;
+        }
+        case 'Mezza':
+          populate(compartimentSelect, ['1', '2', '3', '4', '5', '6', '7', '8']);
+          compartimentGroup.style.display = 'block';
+          break;
+        case 'Contenaire':
+          populate(compartimentSelect, ['1']);
+          compartimentGroup.style.display = 'block';
+          break;
+      }
+    }
+
+    rackSelect.addEventListener('change', updateFields);
+
+    const initialRack = "<%= materiel.rack || '' %>";
+    const initialCompartiment = "<%= materiel.compartiment || '' %>";
+    const initialNiveau = "<%= materiel.niveau !== null && materiel.niveau !== undefined ? materiel.niveau : '' %>";
+    const initialPosition = "<%= materiel.position || '' %>";
+
+    if (initialRack) {
+      rackSelect.value = initialRack;
+    }
+
+    updateFields();
+
+    if (initialCompartiment) {
+      compartimentSelect.value = initialCompartiment;
+      if (compartimentSelect.value) {
+        compartimentGroup.style.display = 'block';
+      }
+    }
+
+    if (initialNiveau !== '') {
+      niveauSelect.value = initialNiveau;
+      if (niveauSelect.value !== '') {
+        niveauGroup.style.display = 'block';
+      }
+    }
+
+    if (initialPosition) {
+      positionSelect.value = initialPosition;
+      if (positionSelect.value) {
+        positionGroup.style.display = 'block';
+      }
+    }
+  });
+  </script>
+</body>
+</html>
