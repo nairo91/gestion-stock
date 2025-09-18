@@ -166,6 +166,17 @@
               <option value="RM1" <%= (query.rack === 'RM1') ? 'selected' : '' %>>RM1</option>
               <option value="RM2" <%= (query.rack === 'RM2') ? 'selected' : '' %>>RM2</option>
               <option value="RM3" <%= (query.rack === 'RM3') ? 'selected' : '' %>>RM3</option>
+              <option value="RM4" <%= (query.rack === 'RM4') ? 'selected' : '' %>>RM4</option>
+              <option value="RM5" <%= (query.rack === 'RM5') ? 'selected' : '' %>>RM5</option>
+              <option value="RM6" <%= (query.rack === 'RM6') ? 'selected' : '' %>>RM6</option>
+              <option value="RM7" <%= (query.rack === 'RM7') ? 'selected' : '' %>>RM7</option>
+              <option value="RM8" <%= (query.rack === 'RM8') ? 'selected' : '' %>>RM8</option>
+              <option value="RM9" <%= (query.rack === 'RM9') ? 'selected' : '' %>>RM9</option>
+              <option value="RM10" <%= (query.rack === 'RM10') ? 'selected' : '' %>>RM10</option>
+              <option value="GL" <%= (query.rack === 'GL') ? 'selected' : '' %>>GL</option>
+              <option value="RK" <%= (query.rack === 'RK') ? 'selected' : '' %>>RK</option>
+              <option value="Mezza" <%= (query.rack === 'Mezza') ? 'selected' : '' %>>Mezza</option>
+              <option value="Contenaire" <%= (query.rack === 'Contenaire') ? 'selected' : '' %>>Contenaire</option>
               <option value="A"   <%= (query.rack === 'A')   ? 'selected' : '' %>>A</option>
               <option value="B"   <%= (query.rack === 'B')   ? 'selected' : '' %>>B</option>
               <option value="C"   <%= (query.rack === 'C')   ? 'selected' : '' %>>C</option>
@@ -180,6 +191,27 @@
               <option value="A" <%= (query.compartiment === 'A') ? 'selected' : '' %>>A</option>
               <option value="B" <%= (query.compartiment === 'B') ? 'selected' : '' %>>B</option>
               <option value="C" <%= (query.compartiment === 'C') ? 'selected' : '' %>>C</option>
+              <option value="D" <%= (query.compartiment === 'D') ? 'selected' : '' %>>D</option>
+              <option value="E" <%= (query.compartiment === 'E') ? 'selected' : '' %>>E</option>
+              <option value="F" <%= (query.compartiment === 'F') ? 'selected' : '' %>>F</option>
+              <option value="G" <%= (query.compartiment === 'G') ? 'selected' : '' %>>G</option>
+              <option value="H" <%= (query.compartiment === 'H') ? 'selected' : '' %>>H</option>
+              <option value="I" <%= (query.compartiment === 'I') ? 'selected' : '' %>>I</option>
+              <option value="J" <%= (query.compartiment === 'J') ? 'selected' : '' %>>J</option>
+              <option value="K" <%= (query.compartiment === 'K') ? 'selected' : '' %>>K</option>
+              <option value="L" <%= (query.compartiment === 'L') ? 'selected' : '' %>>L</option>
+              <option value="M" <%= (query.compartiment === 'M') ? 'selected' : '' %>>M</option>
+              <option value="N" <%= (query.compartiment === 'N') ? 'selected' : '' %>>N</option>
+              <option value="O" <%= (query.compartiment === 'O') ? 'selected' : '' %>>O</option>
+              <option value="P" <%= (query.compartiment === 'P') ? 'selected' : '' %>>P</option>
+              <option value="1" <%= (query.compartiment === '1') ? 'selected' : '' %>>1</option>
+              <option value="2" <%= (query.compartiment === '2') ? 'selected' : '' %>>2</option>
+              <option value="3" <%= (query.compartiment === '3') ? 'selected' : '' %>>3</option>
+              <option value="4" <%= (query.compartiment === '4') ? 'selected' : '' %>>4</option>
+              <option value="5" <%= (query.compartiment === '5') ? 'selected' : '' %>>5</option>
+              <option value="6" <%= (query.compartiment === '6') ? 'selected' : '' %>>6</option>
+              <option value="7" <%= (query.compartiment === '7') ? 'selected' : '' %>>7</option>
+              <option value="8" <%= (query.compartiment === '8') ? 'selected' : '' %>>8</option>
             </select>
           </div>
 
@@ -192,6 +224,20 @@
               <option value="1" <%= (query.niveau === '1') ? 'selected' : '' %>>1</option>
               <option value="2" <%= (query.niveau === '2') ? 'selected' : '' %>>2</option>
               <option value="3" <%= (query.niveau === '3') ? 'selected' : '' %>>3</option>
+              <option value="4" <%= (query.niveau === '4') ? 'selected' : '' %>>4</option>
+              <option value="5" <%= (query.niveau === '5') ? 'selected' : '' %>>5</option>
+              <option value="6" <%= (query.niveau === '6') ? 'selected' : '' %>>6</option>
+            </select>
+          </div>
+
+          <!-- Position -->
+          <div class="col-md-2">
+            <label for="position" class="form-label">Position</label>
+            <select name="position" id="position" class="form-select">
+              <option value="">Toutes les positions</option>
+              <option value="P1" <%= (query.position === 'P1') ? 'selected' : '' %>>P1</option>
+              <option value="P2" <%= (query.position === 'P2') ? 'selected' : '' %>>P2</option>
+              <option value="P3" <%= (query.position === 'P3') ? 'selected' : '' %>>P3</option>
             </select>
           </div>
 
@@ -272,6 +318,15 @@
     </div>
 
     <!-- Tableau du stock -->
+    <% const formatEmplacement = (materiel) => {
+         const parts = [];
+         if (materiel.rack) parts.push(materiel.rack);
+         if (materiel.compartiment) parts.push(materiel.compartiment);
+         if (materiel.niveau !== null && materiel.niveau !== undefined) parts.push(materiel.niveau);
+         if (materiel.position) parts.push(materiel.position);
+         return parts.join('-');
+       };
+    %>
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">Liste du stock (Dépôt)</h5>
@@ -285,9 +340,7 @@
                 <th>Référence</th>
                 <th>Quantité</th>
                 <th>Catégorie</th>
-                <th>Rack</th>
-                <th>Compartiment</th>
-                <th>Niveau</th>
+                <th>Emplacement stock</th>
                 <th>Description</th>
                 <th>Prix</th>
                 <th>Photos</th>
@@ -306,9 +359,7 @@
                     <% } %>
                   </td>
                   <td><%= m.categorie %></td>
-                  <td><%= m.rack %></td>
-                  <td><%= m.compartiment %></td>
-                  <td><%= (m.niveau !== null) ? m.niveau : '' %></td>
+                  <td><%= formatEmplacement(m) %></td>
                   <td><%= m.description %></td>
                   <td><%= m.prix %> €</td>
                   <td>
@@ -352,9 +403,8 @@
         <ul class="list-unstyled mb-0">
           <li><strong>Quantité :</strong> <%= m.quantite %></li>
           <li><strong>Catégorie :</strong> <%= m.categorie %></li>
-          <li><strong>Rack :</strong> <%= m.rack %></li>
-          <li><strong>Compartiment :</strong> <%= m.compartiment %></li>
-          <li><strong>Niveau :</strong> <%= m.niveau!==null?m.niveau:'' %></li>
+          <% const mobileEmplacement = formatEmplacement(m); %>
+          <li><strong>Emplacement :</strong> <%= mobileEmplacement %></li>
           <li><strong>Description :</strong> <%= m.description %></li>
           <li><strong>Prix :</strong> <%= m.prix %> €</li>
           <li>

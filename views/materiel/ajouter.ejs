@@ -118,38 +118,46 @@
             </select>
           </div>
 
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label for="rack" class="form-label">Rack</label>
-              <select name="rack" id="rack" class="form-select">
-                <option value="">-- Choisir un rack --</option>
-                <option value="RM1">RM1</option>
-                <option value="RM2">RM2</option>
-                <option value="RM3">RM3</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="compartiment" class="form-label">Compartiment</label>
-              <select name="compartiment" id="compartiment" class="form-select">
-                <option value="">-- Choisir un compartiment --</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label for="niveau" class="form-label">Niveau</label>
-              <select name="niveau" id="niveau" class="form-select">
-                <option value="">-- Choisir un niveau --</option>
-                <option value="0">0</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
-            </div>
+          <!-- Emplacement dynamique -->
+          <div class="mb-3">
+            <label for="rack" class="form-label">Rack</label>
+            <select name="rack" id="rack" class="form-select">
+              <option value="">-- Choisir un rack --</option>
+              <option value="RM1">RM1</option>
+              <option value="RM2">RM2</option>
+              <option value="RM3">RM3</option>
+              <option value="RM4">RM4</option>
+              <option value="RM5">RM5</option>
+              <option value="RM6">RM6</option>
+              <option value="RM7">RM7</option>
+              <option value="RM8">RM8</option>
+              <option value="RM9">RM9</option>
+              <option value="RM10">RM10</option>
+              <option value="GL">GL</option>
+              <option value="RK">RK</option>
+              <option value="Mezza">Mezza</option>
+              <option value="Contenaire">Contenaire</option>
+            </select>
+          </div>
+
+          <div id="compartiment-group" class="mb-3" style="display:none;">
+            <label for="compartiment" class="form-label">Compartiment</label>
+            <select name="compartiment" id="compartiment" class="form-select"></select>
+          </div>
+
+          <div id="niveau-group" class="mb-3" style="display:none;">
+            <label for="niveau" class="form-label">Étage</label>
+            <select name="niveau" id="niveau" class="form-select"></select>
+          </div>
+
+          <div id="position-group" class="mb-3" style="display:none;">
+            <label for="position" class="form-label">Position</label>
+            <select name="position" id="position" class="form-select">
+              <option value="">-- Choisir une position --</option>
+              <option value="P1">P1</option>
+              <option value="P2">P2</option>
+              <option value="P3">P3</option>
+            </select>
           </div>
 
           <div class="mb-3">
@@ -169,5 +177,93 @@
     </div>
   </div>
   <script src="/js/bootstrap.bundle.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const rackSelect = document.getElementById('rack');
+    const compartimentSelect = document.getElementById('compartiment');
+    const niveauSelect = document.getElementById('niveau');
+    const positionSelect = document.getElementById('position');
+    const compartimentGroup = document.getElementById('compartiment-group');
+    const niveauGroup = document.getElementById('niveau-group');
+    const positionGroup = document.getElementById('position-group');
+
+    function resetSelect(selectEl, placeholderText) {
+      selectEl.innerHTML = '';
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = placeholderText;
+      selectEl.appendChild(option);
+      selectEl.value = '';
+    }
+
+    function populate(selectEl, values) {
+      values.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    function updateFields() {
+      const rack = rackSelect.value;
+
+      resetSelect(compartimentSelect, '-- Choisir un compartiment --');
+      resetSelect(niveauSelect, '-- Choisir un étage --');
+      compartimentGroup.style.display = 'none';
+      niveauGroup.style.display = 'none';
+      positionSelect.value = '';
+      positionGroup.style.display = 'none';
+
+      if (!rack) {
+        return;
+      }
+
+      switch (rack) {
+        case 'RM1':
+        case 'RM2':
+        case 'RM3':
+        case 'RM4':
+        case 'RM5':
+        case 'RM6':
+        case 'RM7':
+        case 'RM8':
+        case 'RM9':
+        case 'RM10':
+          populate(compartimentSelect, ['A', 'B', 'C']);
+          compartimentGroup.style.display = 'block';
+          populate(niveauSelect, ['1', '2', '3', '4', '5']);
+          niveauGroup.style.display = 'block';
+          positionGroup.style.display = 'block';
+          break;
+        case 'GL':
+          populate(niveauSelect, ['0', '1', '2', '3', '4', '5', '6']);
+          niveauGroup.style.display = 'block';
+          break;
+        case 'RK': {
+          const letters = Array.from({ length: 16 }, (_, i) =>
+            String.fromCharCode('A'.charCodeAt(0) + i)
+          );
+          populate(compartimentSelect, letters);
+          compartimentGroup.style.display = 'block';
+          populate(niveauSelect, ['0', '1', '2', '3']);
+          niveauGroup.style.display = 'block';
+          break;
+        }
+        case 'Mezza':
+          populate(compartimentSelect, ['1', '2', '3', '4', '5', '6', '7', '8']);
+          compartimentGroup.style.display = 'block';
+          break;
+        case 'Contenaire':
+          populate(compartimentSelect, ['1']);
+          compartimentGroup.style.display = 'block';
+          break;
+      }
+    }
+
+    rackSelect.addEventListener('change', updateFields);
+    updateFields();
+  });
+  </script>
 </body>
 </html>
