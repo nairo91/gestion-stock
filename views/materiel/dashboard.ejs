@@ -373,7 +373,8 @@
                   </td>
                   <td>
                     <% if (user && user.role === 'admin') { %>
-                      <a href="/materiel/modifier/<%= m.id %>" class="btn btn-warning btn-sm mb-1">Modifier</a>
+                      <a href="/materiel/editer/<%= m.id %>" class="btn btn-primary btn-sm mb-1 me-1">Modifier</a>
+                      <a href="/materiel/modifier/<%= m.id %>" class="btn btn-warning btn-sm mb-1">Modifier Quantité</a>
                       <form action="/materiel/supprimer/<%= m.id %>" method="POST" style="display:inline-block;" onsubmit="return confirm('Voulez-vous vraiment supprimer ce matériel ?');">
                         <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                       </form>
@@ -414,7 +415,8 @@
           </li>
         </ul>
         <% if (user && user.role==='admin') { %>
-          <a href="/materiel/modifier/<%=m.id%>" class="btn btn-sm btn-warning">Modifier</a>
+          <a href="/materiel/editer/<%=m.id%>" class="btn btn-sm btn-primary mb-1">Modifier</a>
+          <a href="/materiel/modifier/<%=m.id%>" class="btn btn-sm btn-warning mb-1">Modifier Quantité</a>
           <form action="/materiel/supprimer/<%=m.id%>" method="POST" style="display:inline;">
             <button class="btn btn-sm btn-danger">Supprimer</button>
           </form>

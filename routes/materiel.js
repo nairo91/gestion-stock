@@ -29,6 +29,35 @@ const buildEmplacement = (materiel) => {
   return parts.join('-');
 };
 
+const trimString = value =>
+  typeof value === 'string' ? value.trim() : value;
+
+const normalizeOptionalString = value => {
+  const trimmedValue = trimString(value);
+  if (trimmedValue === undefined || trimmedValue === null || trimmedValue === '') {
+    return null;
+  }
+  return trimmedValue;
+};
+
+const parseOptionalInt = value => {
+  const trimmedValue = trimString(value);
+  if (trimmedValue === undefined || trimmedValue === null || trimmedValue === '') {
+    return null;
+  }
+  const parsed = parseInt(trimmedValue, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const parseOptionalFloat = value => {
+  const trimmedValue = trimString(value);
+  if (trimmedValue === undefined || trimmedValue === null || trimmedValue === '') {
+    return null;
+  }
+  const parsed = parseFloat(trimmedValue);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
   res.redirect('/auth/login');
@@ -273,42 +302,33 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
       ...rest
     } = req.body;
 
-    const trimString = value =>
-      typeof value === 'string' ? value.trim() : value;
-
-    const normalizeOptionalString = value => {
-      const trimmedValue = trimString(value);
-      if (trimmedValue === undefined || trimmedValue === null || trimmedValue === '') {
-        return null;
-      }
-      return trimmedValue;
-    };
-
     const sanitizedRest = Object.fromEntries(
       Object.entries(rest).map(([key, value]) => [key, trimString(value)])
     );
 
-    const prixTrimmed = trimString(prix);
-    const prixValue =
-      prixTrimmed !== undefined && prixTrimmed !== '' ? parseFloat(prixTrimmed) : null;
+    if (!sanitizedRest.nom || sanitizedRest.nom === '') {
+      return res.send('Le nom du matériel est requis.');
+    }
 
-    const niveauTrimmed = trimString(niveau);
-    const niveauValue =
-      niveauTrimmed !== undefined && niveauTrimmed !== ''
-        ? parseInt(niveauTrimmed, 10)
-        : null;
+    const quantiteTrimmed = trimString(quantite);
+    if (quantiteTrimmed === undefined || quantiteTrimmed === null || quantiteTrimmed === '') {
+      return res.send('La quantité est requise.');
+    }
 
-    const barcodeValue = normalizeOptionalString(barcode);
+    const quantiteValue = parseInt(quantiteTrimmed, 10);
+    if (Number.isNaN(quantiteValue)) {
+      return res.send('La quantité fournie est invalide.');
+    }
 
     const nouveauMateriel = await Materiel.create({
       ...sanitizedRest,
-      quantite: parseInt(quantite, 10),
-      prix: prixValue,
+      quantite: quantiteValue,
+      prix: parseOptionalFloat(prix),
       rack: normalizeOptionalString(rack),
       compartiment: normalizeOptionalString(compartiment),
-      niveau: niveauValue,
+      niveau: parseOptionalInt(niveau),
       position: normalizeOptionalString(position),
-      barcode: barcodeValue,
+      barcode: normalizeOptionalString(barcode),
       vehiculeId: null,
       chantierId: null
     });
@@ -341,6 +361,123 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
     res.send('Erreur lors de l’ajout.');
   }
 });
+
+/* ======================
+   ÉDITION COMPLÈTE
+====================== */
+router.get('/editer/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const materiel = await Materiel.findByPk(req.params.id, {
+      include: [{ model: Photo, as: 'photos' }]
+    });
+    if (!materiel) return res.send('Matériel non trouvé.');
+    res.render('materiel/editer', { materiel });
+  } catch (err) {
+    console.error(err);
+    res.send('Erreur lors de la récupération du matériel.');
+  }
+});
+
+router.post(
+  '/editer/:id',
+  ensureAuthenticated,
+  checkAdmin,
+  upload.array('photos', 5),
+  async (req, res) => {
+    try {
+      const materiel = await Materiel.findByPk(req.params.id, {
+        include: [{ model: Photo, as: 'photos' }]
+      });
+      if (!materiel) return res.send('Matériel non trouvé.');
+
+      const {
+        prix,
+        quantite,
+        niveau,
+        rack,
+        compartiment,
+        position,
+        barcode,
+        photosToDelete,
+        ...rest
+      } = req.body;
+
+      const sanitizedRest = Object.fromEntries(
+        Object.entries(rest).map(([key, value]) => [key, trimString(value)])
+      );
+
+      if (!sanitizedRest.nom || sanitizedRest.nom === '') {
+        return res.send('Le nom du matériel est requis.');
+      }
+
+      const quantiteTrimmed = trimString(quantite);
+      if (quantiteTrimmed === undefined || quantiteTrimmed === null || quantiteTrimmed === '') {
+        return res.send('La quantité est requise.');
+      }
+
+      const quantiteValue = parseInt(quantiteTrimmed, 10);
+      if (Number.isNaN(quantiteValue)) {
+        return res.send('La quantité fournie est invalide.');
+      }
+
+      const updateData = {
+        ...sanitizedRest,
+        quantite: quantiteValue,
+        prix: parseOptionalFloat(prix),
+        rack: normalizeOptionalString(rack),
+        compartiment: normalizeOptionalString(compartiment),
+        niveau: parseOptionalInt(niveau),
+        position: normalizeOptionalString(position),
+        barcode: normalizeOptionalString(barcode)
+      };
+
+      const oldQuantite = materiel.quantite;
+      await materiel.update(updateData);
+
+      const photosToDeleteValue = photosToDelete;
+      if (photosToDeleteValue) {
+        const idsToDelete = Array.isArray(photosToDeleteValue)
+          ? photosToDeleteValue
+          : [photosToDeleteValue];
+        const numericIds = idsToDelete
+          .map(id => parseInt(id, 10))
+          .filter(id => !Number.isNaN(id));
+        if (numericIds.length > 0) {
+          await Photo.destroy({
+            where: { id: numericIds, materielId: materiel.id }
+          });
+        }
+      }
+
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const url = file.path || file.secure_url;
+          await Photo.create({
+            chemin: url,
+            materielId: materiel.id
+          });
+        }
+      }
+
+      if (oldQuantite !== quantiteValue) {
+        await Historique.create({
+          materielId: materiel.id,
+          oldQuantite: oldQuantite,
+          newQuantite: quantiteValue,
+          userId: req.user ? req.user.id : null,
+          action: 'UPDATE',
+          materielNom: materiel.nom,
+          stockType: 'depot'
+        });
+      }
+
+      res.redirect('/materiel');
+    } catch (err) {
+      console.error(err);
+      res.send('Erreur lors de la mise à jour du matériel.');
+    }
+  }
+);
 
 /* ======================
    MODIFICATION QUANTITÉ
