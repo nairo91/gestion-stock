@@ -108,17 +108,17 @@
           <div class="mb-3">
             <label for="categorie" class="form-label">Catégorie</label>
             <select name="categorie" id="categorie" class="form-select" required>
+              <option value="" <%= ['Électricité', 'Plomberie', 'CVC', 'Plâtrerie', 'Menuiserie INT', 'Menuiserie EXT', 'Revêtement de sol', 'Revêtement mural', 'Quincaillerie', 'Fixations (visseries, colles…)'].includes(materiel.categorie) ? '' : 'selected' %>>-- Choisir une catégorie --</option>
+              <option value="Électricité" <%= materiel.categorie === 'Électricité' ? 'selected' : '' %>>Électricité</option>
               <option value="Plomberie" <%= materiel.categorie === 'Plomberie' ? 'selected' : '' %>>Plomberie</option>
-              <option value="Electricité" <%= materiel.categorie === 'Electricité' ? 'selected' : '' %>>Electricité</option>
-              <option value="Climatisation" <%= materiel.categorie === 'Climatisation' ? 'selected' : '' %>>Climatisation</option>
-              <option value="Chauffage" <%= materiel.categorie === 'Chauffage' ? 'selected' : '' %>>Chauffage</option>
-              <option value="Revêtement mural / Revêtement Sol" <%= materiel.categorie === 'Revêtement mural / Revêtement Sol' ? 'selected' : '' %>>Revêtement mural / Revêtement Sol</option>
-              <option value="Enduit" <%= materiel.categorie === 'Enduit' ? 'selected' : '' %>>Enduit</option>
-              <option value="Maçonnerie" <%= materiel.categorie === 'Maçonnerie' ? 'selected' : '' %>>Maçonnerie</option>
-              <option value="Ventilation" <%= materiel.categorie === 'Ventilation' ? 'selected' : '' %>>Ventilation</option>
-              <option value="Menuiserie" <%= materiel.categorie === 'Menuiserie' ? 'selected' : '' %>>Menuiserie</option>
-              <option value="Electroportatif" <%= materiel.categorie === 'Electroportatif' ? 'selected' : '' %>>Electroportatif</option>
-              <option value="Autre" <%= !materiel.categorie || materiel.categorie === 'Autre' ? 'selected' : '' %>>Autre</option>
+              <option value="CVC" <%= materiel.categorie === 'CVC' ? 'selected' : '' %>>CVC</option>
+              <option value="Plâtrerie" <%= materiel.categorie === 'Plâtrerie' ? 'selected' : '' %>>Plâtrerie</option>
+              <option value="Menuiserie INT" <%= materiel.categorie === 'Menuiserie INT' ? 'selected' : '' %>>Menuiserie INT</option>
+              <option value="Menuiserie EXT" <%= materiel.categorie === 'Menuiserie EXT' ? 'selected' : '' %>>Menuiserie EXT</option>
+              <option value="Revêtement de sol" <%= materiel.categorie === 'Revêtement de sol' ? 'selected' : '' %>>Revêtement de sol</option>
+              <option value="Revêtement mural" <%= materiel.categorie === 'Revêtement mural' ? 'selected' : '' %>>Revêtement mural</option>
+              <option value="Quincaillerie" <%= materiel.categorie === 'Quincaillerie' ? 'selected' : '' %>>Quincaillerie</option>
+              <option value="Fixations (visseries, colles…)" <%= materiel.categorie === 'Fixations (visseries, colles…)' ? 'selected' : '' %>>Fixations (visseries, colles…)</option>
             </select>
           </div>
 
