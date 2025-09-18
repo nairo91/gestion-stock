@@ -261,27 +261,21 @@ router.get('/ajouter', ensureAuthenticated, checkAdmin, (req, res) => {
 router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
     const {
-      nom,
-      reference,
-      barcode,   // <-- on récupère le code scanné s'il y en a un
-      quantite,
-      description,
       prix,
-      categorie,
+      quantite,
+      niveau,
       rack,
       compartiment,
-      niveau,
-      position
+      position,
+      ...rest
     } = req.body;
 
+    const prixValue = prix && prix.trim() !== '' ? parseFloat(prix) : null;
+
     const nouveauMateriel = await Materiel.create({
-      nom,
-      reference,
-      barcode,
+      ...rest,
       quantite: parseInt(quantite, 10),
-      description,
-      prix: parseFloat(prix),
-      categorie,
+      prix: prixValue,
       rack: rack || null,
       compartiment: compartiment || null,
       niveau: niveau ? parseInt(niveau, 10) : null,
