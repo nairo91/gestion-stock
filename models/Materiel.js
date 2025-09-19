@@ -8,7 +8,19 @@ const Materiel = sequelize.define(
     nom: { type: DataTypes.STRING, allowNull: false },
     reference: { type: DataTypes.STRING },
     barcode: { type: DataTypes.STRING, allowNull: true, unique: true },
-    quantite: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    quantite: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+      get() {
+        const rawValue = this.getDataValue('quantite');
+        if (rawValue === null || rawValue === undefined) {
+          return rawValue;
+        }
+        const parsed = parseFloat(rawValue);
+        return Number.isNaN(parsed) ? 0 : parsed;
+      }
+    },
     description: { type: DataTypes.TEXT },
     prix: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     categorie: { type: DataTypes.STRING },

@@ -100,6 +100,7 @@
 </head>
 
 <body>
+  <% const formatQuantity = value => value === null || value === undefined ? '-' : Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); %>
   <!-- Barre de navigation -->
   <nav class="navbar navbar-expand-lg">
     <div class="container-fluid px-4">
@@ -159,8 +160,8 @@
                         <%= h.materielNom ? h.materielNom : 'Inconnu' %>
                       <% } %>
                     </td>
-                    <td><%= (h.oldQuantite !== null) ? h.oldQuantite : '-' %></td>
-                    <td><%= (h.newQuantite !== null) ? h.newQuantite : '-' %></td>
+                    <td><%= formatQuantity(h.oldQuantite) %></td>
+                    <td><%= formatQuantity(h.newQuantite) %></td>
                     <td>
                       <!-- Différenciation par type d'action -->
                       <% if (h.action === 'DELETE') { %>

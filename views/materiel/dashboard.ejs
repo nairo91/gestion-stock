@@ -90,6 +90,7 @@
 </head>
 
 <body>
+  <% const formatQuantity = value => Number(value ?? 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); %>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
@@ -359,8 +360,8 @@
                   <td><%= m.nom %></td>
                   <td><%= m.reference %></td>
                   <td>
-                    <%= m.quantite %>
-                    <% if (m.quantite < 5) { %>
+                    <%= formatQuantity(m.quantite) %>
+                    <% if (Number(m.quantite) < 5) { %>
                       <span class="badge bg-danger ms-1">Stock faible</span>
                     <% } %>
                   </td>
@@ -407,7 +408,7 @@
           <% } %>
         </h5>
         <ul class="list-unstyled mb-0">
-          <li><strong>Quantité :</strong> <%= m.quantite %></li>
+          <li><strong>Quantité :</strong> <%= formatQuantity(m.quantite) %></li>
           <li><strong>Catégorie :</strong> <%= m.categorie %></li>
           <% const mobileEmplacement = formatEmplacement(m); %>
           <li><strong>Emplacement :</strong> <%= mobileEmplacement %></li>

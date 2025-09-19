@@ -32,6 +32,9 @@ const buildEmplacement = (materiel) => {
 const trimString = value =>
   typeof value === 'string' ? value.trim() : value;
 
+const normalizeDecimalString = value =>
+  typeof value === 'string' ? value.replace(/,/g, '.').trim() : value;
+
 const normalizeOptionalString = value => {
   const trimmedValue = trimString(value);
   if (trimmedValue === undefined || trimmedValue === null || trimmedValue === '') {
@@ -50,13 +53,29 @@ const parseOptionalInt = value => {
 };
 
 const parseOptionalFloat = value => {
-  const trimmedValue = trimString(value);
+  const trimmedValue = normalizeDecimalString(value);
   if (trimmedValue === undefined || trimmedValue === null || trimmedValue === '') {
     return null;
   }
   const parsed = parseFloat(trimmedValue);
   return Number.isNaN(parsed) ? null : parsed;
 };
+
+const parseDecimalOrZero = value => {
+  const normalized = normalizeDecimalString(value);
+  if (normalized === undefined || normalized === null || normalized === '') {
+    return 0;
+  }
+  const parsed = parseFloat(normalized);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const quantityFormatter = new Intl.NumberFormat('fr-FR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+
+const formatQuantity = value => quantityFormatter.format(parseDecimalOrZero(value));
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
@@ -99,7 +118,7 @@ router.get('/export/csv', ensureAuthenticated, async (req, res) => {
     const records = materiels.map(m => ({
       id: m.id,
       nom: m.nom,
-      quantite: m.quantite,
+      quantite: formatQuantity(m.quantite),
       description: m.description,
       prix: m.prix,
       emplacement: buildEmplacement(m),
@@ -143,7 +162,7 @@ router.get('/export/excel', ensureAuthenticated, async (req, res) => {
       worksheet.addRow({
         id: m.id,
         nom: m.nom,
-        quantite: m.quantite,
+        quantite: formatQuantity(m.quantite),
         description: m.description,
         prix: m.prix,
         emplacement: buildEmplacement(m),
@@ -182,7 +201,7 @@ router.get('/export/pdf', ensureAuthenticated, async (req, res) => {
 
     materiels.forEach(m => {
       doc.fontSize(14).text(`ID: ${m.id} - ${m.nom}`, { underline: true });
-      doc.fontSize(12).text(`Quantité: ${m.quantite}`);
+      doc.fontSize(12).text(`Quantité: ${formatQuantity(m.quantite)}`);
       doc.fontSize(12).text(`Description: ${m.description}`);
       doc.fontSize(12).text(`Prix: ${m.prix} €`);
       const emplacement = buildEmplacement(m) || 'Non défini';
@@ -258,8 +277,10 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     }
     if (minQuantite || maxQuantite) {
       whereClause.quantite = whereClause.quantite || {};
-      if (minQuantite) whereClause.quantite[Op.gte] = parseInt(minQuantite, 10);
-      if (maxQuantite) whereClause.quantite[Op.lte] = parseInt(maxQuantite, 10);
+      const minQuantiteValue = parseOptionalFloat(minQuantite);
+      const maxQuantiteValue = parseOptionalFloat(maxQuantite);
+      if (minQuantiteValue !== null) whereClause.quantite[Op.gte] = minQuantiteValue;
+      if (maxQuantiteValue !== null) whereClause.quantite[Op.lte] = maxQuantiteValue;
     }
 
     const materiels = await Materiel.findAll({
@@ -315,10 +336,7 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, upload.array('photos', 
       return res.send('La quantité est requise.');
     }
 
-    const quantiteValue = parseInt(quantiteTrimmed, 10);
-    if (Number.isNaN(quantiteValue)) {
-      return res.send('La quantité fournie est invalide.');
-    }
+    const quantiteValue = parseDecimalOrZero(quantiteTrimmed);
 
     const nouveauMateriel = await Materiel.create({
       ...sanitizedRest,
@@ -415,10 +433,7 @@ router.post(
         return res.send('La quantité est requise.');
       }
 
-      const quantiteValue = parseInt(quantiteTrimmed, 10);
-      if (Number.isNaN(quantiteValue)) {
-        return res.send('La quantité fournie est invalide.');
-      }
+      const quantiteValue = parseDecimalOrZero(quantiteTrimmed);
 
       const updateData = {
         ...sanitizedRest,
@@ -431,7 +446,7 @@ router.post(
         barcode: normalizeOptionalString(barcode)
       };
 
-      const oldQuantite = materiel.quantite;
+      const oldQuantite = parseDecimalOrZero(materiel.quantite);
       await materiel.update(updateData);
 
       const photosToDeleteValue = photosToDelete;
@@ -497,17 +512,18 @@ router.post('/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) =
   try {
     // On suppose qu'on reçoit "action=add|remove" et "amount"
     const { action, amount } = req.body;
-    const delta = parseInt(amount, 10);
+    const delta = parseDecimalOrZero(amount);
 
     const materiel = await Materiel.findByPk(req.params.id);
     if (!materiel) return res.send("Matériel non trouvé.");
 
-    const oldQte = materiel.quantite;
+    const currentQuantite = parseDecimalOrZero(materiel.quantite);
+    const oldQte = currentQuantite;
 
     if (action === 'add') {
-      materiel.quantite += delta;
+      materiel.quantite = currentQuantite + delta;
     } else if (action === 'remove') {
-      materiel.quantite = Math.max(0, materiel.quantite - delta);
+      materiel.quantite = Math.max(0, currentQuantite - delta);
     } else {
       // S’il n’y a pas d’action, on ne fait rien (ou on gère autrement)
       return res.send("Action inconnue.");
@@ -527,7 +543,7 @@ router.post('/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) =
     });
 
     // Notification stock faible
-    if (materiel.quantite < 5 && typeof sendLowStockNotification === 'function') {
+    if (parseDecimalOrZero(materiel.quantite) < 5 && typeof sendLowStockNotification === 'function') {
       sendLowStockNotification(materiel);
     }
 
@@ -548,7 +564,7 @@ router.post('/supprimer/:id', ensureAuthenticated, checkAdmin, async (req, res) 
     if (!materiel) return res.send("Matériel non trouvé.");
 
     const oldName = materiel.nom;
-    const oldQte = materiel.quantite;
+    const oldQte = parseDecimalOrZero(materiel.quantite);
 
     // Historique
     await Historique.create({

@@ -25,12 +25,28 @@ const Historique = sequelize.define(
 
     // Quantités avant / après (null si pas applicable)
     oldQuantite: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
+      get() {
+        const rawValue = this.getDataValue('oldQuantite');
+        if (rawValue === null || rawValue === undefined) {
+          return rawValue;
+        }
+        const parsed = parseFloat(rawValue);
+        return Number.isNaN(parsed) ? 0 : parsed;
+      },
     },
     newQuantite: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
+      get() {
+        const rawValue = this.getDataValue('newQuantite');
+        if (rawValue === null || rawValue === undefined) {
+          return rawValue;
+        }
+        const parsed = parseFloat(rawValue);
+        return Number.isNaN(parsed) ? 0 : parsed;
+      },
     },
 
     // Libellé lisible (nom du matériel ou autre)

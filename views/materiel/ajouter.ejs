@@ -88,7 +88,16 @@
 
           <div class="mb-3">
             <label for="quantite" class="form-label">Quantité</label>
-            <input type="number" name="quantite" id="quantite" class="form-control" required>
+            <input
+              type="text"
+              name="quantite"
+              id="quantite"
+              class="form-control"
+              inputmode="decimal"
+              pattern="^\\d+(?:[\\.,]\\d{0,2})?$"
+              placeholder="1,5 ou 1.5"
+              required
+            >
           </div>
 
           <div class="mb-3">
@@ -182,6 +191,8 @@
   <script src="/js/bootstrap.bundle.min.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form');
+    const quantiteInput = document.getElementById('quantite');
     const rackSelect = document.getElementById('rack');
     const compartimentSelect = document.getElementById('compartiment');
     const niveauSelect = document.getElementById('niveau');
@@ -189,6 +200,19 @@
     const compartimentGroup = document.getElementById('compartiment-group');
     const niveauGroup = document.getElementById('niveau-group');
     const positionGroup = document.getElementById('position-group');
+
+    function normalizeQuantiteInput() {
+      if (quantiteInput) {
+        quantiteInput.value = quantiteInput.value.replace(/,/g, '.');
+      }
+    }
+
+    if (quantiteInput) {
+      quantiteInput.addEventListener('change', normalizeQuantiteInput);
+      if (form) {
+        form.addEventListener('submit', normalizeQuantiteInput);
+      }
+    }
 
     function resetSelect(selectEl, placeholderText) {
       selectEl.innerHTML = '';
