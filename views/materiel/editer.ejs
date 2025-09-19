@@ -108,17 +108,20 @@
           <div class="mb-3">
             <label for="categorie" class="form-label">Catégorie</label>
             <select name="categorie" id="categorie" class="form-select" required>
-              <option value="" <%= ['Électricité', 'Plomberie', 'CVC', 'Plâtrerie', 'Menuiserie INT', 'Menuiserie EXT', 'Revêtement de sol', 'Revêtement mural', 'Quincaillerie', 'Fixations (visseries, colles…)'].includes(materiel.categorie) ? '' : 'selected' %>>-- Choisir une catégorie --</option>
+              <option value="" <%= ['Électricité', 'Plomberie', 'CVC', 'Plâtrerie', 'Menuiserie INT', 'Menuiserie EXT', 'Maçonnerie', 'Revêtement de sol', 'Revêtement mural', 'Quincaillerie', 'Fixations (visseries, colles…)', 'Outillage Électroportatif', 'Autres'].includes(materiel.categorie) ? '' : 'selected' %>>-- Choisir une catégorie --</option>
               <option value="Électricité" <%= materiel.categorie === 'Électricité' ? 'selected' : '' %>>Électricité</option>
               <option value="Plomberie" <%= materiel.categorie === 'Plomberie' ? 'selected' : '' %>>Plomberie</option>
               <option value="CVC" <%= materiel.categorie === 'CVC' ? 'selected' : '' %>>CVC</option>
               <option value="Plâtrerie" <%= materiel.categorie === 'Plâtrerie' ? 'selected' : '' %>>Plâtrerie</option>
               <option value="Menuiserie INT" <%= materiel.categorie === 'Menuiserie INT' ? 'selected' : '' %>>Menuiserie INT</option>
               <option value="Menuiserie EXT" <%= materiel.categorie === 'Menuiserie EXT' ? 'selected' : '' %>>Menuiserie EXT</option>
+              <option value="Maçonnerie" <%= materiel.categorie === 'Maçonnerie' ? 'selected' : '' %>>Maçonnerie</option>
               <option value="Revêtement de sol" <%= materiel.categorie === 'Revêtement de sol' ? 'selected' : '' %>>Revêtement de sol</option>
               <option value="Revêtement mural" <%= materiel.categorie === 'Revêtement mural' ? 'selected' : '' %>>Revêtement mural</option>
               <option value="Quincaillerie" <%= materiel.categorie === 'Quincaillerie' ? 'selected' : '' %>>Quincaillerie</option>
               <option value="Fixations (visseries, colles…)" <%= materiel.categorie === 'Fixations (visseries, colles…)' ? 'selected' : '' %>>Fixations (visseries, colles…)</option>
+              <option value="Outillage Électroportatif" <%= materiel.categorie === 'Outillage Électroportatif' ? 'selected' : '' %>>Outillage Électroportatif</option>
+              <option value="Autres" <%= materiel.categorie === 'Autres' ? 'selected' : '' %>>Autres</option>
             </select>
           </div>
 
