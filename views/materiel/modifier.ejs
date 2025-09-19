@@ -59,6 +59,7 @@
   </style>
 </head>
 <body class="bg-light">
+  <% const formatQuantity = value => Number(value ?? 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); %>
   <div class="container">
     <div class="card card-custom">
       <div class="card-header card-header-custom">
@@ -71,12 +72,21 @@
         </p>
         <p class="mb-4">
           Quantité actuelle :
-          <span class="badge bg-info text-dark"><%= materiel.quantite %></span>
+          <span class="badge bg-info text-dark"><%= formatQuantity(materiel.quantite) %></span>
         </p>
         <form action="/materiel/modifier/<%= materiel.id %>" method="POST" class="row g-3">
           <div class="col-12">
             <label for="amount" class="form-label fw-bold">Combien ?</label>
-            <input type="number" name="amount" id="amount" class="form-control" value="1" min="1" required>
+            <input
+              type="text"
+              name="amount"
+              id="amount"
+              class="form-control"
+              value="1"
+              inputmode="decimal"
+              pattern="^\\d+(?:[\\.,]\\d{0,2})?$"
+              required
+            >
             <small class="text-muted">Saisissez la quantité à ajouter ou retirer.</small>
           </div>
           <div class="col-12 d-flex gap-2">
@@ -97,5 +107,24 @@
     </div>
   </div>
   <script src="/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.querySelector('form');
+      const amountInput = document.getElementById('amount');
+
+      function normalizeAmount() {
+        if (amountInput) {
+          amountInput.value = amountInput.value.replace(/,/g, '.');
+        }
+      }
+
+      if (amountInput) {
+        amountInput.addEventListener('change', normalizeAmount);
+        if (form) {
+          form.addEventListener('submit', normalizeAmount);
+        }
+      }
+    });
+  </script>
 </body>
 </html>
