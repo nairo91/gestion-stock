@@ -151,6 +151,7 @@
               <option value="RM10" <%= materiel.rack === 'RM10' ? 'selected' : '' %>>RM10</option>
               <option value="GL" <%= materiel.rack === 'GL' ? 'selected' : '' %>>GL</option>
               <option value="RK" <%= materiel.rack === 'RK' ? 'selected' : '' %>>RK</option>
+              <option value="ZS" <%= materiel.rack === 'ZS' ? 'selected' : '' %>>Zone Sécu (ZS)</option>
               <option value="Mezza" <%= materiel.rack === 'Mezza' ? 'selected' : '' %>>Mezza</option>
               <option value="Contenaire" <%= materiel.rack === 'Contenaire' ? 'selected' : '' %>>Contenaire</option>
             </select>
@@ -299,6 +300,17 @@
           compartimentGroup.style.display = 'block';
           populate(niveauSelect, ['0', '1', '2', '3']);
           niveauGroup.style.display = 'block';
+          break;
+        }
+        case 'ZS': {
+          const letters = Array.from({ length: 6 }, (_, i) =>
+            String.fromCharCode('A'.charCodeAt(0) + i)
+          );
+          populate(compartimentSelect, letters);
+          compartimentGroup.style.display = 'block';
+          populate(niveauSelect, ['0', '1', '2', '3', '4']);
+          niveauGroup.style.display = 'block';
+          positionGroup.style.display = 'none';
           break;
         }
         case 'Mezza':
