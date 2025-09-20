@@ -147,6 +147,7 @@
               <option value="RM10">RM10</option>
               <option value="GL">GL</option>
               <option value="RK">RK</option>
+              <option value="ZS">Zone Sécu (ZS)</option>
               <option value="Mezza">Mezza</option>
               <option value="Contenaire">Contenaire</option>
             </select>
@@ -275,6 +276,17 @@
           compartimentGroup.style.display = 'block';
           populate(niveauSelect, ['0', '1', '2', '3']);
           niveauGroup.style.display = 'block';
+          break;
+        }
+        case 'ZS': {
+          const letters = Array.from({ length: 6 }, (_, i) =>
+            String.fromCharCode('A'.charCodeAt(0) + i)
+          );
+          populate(compartimentSelect, letters);
+          compartimentGroup.style.display = 'block';
+          populate(niveauSelect, ['0', '1', '2', '3', '4']);
+          niveauGroup.style.display = 'block';
+          positionGroup.style.display = 'none';
           break;
         }
         case 'Mezza':
