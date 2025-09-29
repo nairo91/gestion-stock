@@ -17,6 +17,7 @@ const { ensureAuthenticated, checkAdmin } = require('./materiel');
 const Categorie = require('../models/Categorie');
 const Designation = require('../models/Designation');
 const { sequelize } = require('../config/database');
+const { sendReceptionGapNotification } = require('../utils/mailer');
 
 const CHANTIER_FILTER_KEYS = [
   'chantierId',
@@ -173,6 +174,66 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.send("Erreur lors de la récupération du stock chantier.");
+  }
+});
+
+
+router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const { quantiteReceptionnee } = req.body;
+    const receptionQty = parseInt(quantiteReceptionnee, 10);
+
+    if (Number.isNaN(receptionQty) || receptionQty <= 0) {
+      return res.status(400).send('Quantité de réception invalide.');
+    }
+
+    const mc = await MaterielChantier.findByPk(req.params.id, {
+      include: [
+        { model: Materiel, as: 'materiel' },
+        { model: Chantier, as: 'chantier' }
+      ]
+    });
+
+    if (!mc) {
+      return res.status(404).send('Matériel de chantier introuvable.');
+    }
+
+    const oldQuantite = mc.quantite || 0;
+    const oldQuantitePrevue = mc.quantitePrevue ?? 0;
+
+    const newQuantite = oldQuantite + receptionQty;
+    const newQuantitePrevue = Math.max(oldQuantitePrevue - receptionQty, 0);
+
+    mc.quantite = newQuantite;
+    mc.quantitePrevue = newQuantitePrevue;
+    await mc.save();
+
+    await Historique.create({
+      materielId: mc.materiel ? mc.materiel.id : null,
+      oldQuantite,
+      newQuantite,
+      userId: req.user ? req.user.id : null,
+      action: `Réception chantier de ${receptionQty}`,
+      materielNom: mc.materiel
+        ? `${mc.materiel.nom} (Chantier : ${mc.chantier ? mc.chantier.nom : 'N/A'})`
+        : 'Matériel chantier',
+      stockType: 'chantier'
+    });
+
+    const difference = (mc.quantitePrevue ?? 0) - mc.quantite;
+
+    if (difference > 0 && mc.materiel && mc.chantier) {
+      await sendReceptionGapNotification({
+        difference,
+        materielNom: mc.materiel.nom,
+        chantierNom: mc.chantier.nom
+      });
+    }
+
+    res.redirect('/chantier');
+  } catch (error) {
+    console.error('Erreur lors de la réception du matériel chantier :', error);
+    res.status(500).send('Erreur lors de la réception du matériel.');
   }
 });
 

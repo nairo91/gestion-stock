@@ -335,6 +335,35 @@
               <td>
 
                 <% if (user && user.role === 'admin') { %>
+                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#receptionModal<%= mc.id %>">
+                  Réceptionner
+                </button>
+
+                <div class="modal fade" id="receptionModal<%= mc.id %>" tabindex="-1" aria-labelledby="receptionModalLabel<%= mc.id %>" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form action="/chantier/materielChantier/receptionner/<%= mc.id %>" method="POST">
+                        <div class="modal-header bg-success text-white">
+                          <h5 class="modal-title" id="receptionModalLabel<%= mc.id %>">Réceptionner du matériel</h5>
+                          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                        </div>
+                        <div class="modal-body">
+                          <p class="mb-2"><strong>Matériel :</strong> <%= mc.materiel ? mc.materiel.nom : 'N/A' %></p>
+                          <p class="mb-3"><strong>Chantier :</strong> <%= mc.chantier ? mc.chantier.nom : 'N/A' %></p>
+                          <div class="mb-3">
+                            <label for="quantiteReceptionnee<%= mc.id %>" class="form-label">Quantité réceptionnée</label>
+                            <input type="number" class="form-control" id="quantiteReceptionnee<%= mc.id %>" name="quantiteReceptionnee" min="1" required>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                          <button type="submit" class="btn btn-success">Confirmer</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Bouton ici -->
                  <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
                 <!-- Tu peux aussi ajouter un bouton pour supprimer ici -->
