@@ -25,4 +25,31 @@ async function sendLowStockNotification(materiel) {
   }
 }
 
-module.exports = { sendLowStockNotification };
+async function sendReceptionGapNotification({ difference, materielNom, chantierNom }) {
+  const recipients = [
+    'launay.jeremy@batirenov.info',
+    'athari.keivan@batirenov.info',
+    'blot.valentin@batirenov.info',
+    'rouault.christophe@batirenov.info',
+    'mirona.orian@batirenov.info'
+  ];
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: recipients.join(','),
+    subject: `Manque de réception pour ${materielNom}`,
+    text: [
+      `Attention il manque ${difference} à réceptionner pour ${materielNom}.`,
+      `Chantier concerné : ${chantierNom}.`
+    ].join('\n')
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Alerte de réception envoyée pour ${materielNom} (${chantierNom})`);
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'alerte de réception :", error);
+  }
+}
+
+module.exports = { sendLowStockNotification, sendReceptionGapNotification };
