@@ -25,7 +25,13 @@ async function sendLowStockNotification(materiel) {
   }
 }
 
-async function sendReceptionGapNotification({ difference, materielNom, chantierNom }) {
+async function sendReceptionGapNotification({
+  difference,
+  materielNom,
+  chantierNom,
+  quantitePrevue,
+  quantiteReelle
+}) {
   const recipients = [
     'launay.jeremy@batirenov.info',
     'athari.keivan@batirenov.info',
@@ -34,12 +40,18 @@ async function sendReceptionGapNotification({ difference, materielNom, chantierN
     'mirona.orian@batirenov.info'
   ];
 
+  const ecartAbsolu = Math.abs(difference);
+  const tendance = difference > 0 ? 'supérieure' : 'inférieure';
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: recipients.join(','),
-    subject: `Manque de réception pour ${materielNom}`,
+    subject: `Écart de réception pour ${materielNom}`,
     text: [
-      `Attention il manque ${difference} à réceptionner pour ${materielNom}.`,
+      `Une différence de ${ecartAbsolu} a été détectée entre la quantité prévue et la quantité réceptionnée pour ${materielNom}.`,
+      `La quantité réceptionnée est ${tendance} à la quantité prévue.`,
+      `Quantité prévue : ${quantitePrevue}.`,
+      `Quantité réceptionnée : ${quantiteReelle}.`,
       `Chantier concerné : ${chantierNom}.`
     ].join('\n')
   };

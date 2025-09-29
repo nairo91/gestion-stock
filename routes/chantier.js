@@ -200,6 +200,7 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
 
     const oldQuantite = mc.quantite || 0;
     const oldQuantitePrevue = mc.quantitePrevue ?? 0;
+    const quantitePrevueTotale = oldQuantite + oldQuantitePrevue;
 
     const newQuantite = oldQuantite + receptionQty;
     const newQuantitePrevue = Math.max(oldQuantitePrevue - receptionQty, 0);
@@ -220,13 +221,15 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       stockType: 'chantier'
     });
 
-    const difference = (mc.quantitePrevue ?? 0) - mc.quantite;
+    const difference = newQuantite - quantitePrevueTotale;
 
-    if (difference > 0 && mc.materiel && mc.chantier) {
+    if (difference !== 0 && mc.materiel && mc.chantier) {
       await sendReceptionGapNotification({
         difference,
         materielNom: mc.materiel.nom,
-        chantierNom: mc.chantier.nom
+        chantierNom: mc.chantier.nom,
+        quantitePrevue: quantitePrevueTotale,
+        quantiteReelle: newQuantite
       });
     }
 
