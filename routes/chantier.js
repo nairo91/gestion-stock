@@ -247,25 +247,31 @@ router.get('/ajouterMateriel', ensureAuthenticated, checkAdmin, async (req, res)
     const chantiers = await Chantier.findAll();
     const emplacementsBruts = await Emplacement.findAll({ include: [{ model: Emplacement, as: 'parent' }] });
     const categories = await loadCategories();
+    const { chantierId: selectedChantierId } = req.query;
 
-function construireCheminComplet(emplacement) {
-  let chemin = emplacement.nom;
-  let courant = emplacement.parent;
-  while (courant) {
-    chemin = `${courant.nom} > ${chemin}`;
-    courant = courant.parent;
-  }
-  return chemin;
-}
+    function construireCheminComplet(emplacement) {
+      let chemin = emplacement.nom;
+      let courant = emplacement.parent;
+      while (courant) {
+        chemin = `${courant.nom} > ${chemin}`;
+        courant = courant.parent;
+      }
+      return chemin;
+    }
 
-const emplacements = emplacementsBruts.map(e => ({
-  id: e.id,
-  cheminComplet: construireCheminComplet(e),
-  chantierId: e.chantierId
-}));
+    const emplacements = emplacementsBruts.map(e => ({
+      id: e.id,
+      cheminComplet: construireCheminComplet(e),
+      chantierId: e.chantierId
+    }));
 
     // On passe chantiers et emplacements en une seule réponse
-    res.render('chantier/ajouterMateriel', { chantiers, emplacements, categories });
+    res.render('chantier/ajouterMateriel', {
+      chantiers,
+      emplacements,
+      categories,
+      selectedChantierId: selectedChantierId || ''
+    });
   } catch (err) {
     console.error(err);
     res.send("Erreur lors du chargement du formulaire d'ajout de matériel dans un chantier.");

@@ -79,7 +79,13 @@
   <% if (user && user.role === 'admin') { %>
   <!-- Bouton ici -->
    <!-- <a href="/chantier/ajouter" class="btn btn-primary">Ajouter une livraison chantier</a>-->
-  <a href="/chantier/ajouterMateriel" class="btn btn-success">Ajouter du matériel dans un chantier</a>
+  <% const chantierSelectionne = (chantiers || []).find(c => String(c.id) === String(chantierId)); %>
+  <a
+    href="/chantier/ajouterMateriel<%= chantierSelectionne ? `?chantierId=${encodeURIComponent(chantierSelectionne.id)}` : '' %>"
+    class="btn btn-success"
+  >
+    Ajouter du matériel dans <%= chantierSelectionne ? `chantier &laquo; ${chantierSelectionne.nom} &raquo;` : 'un chantier' %>
+  </a>
   <!-- Supprime le bouton "Modifier" global ici -->
   <a href="/chantier/ajouter-chantier" class="btn btn-success">Créer un nouveau chantier</a>
   <a href="/chantier/historique" class="btn btn-warning">Voir l'historique chantier</a>
