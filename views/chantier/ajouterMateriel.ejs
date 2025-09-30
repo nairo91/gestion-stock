@@ -255,9 +255,9 @@ select#emplacementId.form-control {
       <div class="mb-3">
         <label for="chantierId" class="form-label">Chantier</label>
         <select name="chantierId" id="chantierId" class="form-control" required>
-          <option value="" disabled selected>-- Choisir un chantier --</option>
+          <option value="" disabled <%= selectedChantierId ? '' : 'selected' %>>-- Choisir un chantier --</option>
           <% chantiers.forEach(function(c){ %>
-            <option value="<%= c.id %>">
+            <option value="<%= c.id %>" <%= String(c.id) === String(selectedChantierId) ? 'selected' : '' %>>
               <%= c.nom %> - <%= c.localisation %>
             </option>
           <% }); %>
