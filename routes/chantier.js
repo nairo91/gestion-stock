@@ -25,6 +25,7 @@ const CHANTIER_FILTER_KEYS = [
   'categorie',
   'emplacement',
   'description',
+  'fournisseur',
   'triNom',
   'triAjout',
   'triModification',
@@ -38,6 +39,7 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
     categorie,
     emplacement,
     description,
+    fournisseur,
     triNom,
     triAjout,
     triModification,
@@ -55,6 +57,9 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
   }
   if (description) {
     whereMateriel.description = { [Op.iLike]: `%${description}%` };
+  }
+  if (fournisseur) {
+    whereMateriel.fournisseur = { [Op.iLike]: `%${fournisseur}%` };
   }
 
   const order = [];
@@ -162,11 +167,26 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
+    const fournisseursRaw = await Materiel.findAll({
+      attributes: ['fournisseur'],
+      where: {
+        fournisseur: {
+          [Op.and]: [
+            { [Op.not]: null },
+            { [Op.ne]: '' }
+          ]
+        }
+      }
+    });
+    const fournisseurs = Array.from(
+      new Set(fournisseursRaw.map(item => item.fournisseur).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
     const categories = await loadCategories();
     res.render('chantier/index', {
       materielChantiers,
       chantiers,
       emplacements,
+      fournisseurs,
       categories,
       ...activeFilters
     });

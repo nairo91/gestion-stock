@@ -103,6 +103,7 @@
     pushParam('categorie', categorie);
     pushParam('emplacement', emplacement);
     pushParam('description', description);
+    pushParam('fournisseur', fournisseur);
     pushParam('triNom', triNom);
     pushParam('triAjout', triAjout);
     pushParam('triModification', triModification);
@@ -183,6 +184,16 @@
         <option value="<%= e.nom %>" <%= emplacement === e.nom ? 'selected' : '' %>><%= e.nom %></option>
       <% }); %>
     <% } %>
+  </select>
+</div>
+
+<div class="col-md-3">
+  <label for="fournisseur" class="form-label">Fournisseur</label>
+  <select class="form-select" name="fournisseur" id="fournisseur">
+    <option value="">-- Tous les fournisseurs --</option>
+    <% (fournisseurs || []).forEach(function(f) { %>
+      <option value="<%= f %>" <%= fournisseur === f ? 'selected' : '' %>><%= f %></option>
+    <% }); %>
   </select>
 </div>
 
