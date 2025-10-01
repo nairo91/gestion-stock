@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Fiche du matériel dépôt</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .card {
+      border-left: 5px solid #0d6efd;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .card img {
+      max-width: 100%;
+      border-radius: 5px;
+      margin-top: 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    .table th {
+      background-color: #e9ecef;
+    }
+    .badge-action {
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+  <%
+    const formatQuantity = value => Number(value ?? 0).toLocaleString('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    const formatPrice = value => {
+      if (value === null || value === undefined || value === '') {
+        return '-';
+      }
+      const number = Number(value);
+      if (Number.isNaN(number)) {
+        return value;
+      }
+      return number.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+    };
+  %>
+  <div class="container mt-5">
+    <h2 class="mb-4 text-primary">🔍 Détails du matériel : <%= materiel.nom %></h2>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <p><strong>📦 Référence :</strong> <%= materiel.reference || '-' %></p>
+        <p><strong>📝 Description :</strong> <%= materiel.description || '-' %></p>
+        <p><strong>🏷️ Catégorie :</strong> <%= materiel.categorie || '-' %></p>
+        <p><strong>🏢 Fournisseur :</strong> <%= materiel.fournisseur || '-' %></p>
+        <p><strong>💰 Prix :</strong> <%= formatPrice(materiel.prix) %></p>
+        <p><strong>🔢 Quantité en stock :</strong> <%= formatQuantity(materiel.quantite) %></p>
+        <p><strong>📍 Emplacement :</strong> <%= materiel.emplacement ? materiel.emplacement.nom : '-' %></p>
+        <p><strong>📦 Rack :</strong> <%= materiel.rack || '-' %></p>
+        <p><strong>🗃️ Compartiment :</strong> <%= materiel.compartiment || '-' %></p>
+        <p><strong>📐 Niveau :</strong> <%= (materiel.niveau !== null && materiel.niveau !== undefined) ? materiel.niveau : '-' %></p>
+        <p><strong>🎯 Position :</strong> <%= materiel.position || '-' %></p>
+
+        <% if (materiel.photos && materiel.photos.length > 0) { %>
+          <p><strong>🖼️ Photos :</strong></p>
+          <div class="d-flex flex-wrap gap-2">
+            <% materiel.photos.forEach(photo => { %>
+              <a href="/<%= photo.chemin.replace(/\\/g, '/') %>" target="_blank">
+                <img src="/<%= photo.chemin.replace(/\\/g, '/') %>" alt="Photo de <%= materiel.nom %>" class="img-fluid" style="max-width: 200px;">
+              </a>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <p><strong>🖼️ Photos :</strong> -</p>
+        <% } %>
+      </div>
+    </div>
+
+    <h4 class="text-secondary">🕓 Historique des actions</h4>
+    <% if (!historique || historique.length === 0) { %>
+      <p class="text-muted">Aucune action enregistrée.</p>
+    <% } else { %>
+      <table class="table table-hover table-sm mt-3">
+        <thead>
+          <tr>
+            <th>Date / Heure</th>
+            <th>Action</th>
+            <th>Par</th>
+            <th>Ancienne Qte</th>
+            <th>Nouvelle Qte</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% historique.forEach(h => { %>
+            <tr>
+              <td><%= new Date(h.createdAt).toLocaleString('fr-FR') %></td>
+              <td><span class="badge bg-info text-dark badge-action"><%= h.action %></span></td>
+              <td><%= h.user ? h.user.nom : 'Inconnu' %></td>
+              <td><%= (h.oldQuantite !== null && h.oldQuantite !== undefined) ? formatQuantity(h.oldQuantite) : '-' %></td>
+              <td><%= (h.newQuantite !== null && h.newQuantite !== undefined) ? formatQuantity(h.newQuantite) : '-' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+
+    <a href="/materiel" class="btn btn-outline-secondary mt-4">⬅ Retour au stock dépôt</a>
+  </div>
+
+  <script src="/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

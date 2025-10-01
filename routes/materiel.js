@@ -11,6 +11,7 @@ const Materiel = require('../models/Materiel');
 const Photo = require('../models/Photo');
 const Historique = require('../models/Historique');
 const User = require('../models/User');
+const Emplacement = require('../models/Emplacement');
 const MaterielDelivery = require('../models/MaterielDelivery'); // si utilisé
 const { sendLowStockNotification } = require('../utils/mailer') || {};
 
@@ -609,6 +610,35 @@ router.get('/historique', ensureAuthenticated, checkAdmin, async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la récupération de l'historique du dépôt :", err);
     res.send("Erreur lors de la récupération de l'historique du dépôt.");
+  }
+});
+
+/* ======================
+   FICHE D'UN MATÉRIEL (DÉPÔT)
+====================== */
+router.get('/info/:id', ensureAuthenticated, async (req, res) => {
+  try {
+    const materiel = await Materiel.findByPk(req.params.id, {
+      include: [
+        { model: Photo, as: 'photos' },
+        { model: Emplacement, as: 'emplacement' }
+      ]
+    });
+
+    if (!materiel) {
+      return res.status(404).send("Matériel non trouvé.");
+    }
+
+    const historique = await Historique.findAll({
+      where: { materielId: materiel.id },
+      include: [{ model: User, as: 'user' }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.render('materiel/infoMaterielDepot', { materiel, historique });
+  } catch (err) {
+    console.error('Erreur lors de la récupération des informations du matériel dépôt :', err);
+    res.send("Erreur lors de la récupération des informations du matériel.");
   }
 });
 
