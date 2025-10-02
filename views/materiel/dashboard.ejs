@@ -17,111 +17,126 @@
       padding-top: var(--navbar-h);
     }
 
+    /* === conteneur plus large (PC) === */
+    @media (min-width: 1400px) {
+      .container,
+      .container-lg,
+      .container-xl,
+      .container-xxl {
+        max-width: 1600px;
+      }
+    }
+
     .navbar.fixed-top,
     .navbar.sticky-top {
       z-index: 1030;
     }
 
-    .table.fit {
-      table-layout: fixed;
-      width: 100%;
+    /* --- STOCK TABLE: force one-row, enable horizontal scroll --- */
+    .stock-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .table.fit th,
-    .table.fit td {
-      white-space: normal;
-      word-break: break-word;
+    .table-stock {
+      border-collapse: separate;
+      table-layout: fixed;
+      min-width: 1280px;
+    }
+
+    .table-stock th,
+    .table-stock td {
+      white-space: nowrap;
       vertical-align: middle;
     }
 
-    .table.fit th.col-designation,
-    .table.fit td.col-designation { width: 16%; }
-    .table.fit th.col-photo,
-    .table.fit td.col-photo { width: 8%; }
-    .table.fit th.col-reference,
-    .table.fit td.col-reference { width: 10%; }
-    .table.fit th.col-categorie,
-    .table.fit td.col-categorie { width: 12%; }
-    .table.fit th.col-description,
-    .table.fit td.col-description { width: 12%; }
-    .table.fit th.col-fournisseur,
-    .table.fit td.col-fournisseur { width: 10%; }
-    .table.fit th.col-emplacement,
-    .table.fit td.col-emplacement { width: 12%; }
-    .table.fit th.col-rack,
-    .table.fit td.col-rack { width: 6%; }
-    .table.fit th.col-compartiment,
-    .table.fit td.col-compartiment { width: 6%; }
-    .table.fit th.col-niveau,
-    .table.fit td.col-niveau { width: 6%; }
-    .table.fit th.col-quantite,
-    .table.fit td.col-quantite { width: 6%; }
-    .table.fit th.col-quantite-prevue,
-    .table.fit td.col-quantite-prevue { width: 8%; }
-    .table.fit th.col-date,
-    .table.fit td.col-date { width: 8%; }
-    .table.fit th.col-actions,
-    .table.fit td.col-actions { width: 18%; }
+    .table-stock .btn {
+      white-space: nowrap;
+    }
 
-    .table.fit td .btn-group,
-    .table.fit td .btn-wrap {
+    .table-stock td .btn-group,
+    .table-stock td .btn-wrap {
       display: flex;
       flex-wrap: wrap;
       gap: 0.35rem;
     }
 
-    .table.fit td img {
-      max-width: 72px;
-      height: auto;
+    .table-stock .cell-photo img {
       display: block;
+      max-width: 90px;
+      height: auto;
+      margin: 0 auto;
     }
 
-    @media (max-width: 991.98px) {
-      .table.stacked,
-      .table.stacked thead,
-      .table.stacked tbody,
-      .table.stacked th,
-      .table.stacked td,
-      .table.stacked tr {
-        display: block;
-        width: 100%;
+    @media (max-width: 1200px) {
+      .table-stock th:last-child,
+      .table-stock td:last-child {
+        position: sticky;
+        right: 0;
+        background: rgba(22, 18, 37, .92);
+        backdrop-filter: blur(2px);
+        z-index: 2;
       }
+    }
 
-      .table.stacked thead {
-        display: none;
-      }
+    /* === MODE COMPACT+ (mobile : tout tenir sans scroller) === */
+    body.compact-mobile .table-stock {
+      min-width: 100% !important;
+      width: 100%;
+      table-layout: fixed;
+      font-size: 12px;
+    }
 
-      .table.stacked tr {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 0.75rem 0.75rem 0.5rem;
-        margin-bottom: 0.75rem;
-      }
+    body.compact-mobile .table-stock th,
+    body.compact-mobile .table-stock td {
+      padding: 6px 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-      .table.stacked td {
-        border: none !important;
-        padding: 0.3rem 0 0.3rem 0;
-      }
+    body.compact-mobile .table-stock .cell-photo img {
+      max-width: 44px;
+    }
 
-      .table.stacked td::before {
-        content: attr(data-label);
-        display: block;
-        font-size: 0.82rem;
-        opacity: 0.7;
-        margin-bottom: 0.15rem;
-      }
+    body.compact-mobile .table-materiel thead th {
+      font-size: 11px;
+      padding: 8px 6px;
+    }
 
-      .table.stacked td.actions {
-        margin-top: 0.35rem;
-      }
+    body.compact-mobile .table-stock th:nth-child(3),
+    body.compact-mobile .table-stock td:nth-child(3) {
+      min-width: 90px;
+    }
 
-      .table.stacked td.actions .btn-group,
-      .table.stacked td.actions .btn-wrap {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.35rem;
-      }
+    body.compact-mobile .table-stock th:nth-child(5),
+    body.compact-mobile .table-stock td:nth-child(5) {
+      min-width: 70px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(6),
+    body.compact-mobile .table-stock td:nth-child(6) {
+      min-width: 80px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(7),
+    body.compact-mobile .table-stock td:nth-child(7) {
+      min-width: 100px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(8),
+    body.compact-mobile .table-stock td:nth-child(8) {
+      min-width: 70px;
+    }
+
+    body.compact-mobile .table-stock td .btn-group,
+    body.compact-mobile .table-stock td .btn-wrap {
+      gap: 4px;
+    }
+
+    body.compact-mobile .table-stock td .btn {
+      padding: 4px 6px;
+      font-size: 12px;
     }
 
     /* =================== MODE SOMBRE =================== */
@@ -220,6 +235,7 @@
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
             <!-- Bouton pour basculer mode sombre -->
+            <button id="toggleCompact" class="btn btn-outline-secondary me-2">Compact+</button>
             <button id="toggleMode" class="btn btn-outline-secondary me-2">Mode sombre</button>
           </li>
         </ul>
@@ -456,8 +472,9 @@
         <h5 class="mb-0">Liste du stock (Dépôt)</h5>
       </div>
       <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-bordered table-striped table-hover mb-0 fit stacked">
+        <div class="table-wrapper">
+          <div class="stock-table-wrap">
+            <table class="table table-bordered table-striped table-materiel align-middle table-stock">
             <thead>
               <tr>
                 <th class="col-designation">Nom</th>
@@ -484,7 +501,7 @@
                   <td data-label="Catégorie" class="col-categorie"><%= m.categorie %></td>
                   <td data-label="Emplacement stock" class="col-emplacement"><%= formatEmplacement(m) %></td>
                   <td data-label="Description" class="col-description"><%= m.description %></td>
-                  <td data-label="Photos" class="col-photo">
+                  <td data-label="Photos" class="col-photo cell-photo">
                       <% if (m.photos && m.photos.length > 0) { %>
                         <% m.photos.forEach(function(photo) { %>
                           <a href="/<%= photo.chemin.replace(/\\/g, '/') %>" target="_blank" class="me-1">
@@ -532,7 +549,8 @@
                 </tr>
               <% }) %>
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -707,6 +725,27 @@
         navBar.classList.add('navbar-light', 'bg-light');
       }
     });
+  </script>
+
+  <script nonce="<%= nonce %>">
+    (function () {
+      const btn = document.getElementById('toggleCompact');
+      if (!btn) return;
+      const KEY = 'gs_compact_mobile';
+
+      try {
+        if (localStorage.getItem(KEY) === '1') {
+          document.body.classList.add('compact-mobile');
+        }
+      } catch (_) {}
+
+      btn.addEventListener('click', () => {
+        document.body.classList.toggle('compact-mobile');
+        try {
+          localStorage.setItem(KEY, document.body.classList.contains('compact-mobile') ? '1' : '0');
+        } catch (_) {}
+      });
+    })();
   </script>
 </body>
 </html>

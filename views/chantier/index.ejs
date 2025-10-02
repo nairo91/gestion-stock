@@ -38,6 +38,16 @@
       backdrop-filter: blur(12px);
     }
 
+    /* === conteneur plus large (PC) === */
+    @media (min-width: 1400px) {
+      .container,
+      .container-lg,
+      .container-xl,
+      .container-xxl {
+        max-width: 1600px;
+      }
+    }
+
     .navbar.fixed-top,
     .navbar.sticky-top {
       z-index: 1030;
@@ -231,15 +241,15 @@
       text-overflow: ellipsis;
     }
 
-    .table-stock th:nth-child(4),
-    .table-stock td:nth-child(4) {
+    body:not(.compact-mobile) .table-stock th:nth-child(4),
+    body:not(.compact-mobile) .table-stock td:nth-child(4) {
       width: 110px;
     }
 
-    .table-stock th:nth-child(5),
-    .table-stock td:nth-child(5),
-    .table-stock th:nth-child(6),
-    .table-stock td:nth-child(6) {
+    body:not(.compact-mobile) .table-stock th:nth-child(5),
+    body:not(.compact-mobile) .table-stock td:nth-child(5),
+    body:not(.compact-mobile) .table-stock th:nth-child(6),
+    body:not(.compact-mobile) .table-stock td:nth-child(6) {
       width: 140px;
     }
 
@@ -278,6 +288,91 @@
       .table-stock td {
         display: table-cell !important;
       }
+    }
+
+    /* === MODE COMPACT+ (mobile : tout tenir sans scroller) === */
+    body.compact-mobile .table-stock {
+      min-width: 100% !important;
+      width: 100%;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+
+    body.compact-mobile .table-stock th,
+    body.compact-mobile .table-stock td {
+      padding: 6px 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    body.compact-mobile .table-stock .cell-photo img {
+      max-width: 44px;
+    }
+
+    body.compact-mobile .table-materiel thead th {
+      font-size: 11px;
+      padding: 8px 6px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(3),
+    body.compact-mobile .table-stock td:nth-child(3) {
+      min-width: 90px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(5),
+    body.compact-mobile .table-stock td:nth-child(5) {
+      min-width: 70px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(6),
+    body.compact-mobile .table-stock td:nth-child(6) {
+      min-width: 80px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(7),
+    body.compact-mobile .table-stock td:nth-child(7) {
+      min-width: 100px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(8),
+    body.compact-mobile .table-stock td:nth-child(8) {
+      min-width: 70px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(9),
+    body.compact-mobile .table-stock td:nth-child(9) {
+      min-width: 80px;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(10),
+    body.compact-mobile .table-stock td:nth-child(10),
+    body.compact-mobile .table-stock th:nth-child(11),
+    body.compact-mobile .table-stock td:nth-child(11),
+    body.compact-mobile .table-stock th:nth-child(12),
+    body.compact-mobile .table-stock td:nth-child(12),
+    body.compact-mobile .table-stock th:nth-child(13),
+    body.compact-mobile .table-stock td:nth-child(13) {
+      min-width: 48px;
+      text-align: center;
+    }
+
+    body.compact-mobile .table-stock th:nth-child(14),
+    body.compact-mobile .table-stock td:nth-child(14),
+    body.compact-mobile .table-stock th:nth-child(15),
+    body.compact-mobile .table-stock td:nth-child(15) {
+      min-width: 64px;
+      text-align: center;
+    }
+
+    body.compact-mobile .table-stock td .btn-group,
+    body.compact-mobile .table-stock td .btn-wrap {
+      gap: 4px;
+    }
+
+    body.compact-mobile .table-stock td .btn {
+      padding: 4px 6px;
+      font-size: 12px;
     }
 
     .table-materiel thead th {
@@ -425,7 +520,10 @@
         <img src="/images/logo.png" alt="Logo Entreprise">
         Stock Chantier
       </span>
-      <button id="toggleMode" class="btn btn-outline-secondary">Mode sombre</button>
+      <div class="d-flex align-items-center gap-2">
+        <button id="toggleCompact" class="btn btn-outline-secondary">Compact+</button>
+        <button id="toggleMode" class="btn btn-outline-secondary">Mode sombre</button>
+      </div>
     </div>
   </nav>
 
@@ -1013,6 +1111,27 @@
         modifBtn.form.submit();
       });
     }
+  </script>
+
+  <script nonce="<%= nonce %>">
+    (function () {
+      const btn = document.getElementById('toggleCompact');
+      if (!btn) return;
+      const KEY = 'gs_compact_mobile';
+
+      try {
+        if (localStorage.getItem(KEY) === '1') {
+          document.body.classList.add('compact-mobile');
+        }
+      } catch (_) {}
+
+      btn.addEventListener('click', () => {
+        document.body.classList.toggle('compact-mobile');
+        try {
+          localStorage.setItem(KEY, document.body.classList.contains('compact-mobile') ? '1' : '0');
+        } catch (_) {}
+      });
+    })();
   </script>
 
 </body>
