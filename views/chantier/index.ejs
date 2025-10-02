@@ -76,15 +76,17 @@
 
   <div class="container" style="margin-top: 6rem;">
 <div class="mb-4 d-flex flex-wrap gap-2">
+  <%
+    const chantierCourant = (chantiers || []).find(c => String(c.id) === String(chantierId)) || null;
+  %>
   <% if (user && user.role === 'admin') { %>
   <!-- Bouton ici -->
    <!-- <a href="/chantier/ajouter" class="btn btn-primary">Ajouter une livraison chantier</a>-->
-  <% const chantierSelectionne = (chantiers || []).find(c => String(c.id) === String(chantierId)); %>
   <a
-    href="/chantier/ajouterMateriel<%= chantierSelectionne ? `?chantierId=${encodeURIComponent(chantierSelectionne.id)}` : '' %>"
+    href="/chantier/ajouterMateriel<%= chantierCourant ? `?chantierId=${encodeURIComponent(chantierCourant.id)}` : '' %>"
     class="btn btn-success"
   >
-    Ajouter du matériel dans <%= chantierSelectionne ? `chantier &laquo; ${chantierSelectionne.nom} &raquo;` : 'un chantier' %>
+    Ajouter du matériel dans <%= chantierCourant ? `chantier &laquo; ${chantierCourant.nom} &raquo;` : 'un chantier' %>
   </a>
   <!-- Supprime le bouton "Modifier" global ici -->
   <a href="/chantier/ajouter-chantier" class="btn btn-success">Créer un nouveau chantier</a>
@@ -351,45 +353,45 @@
               <td><%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %></td>
               <td>
                 <%
-                  const materielAssoc = mc.materiel;
-                  const assocChantierId = materielAssoc && materielAssoc.chantierId !== undefined && materielAssoc.chantierId !== null
-                    ? String(materielAssoc.chantierId)
-                    : null;
-                  const currentChantierIdStr = mc.chantierId !== undefined && mc.chantierId !== null
-                    ? String(mc.chantierId)
-                    : null;
-                  const isSameChantier = Boolean(materielAssoc) && assocChantierId === currentChantierIdStr;
-                  const fallbackMaterielId = mc.materielId !== undefined && mc.materielId !== null
-                    ? mc.materielId
-                    : (materielAssoc ? materielAssoc.id : '');
-                  const transferMaterielId = isSameChantier && materielAssoc
-                    ? materielAssoc.id
-                    : fallbackMaterielId;
-                  const transferMaterielName = materielAssoc ? materielAssoc.nom : '';
+                  let sourceMat = null;
+                  if (typeof m !== 'undefined' && m && Number(m.chantierId) === Number(chantierCourant?.id)) {
+                    sourceMat = m;
+                  } else if (typeof mc !== 'undefined' && mc && mc.materiel && Number(mc.materiel.chantierId) === Number(chantierCourant?.id)) {
+                    sourceMat = mc.materiel;
+                  } else if (typeof mc !== 'undefined' && mc && Number(mc.chantierId) === Number(chantierCourant?.id)) {
+                    sourceMat = mc;
+                  }
                 %>
                 <div class="d-flex flex-wrap gap-1">
                   <button
                     type="button"
                     class="btn btn-outline-success btn-sm transfer-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#transferModal"
                     data-action="entree"
                     data-context-type="CHANTIER"
-                    data-context-chantier-id="<%= mc.chantierId %>"
-                    data-materiel-id="<%= transferMaterielId !== undefined && transferMaterielId !== null ? transferMaterielId : '' %>"
-                    data-materiel-name="<%= transferMaterielName %>"
+                    data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
+                    data-materiel-id="<%= sourceMat?.id %>"
+                    data-materiel-name="<%= (sourceMat?.nom || m?.nom || mc?.materiel?.nom || mc?.nom) %>"
                   >
                     Entrée
                   </button>
                   <button
                     type="button"
                     class="btn btn-outline-danger btn-sm transfer-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#transferModal"
                     data-action="sortie"
                     data-context-type="CHANTIER"
-                    data-context-chantier-id="<%= mc.chantierId %>"
-                    data-materiel-id="<%= transferMaterielId !== undefined && transferMaterielId !== null ? transferMaterielId : '' %>"
-                    data-materiel-name="<%= transferMaterielName %>"
+                    data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
+                    data-materiel-id="<%= sourceMat?.id %>"
+                    data-materiel-name="<%= (sourceMat?.nom || m?.nom || mc?.materiel?.nom || mc?.nom) %>"
                   >
                     Sortie
                   </button>
+                  <% if (!sourceMat) { %>
+                    <span class="badge bg-danger">Source ID manquant</span>
+                  <% } %>
                   <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
                   <% if (user && user.role === 'admin') { %>
                     <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#receptionModal<%= mc.id %>">
@@ -525,41 +527,39 @@
     const transferForm = document.getElementById('transferForm');
     const transferActionLabel = document.getElementById('transferModalAction');
     const transferMaterielLabel = document.getElementById('transferModalMateriel');
-    const transferContextTypeInput = document.getElementById('transferContextType');
-    const transferContextChantierInput = document.getElementById('transferContextChantierId');
-    const transferMaterielIdInput = document.getElementById('transferMaterielId');
     const transferMaterielNameInput = document.getElementById('transferMaterielName');
     const transferTargetSelect = document.getElementById('transferTargetChantierId');
     const transferQuantityInput = document.getElementById('transferQuantite');
-    let transferModalInstance = null;
 
-    if (transferModalElement && window.bootstrap && typeof window.bootstrap.Modal === 'function') {
-      transferModalInstance = new window.bootstrap.Modal(transferModalElement);
-    }
-
-    document.querySelectorAll('.transfer-btn').forEach(button => {
-      button.addEventListener('click', () => {
-        if (!transferForm) {
+    if (transferModalElement) {
+      transferModalElement.addEventListener('show.bs.modal', (event) => {
+        const triggerButton = event.relatedTarget;
+        if (!transferForm || !triggerButton) {
           return;
         }
 
         transferForm.reset();
-        const action = button.dataset.action || 'entree';
+        const action = triggerButton.dataset.action || 'entree';
         transferForm.setAttribute('action', `/transferts/${action}`);
-        if (transferContextTypeInput) {
-          transferContextTypeInput.value = button.dataset.contextType || 'CHANTIER';
-        }
-        if (transferContextChantierInput) {
-          transferContextChantierInput.value = button.dataset.contextChantierId || '';
-        }
-        if (transferMaterielIdInput) {
-          transferMaterielIdInput.value = button.dataset.materielId || '';
-        }
-        if (transferMaterielNameInput) {
-          transferMaterielNameInput.value = button.dataset.materielName || '';
+        transferForm.dataset.transferAction = action;
+
+        const setInputValue = (selector, value) => {
+          const input = transferForm.querySelector(selector);
+          if (input) {
+            input.value = value;
+          }
+        };
+
+        setInputValue('[name="contextType"]', triggerButton.dataset.contextType || 'CHANTIER');
+        setInputValue('[name="contextChantierId"]', triggerButton.dataset.contextChantierId || '');
+        setInputValue('[name="materielId"]', triggerButton.dataset.materielId || '');
+        setInputValue('[name="materielName"]', triggerButton.dataset.materielName || '');
+
+        if (transferActionLabel) {
+          transferActionLabel.textContent = action === 'entree' ? 'Entrée' : 'Sortie';
         }
         if (transferMaterielLabel) {
-          transferMaterielLabel.textContent = button.dataset.materielName || '';
+          transferMaterielLabel.textContent = triggerButton.dataset.materielName || '';
         }
         if (transferTargetSelect) {
           transferTargetSelect.value = '';
@@ -567,16 +567,8 @@
         if (transferQuantityInput) {
           transferQuantityInput.value = '';
         }
-        transferForm.dataset.transferAction = action;
-        if (transferActionLabel) {
-          transferActionLabel.textContent = action === 'entree' ? 'Entrée' : 'Sortie';
-        }
-
-        if (transferModalInstance) {
-          transferModalInstance.show();
-        }
       });
-    });
+    }
 
     if (transferForm) {
       transferForm.addEventListener('submit', (event) => {

@@ -28,19 +28,31 @@ router.post('/:action(entree|sortie)', async (req, res) => {
     quantite
   } = req.body;
 
-  const context = buildContext({ contextType, contextChantierId });
+  const normalizedContextType = contextType === 'CHANTIER' ? 'CHANTIER' : 'DEPOT';
+  const normalizedChantierId = contextChantierId ? Number(contextChantierId) : null;
+  const context = buildContext({ contextType: normalizedContextType, contextChantierId: normalizedChantierId });
 
   try {
+    console.log('[TRANSFERT]', {
+      action,
+      contextType,
+      contextChantierId,
+      materielId,
+      materielName,
+      targetChantierId,
+      quantite
+    });
+
     const summary = await transferParNom({
       action: action.toUpperCase(),
       context,
       current: {
-        materielId,
+        materielId: Number(materielId),
         materielName
       },
-      targetChantierId,
+      targetChantierId: Number(targetChantierId),
       qty: quantite,
-      userId: req.user ? req.user.id : null
+      userId: req.user?.id ?? null
     });
 
     const message = `${action === 'entree' ? 'Entrée' : 'Sortie'} réalisée avec succès.`;
