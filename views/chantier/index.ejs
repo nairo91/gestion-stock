@@ -206,105 +206,77 @@
       color: var(--text-primary);
     }
 
-    .table.fit {
-      table-layout: fixed;
-      width: 100%;
+    /* --- STOCK TABLE: force one-row, enable horizontal scroll --- */
+    .stock-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .table.fit th,
-    .table.fit td {
-      white-space: normal;
-      word-break: break-word;
+    .table-stock {
+      border-collapse: separate;
+      table-layout: fixed;
+      min-width: 1280px;
+    }
+
+    .table-stock th,
+    .table-stock td {
+      white-space: nowrap;
       vertical-align: middle;
     }
 
-    .table.fit th.col-designation,
-    .table.fit td.col-designation { width: 16%; }
-    .table.fit th.col-photo,
-    .table.fit td.col-photo { width: 8%; }
-    .table.fit th.col-reference,
-    .table.fit td.col-reference { width: 10%; }
-    .table.fit th.col-categorie,
-    .table.fit td.col-categorie { width: 12%; }
-    .table.fit th.col-description,
-    .table.fit td.col-description { width: 12%; }
-    .table.fit th.col-fournisseur,
-    .table.fit td.col-fournisseur { width: 10%; }
-    .table.fit th.col-emplacement,
-    .table.fit td.col-emplacement { width: 12%; }
-    .table.fit th.col-rack,
-    .table.fit td.col-rack { width: 6%; }
-    .table.fit th.col-compartiment,
-    .table.fit td.col-compartiment { width: 6%; }
-    .table.fit th.col-niveau,
-    .table.fit td.col-niveau { width: 6%; }
-    .table.fit th.col-quantite,
-    .table.fit td.col-quantite { width: 6%; }
-    .table.fit th.col-quantite-prevue,
-    .table.fit td.col-quantite-prevue { width: 8%; }
-    .table.fit th.col-date,
-    .table.fit td.col-date { width: 8%; }
-    .table.fit th.col-actions,
-    .table.fit td.col-actions { width: 18%; }
+    .table-stock th:nth-child(3),
+    .table-stock td:nth-child(3) {
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-    .table.fit td .btn-group,
-    .table.fit td .btn-wrap {
+    .table-stock th:nth-child(4),
+    .table-stock td:nth-child(4) {
+      width: 110px;
+    }
+
+    .table-stock th:nth-child(5),
+    .table-stock td:nth-child(5),
+    .table-stock th:nth-child(6),
+    .table-stock td:nth-child(6) {
+      width: 140px;
+    }
+
+    @media (max-width: 1200px) {
+      .table-stock th:last-child,
+      .table-stock td:last-child {
+        position: sticky;
+        right: 0;
+        background: rgba(22, 18, 37, .92);
+        backdrop-filter: blur(2px);
+        z-index: 2;
+      }
+    }
+
+    .table-stock .btn {
+      white-space: nowrap;
+    }
+
+    .table-stock td .btn-group,
+    .table-stock td .btn-wrap {
       display: flex;
       flex-wrap: wrap;
       gap: 0.35rem;
     }
 
-    .table.fit td img {
-      max-width: 72px;
-      height: auto;
+    .table-stock .cell-photo img {
       display: block;
+      max-width: 90px;
+      height: auto;
+      margin: 0 auto;
     }
 
-    @media (max-width: 991.98px) {
-      .table.stacked,
-      .table.stacked thead,
-      .table.stacked tbody,
-      .table.stacked th,
-      .table.stacked td,
-      .table.stacked tr {
-        display: block;
-        width: 100%;
-      }
-
-      .table.stacked thead {
-        display: none;
-      }
-
-      .table.stacked tr {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 0.75rem 0.75rem 0.5rem;
-        margin-bottom: 0.75rem;
-      }
-
-      .table.stacked td {
-        border: none !important;
-        padding: 0.3rem 0 0.3rem 0;
-      }
-
-      .table.stacked td::before {
-        content: attr(data-label);
-        display: block;
-        font-size: 0.82rem;
-        opacity: 0.7;
-        margin-bottom: 0.15rem;
-      }
-
-      .table.stacked td.actions {
-        margin-top: 0.35rem;
-      }
-
-      .table.stacked td.actions .btn-group,
-      .table.stacked td.actions .btn-wrap {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.35rem;
+    @media (max-width: 768px) {
+      table.table-stock,
+      .table-stock th,
+      .table-stock td {
+        display: table-cell !important;
       }
     }
 
@@ -615,8 +587,8 @@
 
 
     <div class="table-wrapper">
-      <div class="table-responsive">
-    <table class="table table-bordered table-striped table-materiel align-middle fit stacked">
+      <div class="stock-table-wrap">
+        <table class="table table-bordered table-striped table-materiel align-middle table-stock">
       <thead>
         <tr>
           <th class="d-none">ID</th>
@@ -656,7 +628,7 @@
                   N/A
                 <% } %>
               </td>
-              <td data-label="Photo" class="col-photo">
+              <td data-label="Photo" class="col-photo cell-photo">
                 <% if (mc.materiel && mc.materiel.photos && mc.materiel.photos.length > 0) { %>
                   <% const fullPath = mc.materiel.photos[0].chemin
                        .replace(
@@ -873,7 +845,7 @@
         <% } %>
       </tbody>
       
-    </table>
+        </table>
       </div>
     </div>
 
