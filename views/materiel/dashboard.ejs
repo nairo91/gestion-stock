@@ -46,8 +46,9 @@
 
     .table-stock th,
     .table-stock td {
-      white-space: nowrap;
       vertical-align: middle;
+      white-space: nowrap;
+      line-height: 1.25;
     }
 
     .table-stock .btn {
@@ -79,6 +80,28 @@
       }
     }
 
+    @media (max-width: 768px) {
+      .table-stock .col-designation {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        word-break: break-word;
+        hyphens: auto;
+        min-width: 220px !important;
+      }
+      .table-stock .col-emplacement {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        word-break: break-word;
+        hyphens: auto;
+        min-width: 140px !important;
+      }
+      .table-stock {
+        min-width: 1250px;
+      }
+    }
+
     /* === MODE COMPACT+ (mobile : tout tenir sans scroller) === */
     body.compact-mobile .table-stock {
       min-width: 100% !important;
@@ -93,6 +116,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      line-height: 1.25;
     }
 
     body.compact-mobile .table-stock .cell-photo img {
@@ -107,6 +131,21 @@
     body.compact-mobile .table-stock th:nth-child(3),
     body.compact-mobile .table-stock td:nth-child(3) {
       min-width: 90px;
+    }
+
+    body.compact-mobile .table-stock .col-designation,
+    body.compact-mobile .table-stock .col-emplacement {
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+      word-break: break-word;
+      hyphens: auto;
+    }
+    body.compact-mobile .table-stock .col-designation {
+      min-width: 160px;
+    }
+    body.compact-mobile .table-stock .col-emplacement {
+      min-width: 120px;
     }
 
     body.compact-mobile .table-stock th:nth-child(5),
