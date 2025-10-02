@@ -44,3 +44,39 @@ body.mode-sombre thead th {
   }
   
   /* Ajoute d'autres styles personnalisés ici si nécessaire */
+
+/* === Mobile readability tweaks (≤ 768px) === */
+@media (max-width: 768px) {
+  /* par défaut, couper pour éviter les chevauchements */
+  .table-stock th,
+  .table-stock td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Désignation : montrer le nom en entier, avec retour à la ligne si besoin */
+  .table-stock .col-designation {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  /* Emplacement et Rack : autoriser retour à la ligne pour éviter chevauchements */
+  .table-stock .col-emplacement,
+  .table-stock .col-rack {
+    white-space: normal;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  /* élargir un peu la table pour plus de lisibilité */
+  .table-stock {
+    min-width: 1350px;
+  }
+}
+
+/* Compact+ : ajuster min-width pour éviter chevauchements */
+body.compact-mobile .table-stock .col-emplacement { min-width: 120px; }
+body.compact-mobile .table-stock .col-rack { min-width: 80px; }
