@@ -363,7 +363,14 @@
                   } else if (typeof mc !== 'undefined' && mc && Number(mc.chantierId) === Number(chantierCourantId)) {
                     sourceMat = mc;
                   }
-                  var sourceMatId  = sourceMat ? sourceMat.id : '';
+                  var sourceMatId = '';
+                  if (sourceMat) {
+                    if (typeof sourceMat.materielId !== 'undefined' && sourceMat.materielId !== null) {
+                      sourceMatId = sourceMat.materielId;
+                    } else {
+                      sourceMatId = sourceMat.id;
+                    }
+                  }
                   var sourceMatNom = (sourceMat && sourceMat.nom)
                                    || (typeof mc !== 'undefined' && mc && mc.materiel && mc.materiel.nom)
                                    || (typeof mc !== 'undefined' && mc && mc.nom)
@@ -489,7 +496,7 @@
         </div>
         <div class="modal-body">
           <input type="hidden" name="contextType" id="transferContextType" value="CHANTIER">
-          <input type="hidden" name="contextChantierId" id="transferContextChantierId" value="">
+          <input type="hidden" name="contextChantierId" id="transferContextChantierId" value="<%= chantierCourant ? chantierCourant.id : '' %>">
           <input type="hidden" name="materielId" id="transferMaterielId" value="">
           <input type="hidden" name="materielName" id="transferMaterielName" value="">
 

@@ -1,24 +1,12 @@
-const { sequelize, Materiel } = require('../models');
+const { sequelize, Materiel, MaterielChantier } = require('../models');
 
 // utils sûrs
 const getByPkLocked = (id, t, lock) =>
   Materiel.findByPk(id, { transaction: t, lock });
 
-const getMatByNameInChantier = (chantierId, nom, t, lock) =>
-  Materiel.findOne({ where: { chantierId, nom }, transaction: t, lock });
-
-const cloneForContext = async ({ prototype, nom, chantierId, t }) => {
-  return Materiel.create({
-    nom,
-    reference: prototype?.reference || null,
-    categorie: prototype?.categorie || null,
-    description: prototype?.description || null,
-    rack: null, compartiment: null, niveau: null, position: null,
-    vehiculeId: null,
-    chantierId: chantierId ?? null,
-    quantite: 0
-  }, { transaction: t });
-};
+// pivot chantier <-> materiel
+const getPivotLocked = (chantierId, materielId, t, lock) =>
+  MaterielChantier.findOne({ where: { chantierId, materielId }, transaction: t, lock });
 
 // parsing & arrondis robustes
 const parseQty = (val) => {
@@ -33,10 +21,9 @@ const sub = (a,b) => Number((a - b).toFixed(2));
 /**
  * Motivation :
  * Au dépôt, il existe des doublons de nom ("chantierId" = NULL).
- * ➜ En SORTIE, on doit toujours prélever la ligne cliquée (par id) et non « une ligne par nom ».
+ * ➜ On prélève toujours la ligne cliquée (par id) côté dépôt.
  *
- * En ENTRÉE vers le contexte courant, on incrémente la ligne cliquée du contexte courant (si elle existe),
- * sinon fallback par nom / création.
+ * Les stocks chantier sont gérés via le pivot MaterielChantier.
  *
  * Parsing et arrondis protègent contre 2,5 et les flottants.
  */
@@ -69,37 +56,67 @@ async function transferParNom({ action, context, current, targetChantierId, qty,
     const lock = t.LOCK.UPDATE;
     let src, dst;
 
-    if (isEntree) {
-      // Source = chantier sélectionné (résolution par NOM)
-      src = await getMatByNameInChantier(Number(targetChantierId), current.materielName, t, lock);
-      if (!src) throw new Error(`Aucun matériel nommé "${current.materielName}" dans le chantier sélectionné.`);
+    if (currIsDepot) {
+      // === CONTEXTE DEPOT ===
+      // Lignes côté dépôt sont dans Materiel (chantierId = null)
+      if (isEntree) {
+        // Source = chantier sélectionné (pivot), Destination = dépôt (Materiel by PK cliquée)
+        const srcPivot = await getPivotLocked(Number(targetChantierId), Number(current.materielId), t, lock);
+        if (!srcPivot) throw new Error('Aucun stock sur le chantier source.');
+        src = srcPivot; // champ: quantite
 
-      // Destination = contexte courant
-      if (currIsDepot) {
-        // on incrémente **la ligne cliquée** du dépôt
         dst = await getByPkLocked(current.materielId, t, lock);
         if (!dst || dst.chantierId !== null) throw new Error('Ligne dépôt cible invalide.');
       } else {
-        // chantier courant : on privilégie **la ligne cliquée**
-        dst = await getByPkLocked(current.materielId, t, lock);
-        if (!dst || Number(dst.chantierId) !== Number(currChantierId)) {
-          // fallback: résolution par nom dans le chantier courant
-          dst = await getMatByNameInChantier(Number(currChantierId), current.materielName, t, lock);
-          if (!dst) dst = await cloneForContext({ prototype: src, nom: current.materielName, chantierId: currChantierId, t });
+        // SORTIE : Source = dépôt (Materiel PK), Destination = chantier (pivot)
+        const srcDepot = await getByPkLocked(current.materielId, t, lock);
+        if (!srcDepot || srcDepot.chantierId !== null) throw new Error('Ligne dépôt source invalide.');
+        src = srcDepot;
+
+        let dstPivot = await getPivotLocked(Number(targetChantierId), Number(current.materielId), t, lock);
+        if (!dstPivot) {
+          dstPivot = await MaterielChantier.create({
+            chantierId: Number(targetChantierId),
+            materielId: Number(current.materielId),
+            quantite: 0
+          }, { transaction: t });
         }
+        dst = dstPivot;
       }
     } else {
-      // SORTIE : Source = contexte courant **par PK**
-      src = await getByPkLocked(current.materielId, t, lock);
-      if (!src) throw new Error('Ligne source introuvable.');
-      if (currIsDepot && src.chantierId !== null) throw new Error('La source attendue (dépôt) ne correspond pas.');
-      if (!currIsDepot && Number(src.chantierId) !== Number(currChantierId)) {
-        throw new Error('La source attendue (chantier courant) ne correspond pas.');
-      }
+      // === CONTEXTE CHANTIER ===
+      // Lignes côté chantier sont dans le pivot MaterielChantier
+      if (isEntree) {
+        // Source = chantier sélectionné (pivot), Destination = chantier courant (pivot)
+        const srcPivot = await getPivotLocked(Number(targetChantierId), Number(current.materielId), t, lock);
+        if (!srcPivot) throw new Error('Aucun stock dans le chantier source.');
+        src = srcPivot;
 
-      // Destination = chantier choisi (par NOM, création si absent)
-      dst = await getMatByNameInChantier(Number(targetChantierId), current.materielName, t, lock);
-      if (!dst) dst = await cloneForContext({ prototype: src, nom: current.materielName, chantierId: targetChantierId, t });
+        let dstPivot = await getPivotLocked(Number(currChantierId), Number(current.materielId), t, lock);
+        if (!dstPivot) {
+          dstPivot = await MaterielChantier.create({
+            chantierId: Number(currChantierId),
+            materielId: Number(current.materielId),
+            quantite: 0
+          }, { transaction: t });
+        }
+        dst = dstPivot;
+      } else {
+        // SORTIE : Source = chantier courant (pivot), Destination = chantier choisi (pivot)
+        const srcPivot = await getPivotLocked(Number(currChantierId), Number(current.materielId), t, lock);
+        if (!srcPivot) throw new Error('Aucun stock dans le chantier courant.');
+        src = srcPivot;
+
+        let dstPivot = await getPivotLocked(Number(targetChantierId), Number(current.materielId), t, lock);
+        if (!dstPivot) {
+          dstPivot = await MaterielChantier.create({
+            chantierId: Number(targetChantierId),
+            materielId: Number(current.materielId),
+            quantite: 0
+          }, { transaction: t });
+        }
+        dst = dstPivot;
+      }
     }
 
     // Contrôle & mouvements
