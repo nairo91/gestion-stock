@@ -382,6 +382,28 @@
                   </td>
                   <td>
                     <div class="d-flex flex-wrap gap-1">
+                      <button
+                        type="button"
+                        class="btn btn-outline-success btn-sm mb-1 transfer-btn"
+                        data-action="entree"
+                        data-context-type="DEPOT"
+                        data-context-chantier-id=""
+                        data-materiel-id="<%= m.id %>"
+                        data-materiel-name="<%= m.nom %>"
+                      >
+                        Entrée
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm mb-1 transfer-btn"
+                        data-action="sortie"
+                        data-context-type="DEPOT"
+                        data-context-chantier-id=""
+                        data-materiel-id="<%= m.id %>"
+                        data-materiel-name="<%= m.nom %>"
+                      >
+                        Sortie
+                      </button>
                       <a href="/materiel/info/<%= m.id %>" class="btn btn-info btn-sm mb-1">Info</a>
                       <% if (user && user.role === 'admin') { %>
                         <a href="/materiel/editer/<%= m.id %>" class="btn btn-primary btn-sm mb-1">Modifier</a>
@@ -425,6 +447,28 @@
           </li>
         </ul>
         <div class="mt-3 d-flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-success transfer-btn"
+            data-action="entree"
+            data-context-type="DEPOT"
+            data-context-chantier-id=""
+            data-materiel-id="<%= m.id %>"
+            data-materiel-name="<%= m.nom %>"
+          >
+            Entrée
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-danger transfer-btn"
+            data-action="sortie"
+            data-context-type="DEPOT"
+            data-context-chantier-id=""
+            data-materiel-id="<%= m.id %>"
+            data-materiel-name="<%= m.nom %>"
+          >
+            Sortie
+          </button>
           <a href="/materiel/info/<%= m.id %>" class="btn btn-sm btn-info">Info</a>
           <% if (user && user.role==='admin') { %>
             <a href="/materiel/editer/<%=m.id%>" class="btn btn-sm btn-primary">Modifier</a>
@@ -441,7 +485,54 @@
 
       </div>
     </div>
-  </div> <!-- /container -->
+</div> <!-- /container -->
+
+  <% const transferChantiers = Array.isArray(chantiers) ? chantiers : []; %>
+  <div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="transferForm" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <span id="transferModalAction">Transfert</span> - <span id="transferModalMateriel"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="contextType" id="transferContextType" value="DEPOT">
+          <input type="hidden" name="contextChantierId" id="transferContextChantierId" value="">
+          <input type="hidden" name="materielId" id="transferMaterielId" value="">
+          <input type="hidden" name="materielName" id="transferMaterielName" value="">
+
+          <div class="mb-3">
+            <label for="transferTargetChantierId" class="form-label">Chantier</label>
+            <select class="form-select" name="targetChantierId" id="transferTargetChantierId" required>
+              <option value="">-- Sélectionner un chantier --</option>
+              <% transferChantiers.forEach(function(c) { %>
+                <option value="<%= c.id %>"><%= c.nom %><% if (c.localisation) { %> - <%= c.localisation %><% } %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="transferQuantite" class="form-label">Quantité</label>
+            <input
+              type="number"
+              class="form-control"
+              id="transferQuantite"
+              name="quantite"
+              min="0.01"
+              step="0.01"
+              required
+            >
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Valider</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Scripts Bootstrap -->
   <script src="/js/bootstrap.bundle.min.js"></script>
@@ -452,6 +543,91 @@
     const toggleBtn = document.getElementById('toggleMode');
     const body = document.body;
     const navBar = document.querySelector('.navbar');
+
+    const transferModalElement = document.getElementById('transferModal');
+    const transferForm = document.getElementById('transferForm');
+    const transferActionLabel = document.getElementById('transferModalAction');
+    const transferMaterielLabel = document.getElementById('transferModalMateriel');
+    const transferContextTypeInput = document.getElementById('transferContextType');
+    const transferContextChantierInput = document.getElementById('transferContextChantierId');
+    const transferMaterielIdInput = document.getElementById('transferMaterielId');
+    const transferMaterielNameInput = document.getElementById('transferMaterielName');
+    const transferTargetSelect = document.getElementById('transferTargetChantierId');
+    const transferQuantityInput = document.getElementById('transferQuantite');
+    let transferModalInstance = null;
+
+    if (transferModalElement && window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+      transferModalInstance = new window.bootstrap.Modal(transferModalElement);
+    }
+
+    document.querySelectorAll('.transfer-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        if (!transferForm) {
+          return;
+        }
+
+        transferForm.reset();
+        const action = button.dataset.action || 'entree';
+        transferForm.setAttribute('action', `/transferts/${action}`);
+        if (transferContextTypeInput) {
+          transferContextTypeInput.value = button.dataset.contextType || 'DEPOT';
+        }
+        if (transferContextChantierInput) {
+          transferContextChantierInput.value = button.dataset.contextChantierId || '';
+        }
+        if (transferMaterielIdInput) {
+          transferMaterielIdInput.value = button.dataset.materielId || '';
+        }
+        if (transferMaterielNameInput) {
+          transferMaterielNameInput.value = button.dataset.materielName || '';
+        }
+        if (transferMaterielLabel) {
+          transferMaterielLabel.textContent = button.dataset.materielName || '';
+        }
+        if (transferTargetSelect) {
+          transferTargetSelect.value = '';
+        }
+        if (transferQuantityInput) {
+          transferQuantityInput.value = '';
+        }
+        if (transferForm) {
+          transferForm.dataset.transferAction = action;
+        }
+        if (transferActionLabel) {
+          transferActionLabel.textContent = action === 'entree' ? 'Entrée' : 'Sortie';
+        }
+
+        if (transferModalInstance) {
+          transferModalInstance.show();
+        }
+      });
+    });
+
+    if (transferForm) {
+      transferForm.addEventListener('submit', (event) => {
+        const action = transferForm.dataset.transferAction || 'entree';
+        const actionLabel = action === 'entree' ? "l'entrée" : 'la sortie';
+        const qtyValue = transferQuantityInput ? transferQuantityInput.value.trim() : '';
+        const normalizedQty = qtyValue.replace(/,/g, '.');
+        const qtyNumber = Number.parseFloat(normalizedQty);
+        if (!Number.isFinite(qtyNumber) || qtyNumber <= 0) {
+          event.preventDefault();
+          return;
+        }
+
+        const materialName = transferMaterielNameInput ? transferMaterielNameInput.value : '';
+        const selectedOption = transferTargetSelect && transferTargetSelect.selectedIndex >= 0
+          ? transferTargetSelect.options[transferTargetSelect.selectedIndex]
+          : null;
+        const chantierLabel = selectedOption ? selectedOption.text.trim() : '';
+        const confirmationMessage = `Confirmer ${actionLabel} de ${qtyValue || qtyNumber} unités\n` +
+          `Matériel : ${materialName}\n` +
+          `Chantier sélectionné : ${chantierLabel}`;
+        if (!window.confirm(confirmationMessage)) {
+          event.preventDefault();
+        }
+      });
+    }
 
     toggleBtn.addEventListener('click', () => {
       body.classList.toggle('mode-sombre');

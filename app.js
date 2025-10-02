@@ -73,7 +73,21 @@ app.use((req, res, next) => {
 app.use(setCrossOriginHeaders);
 
 // Base de données Sequelize + modèles supplémentaires
-const { sequelize } = require('./models');
+const { sequelize, Chantier } = require('./models');
+
+app.use(async (req, res, next) => {
+  if (Array.isArray(res.locals.chantiers) && res.locals.chantiers.length > 0) {
+    return next();
+  }
+
+  try {
+    res.locals.chantiers = await Chantier.findAll({ order: [['nom', 'ASC']] });
+  } catch (error) {
+    console.error(error);
+  }
+
+  next();
+});
 
 
 
@@ -110,12 +124,13 @@ app.use('/vehicule', require('./routes/vehicule'));
 app.use('/bonLivraison', require('./routes/bonLivraison'));
 app.use('/chantier', require('./routes/chantier'));
 //app.use('/materielChantier', require('./routes/materielChantier')); // ← MANQUAIT
- app.use('/emplacements', require('./routes/emplacements'));
+app.use('/emplacements', require('./routes/emplacements'));
+
+app.use('/transferts', require('./routes/transferts'));
  
 
-  const userRoutes = require('./routes/user');
-  app.use('/user', userRoutes);
-app.use('/user', require('./routes/user'));
+const userRoutes = require('./routes/user');
+app.use('/user', userRoutes);
 
 // Lancement du serveur
 const PORT = process.env.PORT || 3000;
