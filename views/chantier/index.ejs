@@ -350,75 +350,106 @@
               <td><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
               <td><%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %></td>
               <td>
-
-                <% if (user && user.role === 'admin') { %>
-                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#receptionModal<%= mc.id %>">
-                  Réceptionner
-                </button>
-
-                <div class="modal fade" id="receptionModal<%= mc.id %>" tabindex="-1" aria-labelledby="receptionModalLabel<%= mc.id %>" aria-hidden="true">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <form action="/chantier/materielChantier/receptionner/<%= mc.id %>" method="POST">
-                        <div class="modal-header bg-success text-white">
-                          <h5 class="modal-title" id="receptionModalLabel<%= mc.id %>">Réceptionner du matériel</h5>
-                          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                        </div>
-                        <div class="modal-body">
-                          <p class="mb-2"><strong>Matériel :</strong> <%= mc.materiel ? mc.materiel.nom : 'N/A' %></p>
-                          <p class="mb-3"><strong>Chantier :</strong> <%= mc.chantier ? mc.chantier.nom : 'N/A' %></p>
-                          <div class="mb-3">
-                            <label for="quantiteReceptionnee<%= mc.id %>" class="form-label">Quantité réceptionnée</label>
-                            <input type="number" class="form-control" id="quantiteReceptionnee<%= mc.id %>" name="quantiteReceptionnee" min="1" required>
-                          </div>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                          <button type="submit" class="btn btn-success">Confirmer</button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
+                <%
+                  const materielAssoc = mc.materiel;
+                  const assocChantierId = materielAssoc && materielAssoc.chantierId !== undefined && materielAssoc.chantierId !== null
+                    ? String(materielAssoc.chantierId)
+                    : null;
+                  const currentChantierIdStr = mc.chantierId !== undefined && mc.chantierId !== null
+                    ? String(mc.chantierId)
+                    : null;
+                  const isSameChantier = Boolean(materielAssoc) && assocChantierId === currentChantierIdStr;
+                  const fallbackMaterielId = mc.materielId !== undefined && mc.materielId !== null
+                    ? mc.materielId
+                    : (materielAssoc ? materielAssoc.id : '');
+                  const transferMaterielId = isSameChantier && materielAssoc
+                    ? materielAssoc.id
+                    : fallbackMaterielId;
+                  const transferMaterielName = materielAssoc ? materielAssoc.nom : '';
+                %>
+                <div class="d-flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-outline-success btn-sm transfer-btn"
+                    data-action="entree"
+                    data-context-type="CHANTIER"
+                    data-context-chantier-id="<%= mc.chantierId %>"
+                    data-materiel-id="<%= transferMaterielId !== undefined && transferMaterielId !== null ? transferMaterielId : '' %>"
+                    data-materiel-name="<%= transferMaterielName %>"
+                  >
+                    Entrée
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm transfer-btn"
+                    data-action="sortie"
+                    data-context-type="CHANTIER"
+                    data-context-chantier-id="<%= mc.chantierId %>"
+                    data-materiel-id="<%= transferMaterielId !== undefined && transferMaterielId !== null ? transferMaterielId : '' %>"
+                    data-materiel-name="<%= transferMaterielName %>"
+                  >
+                    Sortie
+                  </button>
+                  <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
+                  <% if (user && user.role === 'admin') { %>
+                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#receptionModal<%= mc.id %>">
+                      Réceptionner
+                    </button>
+                    <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal<%= mc.id %>">
+                      Supprimer
+                    </button>
+                    <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
+                  <% } %>
                 </div>
 
-                <!-- Bouton ici -->
-                 <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
-                <!-- Tu peux aussi ajouter un bouton pour supprimer ici -->
-                 <!-- Bouton pour ouvrir la modale -->
-<button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal<%= mc.id %>">
-  Supprimer
-</button>
+                <% if (user && user.role === 'admin') { %>
+                  <div class="modal fade" id="receptionModal<%= mc.id %>" tabindex="-1" aria-labelledby="receptionModalLabel<%= mc.id %>" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <form action="/chantier/materielChantier/receptionner/<%= mc.id %>" method="POST">
+                          <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="receptionModalLabel<%= mc.id %>">Réceptionner du matériel</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                          </div>
+                          <div class="modal-body">
+                            <p class="mb-2"><strong>Matériel :</strong> <%= mc.materiel ? mc.materiel.nom : 'N/A' %></p>
+                            <p class="mb-3"><strong>Chantier :</strong> <%= mc.chantier ? mc.chantier.nom : 'N/A' %></p>
+                            <div class="mb-3">
+                              <label for="quantiteReceptionnee<%= mc.id %>" class="form-label">Quantité réceptionnée</label>
+                              <input type="number" class="form-control" id="quantiteReceptionnee<%= mc.id %>" name="quantiteReceptionnee" min="1" required>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-success">Confirmer</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
 
-<!-- Modale Bootstrap -->
-<div class="modal fade" id="confirmDeleteModal<%= mc.id %>" tabindex="-1" aria-labelledby="confirmDeleteLabel<%= mc.id %>" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form action="/chantier/materielChantier/supprimer/<%= mc.id %>" method="POST">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title" id="confirmDeleteLabel<%= mc.id %>">Confirmer la suppression</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-        </div>
-        <div class="modal-body">
-          Êtes-vous sûr de vouloir supprimer ce matériel du chantier ?<br>
-          <strong>Cette action est irréversible.</strong>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="submit" class="btn btn-danger">Supprimer</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-                          
-            <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
+                  <div class="modal fade" id="confirmDeleteModal<%= mc.id %>" tabindex="-1" aria-labelledby="confirmDeleteLabel<%= mc.id %>" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <form action="/chantier/materielChantier/supprimer/<%= mc.id %>" method="POST">
+                          <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="confirmDeleteLabel<%= mc.id %>">Confirmer la suppression</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                          </div>
+                          <div class="modal-body">
+                            Êtes-vous sûr de vouloir supprimer ce matériel du chantier ?<br>
+                            <strong>Cette action est irréversible.</strong>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
                 <% } %>
-
-            <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
-                
-
-
               </td>
             </tr>
           <% }); %>
@@ -430,11 +461,58 @@
       </tbody>
       
     </table>
-    
-   
+
+
 
   </div>
-  
+
+  <% const transferChantiers = Array.isArray(chantiers) ? chantiers : []; %>
+  <div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="transferForm" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <span id="transferModalAction">Transfert</span> - <span id="transferModalMateriel"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="contextType" id="transferContextType" value="CHANTIER">
+          <input type="hidden" name="contextChantierId" id="transferContextChantierId" value="">
+          <input type="hidden" name="materielId" id="transferMaterielId" value="">
+          <input type="hidden" name="materielName" id="transferMaterielName" value="">
+
+          <div class="mb-3">
+            <label for="transferTargetChantierId" class="form-label">Chantier</label>
+            <select class="form-select" name="targetChantierId" id="transferTargetChantierId" required>
+              <option value="">-- Sélectionner un chantier --</option>
+              <% transferChantiers.forEach(function(c) { %>
+                <option value="<%= c.id %>"><%= c.nom %><% if (c.localisation) { %> - <%= c.localisation %><% } %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="transferQuantite" class="form-label">Quantité</label>
+            <input
+              type="number"
+              class="form-control"
+              id="transferQuantite"
+              name="quantite"
+              min="0.01"
+              step="0.01"
+              required
+            >
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Valider</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script nonce="<%= nonce %>">
@@ -443,6 +521,89 @@
     const navBar = document.querySelector('.navbar');
     const modifBtn = document.getElementById('toggleModif');
     const modifInput = document.getElementById('triModification');
+    const transferModalElement = document.getElementById('transferModal');
+    const transferForm = document.getElementById('transferForm');
+    const transferActionLabel = document.getElementById('transferModalAction');
+    const transferMaterielLabel = document.getElementById('transferModalMateriel');
+    const transferContextTypeInput = document.getElementById('transferContextType');
+    const transferContextChantierInput = document.getElementById('transferContextChantierId');
+    const transferMaterielIdInput = document.getElementById('transferMaterielId');
+    const transferMaterielNameInput = document.getElementById('transferMaterielName');
+    const transferTargetSelect = document.getElementById('transferTargetChantierId');
+    const transferQuantityInput = document.getElementById('transferQuantite');
+    let transferModalInstance = null;
+
+    if (transferModalElement && window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+      transferModalInstance = new window.bootstrap.Modal(transferModalElement);
+    }
+
+    document.querySelectorAll('.transfer-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        if (!transferForm) {
+          return;
+        }
+
+        transferForm.reset();
+        const action = button.dataset.action || 'entree';
+        transferForm.setAttribute('action', `/transferts/${action}`);
+        if (transferContextTypeInput) {
+          transferContextTypeInput.value = button.dataset.contextType || 'CHANTIER';
+        }
+        if (transferContextChantierInput) {
+          transferContextChantierInput.value = button.dataset.contextChantierId || '';
+        }
+        if (transferMaterielIdInput) {
+          transferMaterielIdInput.value = button.dataset.materielId || '';
+        }
+        if (transferMaterielNameInput) {
+          transferMaterielNameInput.value = button.dataset.materielName || '';
+        }
+        if (transferMaterielLabel) {
+          transferMaterielLabel.textContent = button.dataset.materielName || '';
+        }
+        if (transferTargetSelect) {
+          transferTargetSelect.value = '';
+        }
+        if (transferQuantityInput) {
+          transferQuantityInput.value = '';
+        }
+        transferForm.dataset.transferAction = action;
+        if (transferActionLabel) {
+          transferActionLabel.textContent = action === 'entree' ? 'Entrée' : 'Sortie';
+        }
+
+        if (transferModalInstance) {
+          transferModalInstance.show();
+        }
+      });
+    });
+
+    if (transferForm) {
+      transferForm.addEventListener('submit', (event) => {
+        const action = transferForm.dataset.transferAction || 'entree';
+        const actionLabel = action === 'entree' ? "l'entrée" : 'la sortie';
+        const qtyValue = transferQuantityInput ? transferQuantityInput.value.trim() : '';
+        const normalizedQty = qtyValue.replace(/,/g, '.');
+        const qtyNumber = Number.parseFloat(normalizedQty);
+        if (!Number.isFinite(qtyNumber) || qtyNumber <= 0) {
+          event.preventDefault();
+          return;
+        }
+
+        const materialName = transferMaterielNameInput ? transferMaterielNameInput.value : '';
+        const selectedOption = transferTargetSelect && transferTargetSelect.selectedIndex >= 0
+          ? transferTargetSelect.options[transferTargetSelect.selectedIndex]
+          : null;
+        const chantierLabel = selectedOption ? selectedOption.text.trim() : '';
+        const confirmationMessage = `Confirmer ${actionLabel} de ${qtyValue || qtyNumber} unités\n` +
+          `Matériel : ${materialName}\n` +
+          `Chantier sélectionné : ${chantierLabel}`;
+        if (!window.confirm(confirmationMessage)) {
+          event.preventDefault();
+        }
+      });
+    }
+
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
         body.classList.toggle('mode-sombre');
