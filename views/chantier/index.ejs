@@ -7,75 +7,358 @@
   <link rel="stylesheet" href="/css/style.css">
 
   <style>
-    body.mode-sombre {
-      background-color: #121212;
-      color: #e0e0e0;
+    @import url('https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.17/index.min.css');
+
+    :root {
+      --violet-dark: #0f021f;
+      --violet-mid: #3b0a6a;
+      --violet-light: #7b3ef3;
+      --violet-accent: #a978ff;
+      --card-bg: rgba(17, 6, 32, 0.72);
+      --text-primary: #f7f4ff;
+      --text-muted: rgba(247, 244, 255, 0.7);
     }
-    body.mode-sombre .navbar {
-      background-color: #1f1f1f !important;
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(123, 62, 243, 0.35), transparent 45%),
+                  radial-gradient(circle at bottom right, rgba(59, 10, 106, 0.6), transparent 55%),
+                  linear-gradient(135deg, #080111 0%, #1a0533 38%, #2d0a52 100%);
+      color: var(--text-primary);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      backdrop-filter: blur(8px);
     }
-    body.mode-sombre .navbar.navbar-light .navbar-brand,
-    body.mode-sombre .navbar.navbar-light .nav-link {
-      color: #e0e0e0 !important;
+
+    .navbar {
+      background: linear-gradient(120deg, rgba(15, 2, 31, 0.9), rgba(59, 10, 106, 0.9));
+      border-bottom: 1px solid rgba(169, 120, 255, 0.25);
+      backdrop-filter: blur(12px);
     }
-    body.mode-sombre .table thead th {
-      background-color: #2c2c2c;
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05rem;
+      color: #fff !important;
+    }
+
+    .navbar-brand img {
+      height: 42px;
+      width: auto;
+    }
+
+    #toggleMode {
+      border-radius: 999px;
+      border-color: rgba(255, 255, 255, 0.25);
       color: #fff;
     }
-    body.mode-sombre .table-striped > tbody > tr:nth-of-type(odd) {
-      --bs-table-accent-bg: #2a2a2a;
+
+    #toggleMode:hover {
+      background-color: rgba(169, 120, 255, 0.2);
+      border-color: rgba(169, 120, 255, 0.5);
     }
-    .table-materiel thead th {
-      position: sticky;
-      top: 70px;
-      z-index: 5;
-      background-color: #f8f9fa;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+
+    .content-wrapper {
+      margin-top: 6.5rem;
+      margin-bottom: 3rem;
     }
-    body.mode-sombre .table-materiel thead th {
-      background-color: #2c2c2c;
+
+    .page-header {
+      background: linear-gradient(135deg, rgba(123, 62, 243, 0.25), rgba(15, 2, 31, 0.65));
+      border: 1px solid rgba(169, 120, 255, 0.28);
+      border-radius: 18px;
+      padding: 2.25rem;
+      box-shadow: 0 18px 45px rgba(7, 1, 20, 0.45);
+      color: #fff;
     }
+
+    .page-header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+    }
+
+    .page-header p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .action-buttons .btn {
+      border-radius: 12px;
+      padding: 0.6rem 1.2rem;
+      font-weight: 600;
+      box-shadow: 0 12px 30px rgba(11, 2, 25, 0.35);
+      border: none;
+    }
+
+    .action-buttons .btn-success,
+    .action-buttons .btn-info {
+      background: linear-gradient(135deg, #7b3ef3, #9a4fff);
+    }
+
+    .action-buttons .btn-warning {
+      background: linear-gradient(135deg, #ffa928, #ff7e2f);
+    }
+
+    .action-buttons .btn-secondary,
+    .action-buttons .btn-outline-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .action-buttons .btn-danger {
+      background: linear-gradient(135deg, #ff5c7a, #ff3564);
+    }
+
+    .action-buttons .btn-primary {
+      background: linear-gradient(135deg, #4f32ff, #7f56ff);
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      border-radius: 22px;
+      padding: 2rem;
+      border: 1px solid rgba(169, 120, 255, 0.2);
+      box-shadow: 0 18px 40px rgba(8, 2, 20, 0.6);
+      backdrop-filter: blur(14px);
+    }
+
+    form.glass-card {
+      margin-top: 2.5rem;
+    }
+
+    label.form-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06rem;
+    }
+
+    .form-control,
+    .form-select {
+      background: rgba(15, 2, 31, 0.55);
+      border: 1px solid rgba(169, 120, 255, 0.25);
+      color: var(--text-primary);
+      border-radius: 12px;
+      padding: 0.65rem 1rem;
+    }
+
     .form-select {
       appearance: none !important;
       -webkit-appearance: none !important;
       -moz-appearance: none !important;
-      background-color: #fff;
-      color: #333;
-      border: 1px solid #ced4da;
-      border-radius: 0.25rem;
       background-image: url('/images/arrow-light.png');
       background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      background-size: 20px auto;
-      padding-right: 2rem;
+      background-position: right 0.95rem center;
+      background-size: 18px auto;
+      padding-right: 2.5rem;
     }
-    body.mode-sombre .form-select {
-      background-color: #2c2c2c !important;
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: rgba(169, 120, 255, 0.55);
+      box-shadow: 0 0 0 0.15rem rgba(123, 62, 243, 0.25);
+      background: rgba(15, 2, 31, 0.75);
+    }
+
+    .filters-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-top: 1.5rem;
+    }
+
+    .filters-actions .btn {
+      border-radius: 12px;
+      padding: 0.55rem 1.4rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05rem;
+    }
+
+    .table-wrapper {
+      margin-top: 2.5rem;
+      background: rgba(14, 4, 28, 0.78);
+      border-radius: 20px;
+      border: 1px solid rgba(169, 120, 255, 0.18);
+      box-shadow: 0 22px 50px rgba(5, 0, 16, 0.65);
+      overflow: hidden;
+    }
+
+    .table-responsive {
+      border-radius: 20px;
+    }
+
+    .table-materiel {
+      margin-bottom: 0;
+      color: var(--text-primary);
+    }
+
+    .table-materiel thead th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: linear-gradient(135deg, rgba(79, 50, 255, 0.95), rgba(123, 62, 243, 0.85));
+      border-bottom: none;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.05rem;
+      font-size: 0.75rem;
+      padding: 0.95rem 0.75rem;
+    }
+
+    .table-materiel tbody tr {
+      background: rgba(12, 2, 28, 0.55);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .table-materiel tbody tr:hover {
+      transform: translateY(-2px);
+      background: rgba(123, 62, 243, 0.2);
+    }
+
+    .table-materiel tbody td {
+      border-color: rgba(169, 120, 255, 0.15);
+      vertical-align: middle;
+    }
+
+    .table-materiel .btn {
+      border-radius: 10px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04rem;
+    }
+
+    .table-materiel img {
+      border-radius: 12px;
+      box-shadow: 0 12px 24px rgba(4, 0, 12, 0.55);
+      border: 1px solid rgba(169, 120, 255, 0.2);
+    }
+
+    .modal-content {
+      background: linear-gradient(145deg, rgba(10, 3, 24, 0.95), rgba(35, 9, 63, 0.92));
+      color: var(--text-primary);
+      border: 1px solid rgba(169, 120, 255, 0.3);
+      box-shadow: 0 16px 40px rgba(8, 1, 24, 0.65);
+    }
+
+    .modal-header {
+      border-bottom-color: rgba(169, 120, 255, 0.25);
+    }
+
+    .modal-footer {
+      border-top-color: rgba(169, 120, 255, 0.25);
+    }
+
+    .transfer-btn {
+      background: rgba(255, 255, 255, 0.1) !important;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
       color: #fff !important;
-      border-color: #444 !important;
+    }
+
+    .transfer-btn[data-action="entree"] {
+      background: linear-gradient(135deg, rgba(68, 217, 159, 0.25), rgba(72, 149, 239, 0.35)) !important;
+    }
+
+    .transfer-btn[data-action="sortie"] {
+      background: linear-gradient(135deg, rgba(255, 91, 122, 0.25), rgba(255, 126, 162, 0.32)) !important;
+    }
+
+    .badge.bg-danger {
+      background: rgba(255, 99, 132, 0.25) !important;
+      border: 1px solid rgba(255, 99, 132, 0.4);
+    }
+
+    .top-shortcuts {
+      position: fixed;
+      top: 6rem;
+      right: 2.5rem;
+      display: flex;
+      gap: 0.75rem;
+      z-index: 10;
+    }
+
+    .top-shortcuts button {
+      border-radius: 999px;
+      border: 1px solid rgba(169, 120, 255, 0.35);
+      background: rgba(12, 2, 28, 0.65);
+      color: var(--text-primary);
+      padding: 0.55rem 1.2rem;
+      font-weight: 600;
+      box-shadow: 0 14px 32px rgba(8, 2, 22, 0.4);
+    }
+
+    .top-shortcuts button:hover {
+      background: rgba(123, 62, 243, 0.35);
+    }
+
+    body.mode-sombre {
+      background: #05010b;
+      color: var(--text-primary);
+    }
+
+    body.mode-sombre .navbar {
+      background: linear-gradient(120deg, rgba(5, 0, 12, 0.95), rgba(21, 2, 45, 0.95));
+    }
+
+    body.mode-sombre .table-materiel thead th {
+      background: linear-gradient(135deg, rgba(21, 2, 45, 0.95), rgba(59, 10, 106, 0.95));
+    }
+
+    body.mode-sombre .form-select {
+      background-color: rgba(8, 2, 20, 0.85) !important;
+      border-color: rgba(169, 120, 255, 0.45) !important;
       background-image: url('/images/arrow-dark.png');
-      background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      background-size: 20px auto;
+    }
+
+    @media (max-width: 992px) {
+      .page-header {
+        padding: 1.8rem;
+      }
+
+      .page-header h1 {
+        font-size: 2rem;
+      }
+
+      .top-shortcuts {
+        position: static;
+        margin-top: 1rem;
+        justify-content: flex-start;
+      }
+
+      .content-wrapper {
+        margin-top: 7.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <nav class="navbar navbar-light bg-light fixed-top">
+  <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
     <div class="container-fluid">
-      <span class="navbar-brand mb-0 h1">Stock Chantier</span>
+      <span class="navbar-brand mb-0 h1">
+        <img src="/images/logo.png" alt="Logo Entreprise">
+        Stock Chantier
+      </span>
       <button id="toggleMode" class="btn btn-outline-secondary">Mode sombre</button>
     </div>
   </nav>
-<div style="display:flex;gap:10px;margin-top:10px;">
-  <button onclick="location.href='https://receptionbr.onrender.com/selection.html'">Gestion Tâches</button>
-  <button onclick="location.href='https://receptionbr.onrender.com/'">Réception</button>
-</div>
-  
-  
 
-  <div class="container" style="margin-top: 6rem;">
-<div class="mb-4 d-flex flex-wrap gap-2">
+  <div class="top-shortcuts">
+    <button onclick="location.href='https://receptionbr.onrender.com/selection.html'">Gestion Tâches</button>
+    <button onclick="location.href='https://receptionbr.onrender.com/'">Réception</button>
+  </div>
+
+  <div class="container content-wrapper">
+    <div class="page-header">
+      <h1>Inventaire chantier</h1>
+      <p>Pilotez vos stocks sur chantier avec une vue claire, élégante et professionnelle.</p>
+    </div>
+
+    <div class="action-buttons d-flex flex-wrap gap-2 mt-4">
   <%
     const chantierCourant = (chantiers || []).find(c => String(c.id) === String(chantierId)) || null;
   %>
@@ -122,9 +405,8 @@
 
   <a href="/materiel" class="btn btn-secondary">Retour</a>
 </div>
-    <h1>Inventaire cumulé des livraisons vers chantier</h1>
 
-<form method="GET" action="/chantier" class="row g-3 mb-4">
+<form method="GET" action="/chantier" class="row g-3 glass-card">
   <div class="col-md-3">
     <label for="chantierId" class="form-label">Filtrer par chantier</label>
     <select class="form-select" name="chantierId" id="chantierId">
@@ -214,13 +496,17 @@
 
 
   <div class="col-12 mt-2">
-    <button type="submit" class="btn btn-primary">Appliquer les filtres</button>
-    <a href="/chantier?reset=1" class="btn btn-secondary">Réinitialiser</a>
+    <div class="filters-actions">
+      <button type="submit" class="btn btn-primary">Appliquer les filtres</button>
+      <a href="/chantier?reset=1" class="btn btn-secondary">Réinitialiser</a>
+    </div>
   </div>
 </form>
 
 
-    <table class="table table-bordered table-striped table-materiel">
+    <div class="table-wrapper">
+      <div class="table-responsive">
+    <table class="table table-bordered table-striped table-materiel align-middle">
       <thead>
         <tr>
           <th class="d-none">ID</th>
@@ -479,8 +765,8 @@
       </tbody>
       
     </table>
-
-
+      </div>
+    </div>
 
   </div>
 
@@ -616,11 +902,11 @@
       toggleBtn.addEventListener('click', () => {
         body.classList.toggle('mode-sombre');
         if (body.classList.contains('mode-sombre')) {
-          navBar.classList.remove('navbar-light', 'bg-light');
           navBar.classList.add('navbar-dark');
+          toggleBtn.textContent = 'Mode clair';
         } else {
           navBar.classList.remove('navbar-dark');
-          navBar.classList.add('navbar-light', 'bg-light');
+          toggleBtn.textContent = 'Mode sombre';
         }
       });
     }
