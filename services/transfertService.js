@@ -1,222 +1,123 @@
-const { sequelize, Materiel, Chantier } = require('../models');
+const { sequelize, Materiel } = require('../models');
 
-const VALID_ACTIONS = new Set(['ENTREE', 'SORTIE']);
+// utils sûrs
+const getByPkLocked = (id, t, lock) =>
+  Materiel.findByPk(id, { transaction: t, lock });
 
-const METADATA_FIELDS = [
-  'reference',
-  'description',
-  'prix',
-  'categorie',
-  'fournisseur',
-  'rack',
-  'compartiment',
-  'niveau',
-  'position',
-  'vehiculeId',
-  'emplacementId'
-];
+const getMatByNameInChantier = (chantierId, nom, t, lock) =>
+  Materiel.findOne({ where: { chantierId, nom }, transaction: t, lock });
 
-const parseQuantity = value => {
-  if (typeof value === 'string') {
-    const normalized = value.replace(/,/g, '.').trim();
-    if (normalized === '') return NaN;
-    return Number.parseFloat(normalized);
-  }
-  return Number.parseFloat(value);
+const cloneForContext = async ({ prototype, nom, chantierId, t }) => {
+  return Materiel.create({
+    nom,
+    reference: prototype?.reference || null,
+    categorie: prototype?.categorie || null,
+    description: prototype?.description || null,
+    rack: null, compartiment: null, niveau: null, position: null,
+    vehiculeId: null,
+    chantierId: chantierId ?? null,
+    quantite: 0
+  }, { transaction: t });
 };
 
-const normalizeId = value => {
-  if (value === undefined || value === null || value === '') {
-    return null;
-  }
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? null : parsed;
+// parsing & arrondis robustes
+const parseQty = (val) => {
+  if (val == null) return NaN;
+  if (typeof val === 'string') val = val.replace(',', '.');
+  const n = Number(val);
+  return Number.isFinite(n) ? n : NaN;
 };
+const add = (a,b) => Number((a + b).toFixed(2));
+const sub = (a,b) => Number((a - b).toFixed(2));
 
-function copyMetadata(from) {
-  return METADATA_FIELDS.reduce((acc, field) => {
-    acc[field] = from[field];
-    return acc;
-  }, {});
-}
+/**
+ * Motivation :
+ * Au dépôt, il existe des doublons de nom ("chantierId" = NULL).
+ * ➜ En SORTIE, on doit toujours prélever la ligne cliquée (par id) et non « une ligne par nom ».
+ *
+ * En ENTRÉE vers le contexte courant, on incrémente la ligne cliquée du contexte courant (si elle existe),
+ * sinon fallback par nom / création.
+ *
+ * Parsing et arrondis protègent contre 2,5 et les flottants.
+ */
 
-async function ensureChantierExists(chantierId, transaction) {
-  if (chantierId === null) {
-    return null;
-  }
-  const chantier = await Chantier.findByPk(chantierId, { transaction });
-  if (!chantier) {
-    throw new Error('Chantier sélectionné introuvable.');
-  }
-  return chantier;
-}
-
+/**
+ * @param {'ENTREE'|'SORTIE'} action
+ * @param {{ type:'DEPOT'|'CHANTIER', chantierId?:number|null }} context
+ * @param {{ materielId:number, materielName:string }} current
+ * @param {number} targetChantierId
+ * @param {number|string} qty
+ * @param {number=} userId
+ */
 async function transferParNom({ action, context, current, targetChantierId, qty, userId }) {
-  const normalizedAction = typeof action === 'string' ? action.toUpperCase() : action;
-  if (!VALID_ACTIONS.has(normalizedAction)) {
-    throw new Error('Action de transfert invalide.');
+  const isEntree = action === 'ENTREE';
+  const currIsDepot = context.type === 'DEPOT';
+  const currChantierId = context.chantierId ?? null;
+
+  if (!current?.materielId || !current?.materielName) throw new Error('Ligne matériau invalide');
+  if (!targetChantierId) throw new Error('Chantier cible invalide');
+
+  // garde-fou chantier -> même chantier
+  if (!currIsDepot && Number(currChantierId) === Number(targetChantierId)) {
+    throw new Error('Le chantier source et destination sont identiques.');
   }
 
-  if (!current || !current.materielId || !current.materielName) {
-    throw new Error('Matériel courant invalide.');
-  }
+  const Q = parseQty(qty);
+  if (!Q || Q <= 0) throw new Error('Quantité invalide');
 
-  const quantity = parseQuantity(qty);
-  if (!Number.isFinite(quantity) || quantity <= 0) {
-    throw new Error('Quantité invalide.');
-  }
+  return sequelize.transaction(async (t) => {
+    const lock = t.LOCK.UPDATE;
+    let src, dst;
 
-  const contextType = context && context.type === 'CHANTIER' ? 'CHANTIER' : 'DEPOT';
-  const contextChantierId = contextType === 'CHANTIER' ? normalizeId(context.chantierId) : null;
+    if (isEntree) {
+      // Source = chantier sélectionné (résolution par NOM)
+      src = await getMatByNameInChantier(Number(targetChantierId), current.materielName, t, lock);
+      if (!src) throw new Error(`Aucun matériel nommé "${current.materielName}" dans le chantier sélectionné.`);
 
-  if (contextType === 'CHANTIER' && contextChantierId === null) {
-    throw new Error('Chantier courant invalide.');
-  }
-
-  const targetId = normalizeId(targetChantierId);
-
-  const transaction = await sequelize.transaction();
-
-  try {
-    const currentMaterial = await Materiel.findByPk(current.materielId, {
-      transaction,
-      lock: transaction.LOCK.UPDATE
-    });
-
-    if (!currentMaterial && normalizedAction === 'SORTIE') {
-      throw new Error('Matériel source introuvable.');
-    }
-
-    let destinationMaterial = null;
-    let sourceMaterial = null;
-
-    if (normalizedAction === 'ENTREE') {
-      if (targetId === null) {
-        throw new Error('Chantier source requis pour une entrée.');
-      }
-
-      if (contextType === 'CHANTIER' && targetId === contextChantierId) {
-        throw new Error('Impossible de transférer vers le même chantier.');
-      }
-
-      await ensureChantierExists(targetId, transaction);
-
-      sourceMaterial = await Materiel.findOne({
-        where: { nom: current.materielName, chantierId: targetId },
-        transaction,
-        lock: transaction.LOCK.UPDATE
-      });
-
-      if (!sourceMaterial) {
-        throw new Error('Matériel introuvable dans le chantier source.');
-      }
-
-      const available = Number.parseFloat(sourceMaterial.quantite);
-      if (!Number.isFinite(available) || available < quantity) {
-        throw new Error('Quantité insuffisante dans le chantier source.');
-      }
-
-      if (currentMaterial && currentMaterial.nom === current.materielName && currentMaterial.chantierId === contextChantierId) {
-        destinationMaterial = currentMaterial;
+      // Destination = contexte courant
+      if (currIsDepot) {
+        // on incrémente **la ligne cliquée** du dépôt
+        dst = await getByPkLocked(current.materielId, t, lock);
+        if (!dst || dst.chantierId !== null) throw new Error('Ligne dépôt cible invalide.');
       } else {
-        destinationMaterial = await Materiel.findOne({
-          where: { nom: current.materielName, chantierId: contextChantierId },
-          transaction,
-          lock: transaction.LOCK.UPDATE
-        });
+        // chantier courant : on privilégie **la ligne cliquée**
+        dst = await getByPkLocked(current.materielId, t, lock);
+        if (!dst || Number(dst.chantierId) !== Number(currChantierId)) {
+          // fallback: résolution par nom dans le chantier courant
+          dst = await getMatByNameInChantier(Number(currChantierId), current.materielName, t, lock);
+          if (!dst) dst = await cloneForContext({ prototype: src, nom: current.materielName, chantierId: currChantierId, t });
+        }
       }
-
-      if (!destinationMaterial) {
-        const template = currentMaterial || sourceMaterial;
-        const newMaterialPayload = {
-          nom: current.materielName,
-          chantierId: contextChantierId,
-          quantite: 0,
-          ...copyMetadata(template)
-        };
-        destinationMaterial = await Materiel.create(newMaterialPayload, { transaction });
-      }
-
-      sourceMaterial.quantite = available - quantity;
-      const destQty = Number.parseFloat(destinationMaterial.quantite) || 0;
-      destinationMaterial.quantite = destQty + quantity;
-
-      await sourceMaterial.save({ transaction });
-      await destinationMaterial.save({ transaction });
     } else {
-      // SORTIE
-      if (contextType === 'CHANTIER' && contextChantierId === null) {
-        throw new Error('Chantier source invalide.');
+      // SORTIE : Source = contexte courant **par PK**
+      src = await getByPkLocked(current.materielId, t, lock);
+      if (!src) throw new Error('Ligne source introuvable.');
+      if (currIsDepot && src.chantierId !== null) throw new Error('La source attendue (dépôt) ne correspond pas.');
+      if (!currIsDepot && Number(src.chantierId) !== Number(currChantierId)) {
+        throw new Error('La source attendue (chantier courant) ne correspond pas.');
       }
 
-      sourceMaterial = currentMaterial;
-      if (!sourceMaterial || sourceMaterial.nom !== current.materielName) {
-        throw new Error('Matériel source invalide.');
-      }
-
-      const sourceQty = Number.parseFloat(sourceMaterial.quantite);
-      if (!Number.isFinite(sourceQty) || sourceQty < quantity) {
-        throw new Error('Quantité insuffisante dans la source.');
-      }
-
-      if (targetId === null) {
-        throw new Error('Chantier destination requis.');
-      }
-
-      if (contextType === 'CHANTIER' && targetId === contextChantierId) {
-        throw new Error('Impossible de transférer vers le même chantier.');
-      }
-
-      await ensureChantierExists(targetId, transaction);
-
-      destinationMaterial = await Materiel.findOne({
-        where: { nom: current.materielName, chantierId: targetId },
-        transaction,
-        lock: transaction.LOCK.UPDATE
-      });
-
-      if (!destinationMaterial) {
-        const template = sourceMaterial;
-        const newMaterialPayload = {
-          nom: current.materielName,
-          chantierId: targetId,
-          quantite: 0,
-          ...copyMetadata(template)
-        };
-        destinationMaterial = await Materiel.create(newMaterialPayload, { transaction });
-      }
-
-      sourceMaterial.quantite = sourceQty - quantity;
-      const destQty = Number.parseFloat(destinationMaterial.quantite) || 0;
-      destinationMaterial.quantite = destQty + quantity;
-
-      await sourceMaterial.save({ transaction });
-      await destinationMaterial.save({ transaction });
+      // Destination = chantier choisi (par NOM, création si absent)
+      dst = await getMatByNameInChantier(Number(targetChantierId), current.materielName, t, lock);
+      if (!dst) dst = await cloneForContext({ prototype: src, nom: current.materielName, chantierId: targetChantierId, t });
     }
 
-    const summary = {
-      from: {
-        id: sourceMaterial ? sourceMaterial.id : null,
-        after: sourceMaterial ? Number.parseFloat(sourceMaterial.quantite) : null
-      },
-      to: {
-        id: destinationMaterial ? destinationMaterial.id : null,
-        after: destinationMaterial ? Number.parseFloat(destinationMaterial.quantite) : null
-      }
+    // Contrôle & mouvements
+    const srcQty = parseQty(src.quantite || 0);
+    if (Q > srcQty) throw new Error(`Quantité demandée (${Q}) > stock source (${srcQty}).`);
+
+    src.quantite = sub(srcQty, Q);
+    await src.save({ transaction: t });
+
+    const dstQty = parseQty(dst.quantite || 0);
+    dst.quantite = add(dstQty, Q);
+    await dst.save({ transaction: t });
+
+    return {
+      from: { id: src.id, after: Number(src.quantite) },
+      to:   { id: dst.id, after: Number(dst.quantite) }
     };
-
-    // Point d'insertion pour historiser si besoin
-    // await Historique.create({...}, { transaction });
-
-    await transaction.commit();
-
-    return summary;
-  } catch (error) {
-    await transaction.rollback();
-    throw error;
-  }
+  });
 }
 
-module.exports = {
-  transferParNom
-};
+module.exports = { transferParNom };
