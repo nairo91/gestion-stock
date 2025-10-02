@@ -9,6 +9,121 @@
   <link rel="stylesheet" href="/css/style.css">
 
   <style>
+    :root {
+      --navbar-h: 64px;
+    }
+
+    body {
+      padding-top: var(--navbar-h);
+    }
+
+    .navbar.fixed-top,
+    .navbar.sticky-top {
+      z-index: 1030;
+    }
+
+    .table.fit {
+      table-layout: fixed;
+      width: 100%;
+    }
+
+    .table.fit th,
+    .table.fit td {
+      white-space: normal;
+      word-break: break-word;
+      vertical-align: middle;
+    }
+
+    .table.fit th.col-designation,
+    .table.fit td.col-designation { width: 16%; }
+    .table.fit th.col-photo,
+    .table.fit td.col-photo { width: 8%; }
+    .table.fit th.col-reference,
+    .table.fit td.col-reference { width: 10%; }
+    .table.fit th.col-categorie,
+    .table.fit td.col-categorie { width: 12%; }
+    .table.fit th.col-description,
+    .table.fit td.col-description { width: 12%; }
+    .table.fit th.col-fournisseur,
+    .table.fit td.col-fournisseur { width: 10%; }
+    .table.fit th.col-emplacement,
+    .table.fit td.col-emplacement { width: 12%; }
+    .table.fit th.col-rack,
+    .table.fit td.col-rack { width: 6%; }
+    .table.fit th.col-compartiment,
+    .table.fit td.col-compartiment { width: 6%; }
+    .table.fit th.col-niveau,
+    .table.fit td.col-niveau { width: 6%; }
+    .table.fit th.col-quantite,
+    .table.fit td.col-quantite { width: 6%; }
+    .table.fit th.col-quantite-prevue,
+    .table.fit td.col-quantite-prevue { width: 8%; }
+    .table.fit th.col-date,
+    .table.fit td.col-date { width: 8%; }
+    .table.fit th.col-actions,
+    .table.fit td.col-actions { width: 18%; }
+
+    .table.fit td .btn-group,
+    .table.fit td .btn-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .table.fit td img {
+      max-width: 72px;
+      height: auto;
+      display: block;
+    }
+
+    @media (max-width: 991.98px) {
+      .table.stacked,
+      .table.stacked thead,
+      .table.stacked tbody,
+      .table.stacked th,
+      .table.stacked td,
+      .table.stacked tr {
+        display: block;
+        width: 100%;
+      }
+
+      .table.stacked thead {
+        display: none;
+      }
+
+      .table.stacked tr {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 0.75rem 0.75rem 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .table.stacked td {
+        border: none !important;
+        padding: 0.3rem 0 0.3rem 0;
+      }
+
+      .table.stacked td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.82rem;
+        opacity: 0.7;
+        margin-bottom: 0.15rem;
+      }
+
+      .table.stacked td.actions {
+        margin-top: 0.35rem;
+      }
+
+      .table.stacked td.actions .btn-group,
+      .table.stacked td.actions .btn-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+    }
+
     /* =================== MODE SOMBRE =================== */
     body.mode-sombre {
       /* Fond général très foncé mais non noir */
@@ -92,7 +207,7 @@
 <body>
   <% const formatQuantity = value => Number(value ?? 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); %>
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">Gestion de Stock</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -342,34 +457,34 @@
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-bordered table-striped table-hover mb-0">
+          <table class="table table-bordered table-striped table-hover mb-0 fit stacked">
             <thead>
               <tr>
-                <th>Nom</th>
-                <th>Référence</th>
-                <th>Quantité</th>
-                <th>Catégorie</th>
-                <th>Emplacement stock</th>
-                <th>Description</th>
-                <th>Photos</th>
-                <th>Actions</th>
+                <th class="col-designation">Nom</th>
+                <th class="col-reference">Référence</th>
+                <th class="col-quantite">Quantité</th>
+                <th class="col-categorie">Catégorie</th>
+                <th class="col-emplacement">Emplacement stock</th>
+                <th class="col-description">Description</th>
+                <th class="col-photo">Photos</th>
+                <th class="col-actions">Actions</th>
               </tr>
             </thead>
             <tbody>
               <% materiels.forEach(function(m) { %>
                 <tr>
-                  <td><%= m.nom %></td>
-                  <td><%= m.reference %></td>
-                  <td>
+                  <td data-label="Nom" class="col-designation"><%= m.nom %></td>
+                  <td data-label="Référence" class="col-reference"><%= m.reference %></td>
+                  <td data-label="Quantité" class="col-quantite">
                     <%= formatQuantity(m.quantite) %>
                     <% if (Number(m.quantite) < 5) { %>
                       <span class="badge bg-danger ms-1">Stock faible</span>
                     <% } %>
                   </td>
-                  <td><%= m.categorie %></td>
-                  <td><%= formatEmplacement(m) %></td>
-                  <td><%= m.description %></td>
-                  <td>
+                  <td data-label="Catégorie" class="col-categorie"><%= m.categorie %></td>
+                  <td data-label="Emplacement stock" class="col-emplacement"><%= formatEmplacement(m) %></td>
+                  <td data-label="Description" class="col-description"><%= m.description %></td>
+                  <td data-label="Photos" class="col-photo">
                       <% if (m.photos && m.photos.length > 0) { %>
                         <% m.photos.forEach(function(photo) { %>
                           <a href="/<%= photo.chemin.replace(/\\/g, '/') %>" target="_blank" class="me-1">
@@ -380,11 +495,11 @@
                         <span class="text-muted">Aucune</span>
                       <% } %>
                   </td>
-                  <td>
-                    <div class="d-flex flex-wrap gap-1">
+                  <td data-label="Actions" class="actions col-actions">
+                    <div class="btn-wrap">
                       <button
                         type="button"
-                        class="btn btn-outline-success btn-sm mb-1 transfer-btn"
+                        class="btn btn-outline-success btn-sm transfer-btn"
                         data-action="entree"
                         data-context-type="DEPOT"
                         data-context-chantier-id=""
@@ -395,7 +510,7 @@
                       </button>
                       <button
                         type="button"
-                        class="btn btn-outline-danger btn-sm mb-1 transfer-btn"
+                        class="btn btn-outline-danger btn-sm transfer-btn"
                         data-action="sortie"
                         data-context-type="DEPOT"
                         data-context-chantier-id=""
@@ -404,11 +519,11 @@
                       >
                         Sortie
                       </button>
-                      <a href="/materiel/info/<%= m.id %>" class="btn btn-info btn-sm mb-1">Info</a>
+                      <a href="/materiel/info/<%= m.id %>" class="btn btn-info btn-sm">Info</a>
                       <% if (user && user.role === 'admin') { %>
-                        <a href="/materiel/editer/<%= m.id %>" class="btn btn-primary btn-sm mb-1">Modifier</a>
-                        <a href="/materiel/modifier/<%= m.id %>" class="btn btn-warning btn-sm mb-1">Modifier Quantité</a>
-                        <form action="/materiel/supprimer/<%= m.id %>" method="POST" class="mb-1" onsubmit="return confirm('Voulez-vous vraiment supprimer ce matériel ?');">
+                        <a href="/materiel/editer/<%= m.id %>" class="btn btn-primary btn-sm">Modifier</a>
+                        <a href="/materiel/modifier/<%= m.id %>" class="btn btn-warning btn-sm">Modifier Quantité</a>
+                        <form action="/materiel/supprimer/<%= m.id %>" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer ce matériel ?');">
                           <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                         </form>
                       <% } %>
@@ -419,73 +534,9 @@
             </tbody>
           </table>
         </div>
-
-        <!-- Mobile: on masque le tableau et on affiche des cartes -->
-<div class="d-block d-md-none">
-  <% materiels.forEach(function(m) { %>
-    <div class="card mb-3">
-      <div class="card-body">
-        <h5 class="card-title">
-          <%= m.nom %> 
-          <% if (m.reference) { %>
-            <small class="text-muted">(<%= m.reference %>)</small>
-          <% } %>
-        </h5>
-        <ul class="list-unstyled mb-0">
-          <li><strong>Quantité :</strong> <%= formatQuantity(m.quantite) %></li>
-          <li><strong>Catégorie :</strong> <%= m.categorie %></li>
-          <% const mobileEmplacement = formatEmplacement(m); %>
-          <li><strong>Emplacement :</strong> <%= mobileEmplacement %></li>
-          <li><strong>Description :</strong> <%= m.description %></li>
-          <li>
-              <strong>Photos :</strong>
-              <% if (m.photos.length) { %>
-                <% m.photos.forEach(photo => { %>
-                  <a href="/<%= photo.chemin.replace(/\\/g, '/') %>" target="_blank">📷</a>
-                <% }) %>
-              <% } else { %>Aucune<% } %>
-          </li>
-        </ul>
-        <div class="mt-3 d-flex flex-wrap gap-2">
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-success transfer-btn"
-            data-action="entree"
-            data-context-type="DEPOT"
-            data-context-chantier-id=""
-            data-materiel-id="<%= m.id %>"
-            data-materiel-name="<%= m.nom %>"
-          >
-            Entrée
-          </button>
-          <button
-            type="button"
-            class="btn btn-sm btn-outline-danger transfer-btn"
-            data-action="sortie"
-            data-context-type="DEPOT"
-            data-context-chantier-id=""
-            data-materiel-id="<%= m.id %>"
-            data-materiel-name="<%= m.nom %>"
-          >
-            Sortie
-          </button>
-          <a href="/materiel/info/<%= m.id %>" class="btn btn-sm btn-info">Info</a>
-          <% if (user && user.role==='admin') { %>
-            <a href="/materiel/editer/<%=m.id%>" class="btn btn-sm btn-primary">Modifier</a>
-            <a href="/materiel/modifier/<%=m.id%>" class="btn btn-sm btn-warning">Modifier Quantité</a>
-            <form action="/materiel/supprimer/<%=m.id%>" method="POST">
-              <button class="btn btn-sm btn-danger" onclick="return confirm('Voulez-vous vraiment supprimer ce matériel ?');">Supprimer</button>
-            </form>
-          <% } %>
-        </div>
       </div>
     </div>
-  <% }) %>
-</div>
-
-      </div>
-    </div>
-</div> <!-- /container -->
+  </div> <!-- /container -->
 
   <% const transferChantiers = Array.isArray(chantiers) ? chantiers : []; %>
   <div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
@@ -536,6 +587,21 @@
 
   <!-- Scripts Bootstrap -->
   <script src="/js/bootstrap.bundle.min.js"></script>
+
+  <script nonce="<%= nonce %>">
+    (function () {
+      function setNavbarPadding() {
+        var nb = document.querySelector('.navbar');
+        if (!nb) return;
+        var h = nb.offsetHeight || 64;
+        document.documentElement.style.setProperty('--navbar-h', h + 'px');
+      }
+
+      window.addEventListener('load', setNavbarPadding);
+      window.addEventListener('resize', setNavbarPadding);
+      document.addEventListener('readystatechange', setNavbarPadding);
+    })();
+  </script>
 
   <!-- Script de bascule mode sombre -->
   <!-- Si vous avez une CSP stricte, n’oubliez pas le nonce. Exemple : <script nonce="<%= nonce %>"> -->
