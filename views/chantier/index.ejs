@@ -353,14 +353,21 @@
               <td><%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %></td>
               <td>
                 <%
-                  let sourceMat = null;
-                  if (typeof m !== 'undefined' && m && Number(m.chantierId) === Number(chantierCourant?.id)) {
+                  // Trouve la "ligne source" côté chantier courant (pas d'optional chaining ici)
+                  var chantierCourantId = (chantierCourant && chantierCourant.id) || null;
+                  var sourceMat = null;
+                  if (typeof m !== 'undefined' && m && Number(m.chantierId) === Number(chantierCourantId)) {
                     sourceMat = m;
-                  } else if (typeof mc !== 'undefined' && mc && mc.materiel && Number(mc.materiel.chantierId) === Number(chantierCourant?.id)) {
+                  } else if (typeof mc !== 'undefined' && mc && mc.materiel && Number(mc.materiel.chantierId) === Number(chantierCourantId)) {
                     sourceMat = mc.materiel;
-                  } else if (typeof mc !== 'undefined' && mc && Number(mc.chantierId) === Number(chantierCourant?.id)) {
+                  } else if (typeof mc !== 'undefined' && mc && Number(mc.chantierId) === Number(chantierCourantId)) {
                     sourceMat = mc;
                   }
+                  var sourceMatId  = sourceMat ? sourceMat.id : '';
+                  var sourceMatNom = (sourceMat && sourceMat.nom)
+                                   || (typeof mc !== 'undefined' && mc && mc.materiel && mc.materiel.nom)
+                                   || (typeof mc !== 'undefined' && mc && mc.nom)
+                                   || '';
                 %>
                 <div class="d-flex flex-wrap gap-1">
                   <button
@@ -371,8 +378,9 @@
                     data-action="entree"
                     data-context-type="CHANTIER"
                     data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
-                    data-materiel-id="<%= sourceMat?.id %>"
-                    data-materiel-name="<%= (sourceMat?.nom || m?.nom || mc?.materiel?.nom || mc?.nom) %>"
+                    data-materiel-id="<%= sourceMatId %>"
+                    data-materiel-name="<%= sourceMatNom %>"
+                    <%= sourceMat ? '' : 'disabled' %>
                   >
                     Entrée
                   </button>
@@ -384,8 +392,9 @@
                     data-action="sortie"
                     data-context-type="CHANTIER"
                     data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
-                    data-materiel-id="<%= sourceMat?.id %>"
-                    data-materiel-name="<%= (sourceMat?.nom || m?.nom || mc?.materiel?.nom || mc?.nom) %>"
+                    data-materiel-id="<%= sourceMatId %>"
+                    data-materiel-name="<%= sourceMatNom %>"
+                    <%= sourceMat ? '' : 'disabled' %>
                   >
                     Sortie
                   </button>
