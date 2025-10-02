@@ -240,6 +240,21 @@
       border: 1px solid rgba(169, 120, 255, 0.2);
     }
 
+    .photo-cell img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .actions-cell .d-flex {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .actions-cell .btn {
+      flex: 0 0 auto;
+    }
+
     .modal-content {
       background: linear-gradient(145deg, rgba(10, 3, 24, 0.95), rgba(35, 9, 63, 0.92));
       color: var(--text-primary);
@@ -333,6 +348,94 @@
 
       .content-wrapper {
         margin-top: 7.5rem;
+      }
+    }
+
+    @media (max-width: 1400px) {
+      .table-wrapper,
+      .table-responsive {
+        overflow: visible;
+      }
+
+      .table-materiel thead {
+        display: none;
+      }
+
+      .table-materiel,
+      .table-materiel tbody,
+      .table-materiel tr,
+      .table-materiel td {
+        display: block;
+        width: 100%;
+      }
+
+      .table-materiel tr {
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(169, 120, 255, 0.22);
+        border-radius: 18px;
+        padding: 1.25rem 1.4rem;
+        background: rgba(15, 2, 31, 0.65);
+        box-shadow: 0 15px 32px rgba(5, 0, 18, 0.45);
+      }
+
+      .table-materiel td {
+        padding: 0.55rem 0;
+        border: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .table-materiel td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05rem;
+        color: var(--text-muted);
+        margin-right: 1rem;
+      }
+
+      .table-materiel td:last-child {
+        padding-bottom: 0;
+      }
+
+      .photo-cell {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .photo-cell::before {
+        width: 100%;
+        text-align: left;
+        margin-right: 0;
+      }
+
+      .photo-cell img {
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      .actions-cell {
+        padding-top: 1rem;
+        flex-direction: column;
+      }
+
+      .actions-cell::before {
+        margin-bottom: 0.6rem;
+      }
+
+      .actions-cell .d-flex {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+      }
+
+      .actions-cell .btn {
+        width: 100%;
       }
     }
   </style>
@@ -526,6 +629,7 @@
           <th>Qte</th>
           <th>Qte prévue</th>
           <th>Date prévue</th>
+          <th>Actions</th>
 
         </tr>
       </thead>
@@ -541,14 +645,14 @@
                   N/A
                 <% } %>
               </td>
-              <td>
+              <td data-label="Désignation">
                 <% if(mc.materiel) { %>
                   <%= mc.materiel.nom %>
                 <% } else { %>
                   N/A
                 <% } %>
               </td>
-              <td>
+              <td data-label="Photo" class="photo-cell">
                 <% if (mc.materiel && mc.materiel.photos && mc.materiel.photos.length > 0) { %>
                   <% const fullPath = mc.materiel.photos[0].chemin
                        .replace(
@@ -580,28 +684,28 @@
                 <% } %>
               </td>
 
-              <td>
+              <td data-label="Référence">
                 <% if(mc.materiel) { %>
                   <%= mc.materiel.reference %>
                 <% } else { %>
                   -
                 <% } %>
               </td>
-              <td>
+              <td data-label="Categorie">
                 <% if(mc.materiel) { %>
                   <%= mc.materiel.categorie %>
                 <% } else { %>
                   -
                 <% } %>
               </td>
-              <td>
+              <td data-label="Description">
                 <% if(mc.materiel && mc.materiel.description) { %>
                   <%= mc.materiel.description %>
                 <% } else { %>
                   -
                 <% } %>
               </td>
-              <td>
+              <td data-label="Fournisseur">
                 <% if(mc.materiel && mc.materiel.fournisseur) { %>
                   <%= mc.materiel.fournisseur %>
                 <% } else { %>
@@ -609,8 +713,8 @@
                 <% } %>
               </td>
 
-              <td>
-                            <% 
+              <td data-label="Emplacement">
+                <%
                 function afficherChemin(emp) {
                   let chemin = emp.nom;
                   let courant = emp;
@@ -628,17 +732,17 @@
                 -
               <% } %>
 
-                            </td>
+              </td>
 
-              <td><%= mc.materiel && mc.materiel.rack ? mc.materiel.rack : '-' %></td>
-              <td><%= mc.materiel && mc.materiel.compartiment ? mc.materiel.compartiment : '-' %></td>
-              <td><%= mc.materiel && mc.materiel.niveau != null ? mc.materiel.niveau : '-' %></td>
+              <td data-label="Rack"><%= mc.materiel && mc.materiel.rack ? mc.materiel.rack : '-' %></td>
+              <td data-label="Compartiment"><%= mc.materiel && mc.materiel.compartiment ? mc.materiel.compartiment : '-' %></td>
+              <td data-label="Niveau"><%= mc.materiel && mc.materiel.niveau != null ? mc.materiel.niveau : '-' %></td>
 
 
-              <td><%= mc.quantite %></td>
-              <td><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
-              <td><%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %></td>
-              <td>
+              <td data-label="Qte"><%= mc.quantite %></td>
+              <td data-label="Qte prévue"><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
+              <td data-label="Date prévue"><%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %></td>
+              <td data-label="Actions" class="actions-cell">
                 <%
                   // Trouve la "ligne source" côté chantier courant (pas d'optional chaining ici)
                   var chantierCourantId = (chantierCourant && chantierCourant.id) || null;
@@ -760,7 +864,7 @@
           <% }); %>
         <% } else { %>
           <tr>
-            <td colspan="13" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
+            <td colspan="16" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
           </tr>
         <% } %>
       </tbody>
