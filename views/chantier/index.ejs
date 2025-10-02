@@ -230,8 +230,9 @@
 
     .table-stock th,
     .table-stock td {
-      white-space: nowrap;
       vertical-align: middle;
+      white-space: nowrap;
+      line-height: 1.25;
     }
 
     .table-stock th:nth-child(3),
@@ -288,6 +289,26 @@
       .table-stock td {
         display: table-cell !important;
       }
+      .table-stock .col-designation {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        word-break: break-word;
+        hyphens: auto;
+        min-width: 220px !important;
+      }
+      .table-stock .col-emplacement,
+      .table-stock .col-rack {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        word-break: break-word;
+        hyphens: auto;
+        min-width: 140px !important;
+      }
+      .table-stock {
+        min-width: 1350px;
+      }
     }
 
     /* === MODE COMPACT+ (mobile : tout tenir sans scroller) === */
@@ -304,6 +325,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      line-height: 1.25;
     }
 
     body.compact-mobile .table-stock .cell-photo img {
@@ -317,6 +339,22 @@
 
     body.compact-mobile .table-stock th:nth-child(3),
     body.compact-mobile .table-stock td:nth-child(3) {
+      min-width: 160px;
+    }
+
+    body.compact-mobile .table-stock .col-designation,
+    body.compact-mobile .table-stock .col-emplacement,
+    body.compact-mobile .table-stock .col-rack {
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+      word-break: break-word;
+      hyphens: auto;
+    }
+    body.compact-mobile .table-stock .col-emplacement {
+      min-width: 130px;
+    }
+    body.compact-mobile .table-stock .col-rack {
       min-width: 90px;
     }
 
