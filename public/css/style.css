@@ -42,6 +42,36 @@ body.mode-sombre .table-materiel td {
   z-index: 5005 !important;
 }
 
+/* Quand une modale est ouverte, on neutralise les filtres qui cassent le positionnement fixe */
+body.modal-open {
+  /* évite qu’un backdrop-filter/transform sur body crée un contenant bloquant */
+  backdrop-filter: none !important;
+  filter: none !important;
+}
+
+.modal-backdrop.show {
+  /* un peu plus opaque pour compenser la suppression du blur */
+  opacity: 0.5;
+}
+
+/* S’assure que la boîte de dialogue se centre et reste dans le viewport */
+.modal-dialog {
+  max-width: min(720px, 95vw);
+  margin: 1.25rem auto;
+}
+
+.modal-dialog-centered {
+  align-items: center;
+}
+
+/* Empêche tout parent scroll/clippant de gêner pendant la modale */
+body.modal-open .stock-table-wrap,
+body.modal-open .table-wrapper,
+body.modal-open .container,
+body.modal-open .content-wrapper {
+  overflow: visible !important;
+}
+
 body.mode-sombre thead th {
     background-color: #2c2c2c !important;
     color: #ffffff;
