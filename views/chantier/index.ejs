@@ -220,6 +220,8 @@
     .stock-table-wrap {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      /* Espace pour la colonne sticky des actions quand Compact+ est actif */
+      padding-right: 0;
     }
 
     .table-stock {
@@ -307,7 +309,7 @@
         min-width: 140px !important;
       }
       .table-stock {
-        min-width: 1350px;
+        min-width: 1450px;
       }
     }
 
@@ -356,6 +358,28 @@
     }
     body.compact-mobile .table-stock .col-rack {
       min-width: 90px;
+    }
+
+    /* --- Compact+: garder les libellés de boutons complets --- */
+    body.compact-mobile .table-stock .col-actions {
+      min-width: 260px;
+      position: sticky;
+      right: 0;
+      background: rgba(22, 18, 37, .92);
+      backdrop-filter: blur(2px);
+      z-index: 3;
+    }
+    body.compact-mobile .stock-table-wrap {
+      padding-right: 260px;
+    }
+    body.compact-mobile .table-stock td.actions .btn-wrap {
+      flex-wrap: nowrap;
+      gap: 6px;
+    }
+    body.compact-mobile .table-stock td.actions .btn {
+      font-size: 12px;
+      padding: 6px 10px;
+      white-space: nowrap;
     }
 
     body.compact-mobile .table-stock th:nth-child(5),
