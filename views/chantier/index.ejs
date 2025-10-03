@@ -1050,7 +1050,7 @@
 
   <% const transferChantiers = Array.isArray(chantiers) ? chantiers : []; %>
   <div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <form class="modal-content" id="transferForm" method="POST">
         <div class="modal-header">
           <h5 class="modal-title">
@@ -1095,72 +1095,70 @@
     </div>
   </div>
 
-  <script nonce="<%= nonce %>">
-    (function () {
-      var ids = [
-        'globalPhotoModal',
-        'globalReceptionModal',
-        'globalDeleteModal',
-        'transferModal'
-      ];
-      ids.forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el && el.parentNode !== document.body) {
-          document.body.appendChild(el);
-        }
-      });
-    })();
-  </script>
-
+  <!-- 1) Bootstrap d'abord -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+  <!-- 2) Déplacer les modales SOUS <body> une fois le DOM prêt -->
   <script nonce="<%= nonce %>">
-  (function(){
-    const on = (id, evt, fn) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener(evt, fn);
-    };
-
-    on('globalPhotoModal', 'show.bs.modal', (ev) => {
-      const btn = ev.relatedTarget;
-      const src = btn?.dataset.photoSrc || '';
-      const title = btn?.dataset.photoTitle || 'Photo';
-      const img = document.getElementById('globalPhotoImg');
-      const titleEl = document.getElementById('globalPhotoTitle');
-      if (img) img.src = src;
-      if (titleEl) titleEl.textContent = title;
+    document.addEventListener('DOMContentLoaded', function () {
+      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal']
+        .forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el && el.parentNode !== document.body) {
+            document.body.appendChild(el);
+          }
+        });
     });
+  </script>
 
-    on('globalReceptionModal', 'show.bs.modal', (ev) => {
-      const btn = ev.relatedTarget;
-      const mcId = btn?.dataset.mcId;
-      const matName = btn?.dataset.matName || '';
-      const chantierName = btn?.dataset.chantierName || '';
-      const form = document.getElementById('globalReceptionForm');
-      if (form) {
-        form.action = `/chantier/materielChantier/receptionner/${mcId}`;
-      }
-      const matSpan = document.getElementById('receptionMatName');
-      const chantierSpan = document.getElementById('receptionChantierName');
-      if (matSpan) matSpan.textContent = matName;
-      if (chantierSpan) chantierSpan.textContent = chantierName;
-      const qty = document.getElementById('receptionQty');
-      if (qty) qty.value = '';
-    });
+  <!-- 3) Hydratation des modales (inchangé) -->
+  <script nonce="<%= nonce %>">
+    (function(){
+      const on = (id, evt, fn) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener(evt, fn);
+      };
 
-    on('globalDeleteModal', 'show.bs.modal', (ev) => {
-      const btn = ev.relatedTarget;
-      const action = btn?.dataset.deleteAction || '#';
-      const matName = btn?.dataset.matName || '';
-      const form = document.getElementById('globalDeleteForm');
-      if (form) {
-        form.action = action;
-      }
-      const matSpan = document.getElementById('deleteMatName');
-      if (matSpan) matSpan.textContent = matName;
-    });
-  })();
+      on('globalPhotoModal', 'show.bs.modal', (ev) => {
+        const btn = ev.relatedTarget;
+        const src = btn?.dataset.photoSrc || '';
+        const title = btn?.dataset.photoTitle || 'Photo';
+        const img = document.getElementById('globalPhotoImg');
+        const titleEl = document.getElementById('globalPhotoTitle');
+        if (img) img.src = src;
+        if (titleEl) titleEl.textContent = title;
+      });
+
+      on('globalReceptionModal', 'show.bs.modal', (ev) => {
+        const btn = ev.relatedTarget;
+        const mcId = btn?.dataset.mcId;
+        const matName = btn?.dataset.matName || '';
+        const chantierName = btn?.dataset.chantierName || '';
+        const form = document.getElementById('globalReceptionForm');
+        if (form) {
+          form.action = `/chantier/materielChantier/receptionner/${mcId}`;
+        }
+        const matSpan = document.getElementById('receptionMatName');
+        const chantierSpan = document.getElementById('receptionChantierName');
+        if (matSpan) matSpan.textContent = matName;
+        if (chantierSpan) chantierSpan.textContent = chantierName;
+        const qty = document.getElementById('receptionQty');
+        if (qty) qty.value = '';
+      });
+
+      on('globalDeleteModal', 'show.bs.modal', (ev) => {
+        const btn = ev.relatedTarget;
+        const action = btn?.dataset.deleteAction || '#';
+        const matName = btn?.dataset.matName || '';
+        const form = document.getElementById('globalDeleteForm');
+        if (form) {
+          form.action = action;
+        }
+        const matSpan = document.getElementById('deleteMatName');
+        if (matSpan) matSpan.textContent = matName;
+      });
+    })();
   </script>
 
   <script nonce="<%= nonce %>">
