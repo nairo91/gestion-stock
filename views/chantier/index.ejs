@@ -269,6 +269,14 @@
       white-space: nowrap;
     }
 
+    .table-stock th.col-actions,
+    .table-stock td.col-actions {
+      position: relative;
+      overflow: visible;
+      white-space: normal;
+      z-index: 1;
+    }
+
     .table-stock td .btn-group,
     .table-stock td .btn-wrap {
       display: flex;
@@ -305,6 +313,10 @@
         word-break: break-word;
         hyphens: auto;
         min-width: 140px !important;
+      }
+      .table-stock .col-actions {
+        overflow: visible !important;
+        white-space: normal !important;
       }
       .table-stock {
         min-width: 1350px;
@@ -350,6 +362,10 @@
       text-overflow: clip !important;
       word-break: break-word;
       hyphens: auto;
+    }
+    body.compact-mobile .table-stock .col-actions {
+      overflow: visible !important;
+      white-space: normal !important;
     }
     body.compact-mobile .table-stock .col-emplacement {
       min-width: 130px;
@@ -467,6 +483,23 @@
 
     .modal-footer {
       border-top-color: rgba(169, 120, 255, 0.25);
+    }
+
+    .modal-content .form-control {
+      background: rgba(12, 8, 32, 0.92);
+      border: 1px solid rgba(169, 120, 255, 0.35);
+      color: var(--text-primary);
+    }
+
+    .modal-content .form-control:focus {
+      border-color: rgba(199, 172, 255, 0.7);
+      box-shadow: 0 0 0 0.25rem rgba(123, 106, 255, 0.25);
+      background: rgba(18, 12, 48, 0.96);
+      color: #ffffff;
+    }
+
+    .modal-content .form-control::placeholder {
+      color: rgba(247, 244, 255, 0.65);
     }
 
     .transfer-btn {

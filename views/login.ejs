@@ -225,6 +225,29 @@
       background: rgba(15, 22, 58, 0.95);
     }
 
+    .form-control::placeholder {
+      color: rgba(245, 247, 255, 0.65);
+    }
+
+    .form-control[type="password"],
+    input[type="password"].form-control,
+    input[type="password"] {
+      color: #f5f7ff !important;
+    }
+
+    .form-control[type="password"]::placeholder,
+    input[type="password"].form-control::placeholder {
+      color: rgba(245, 247, 255, 0.65);
+    }
+
+    .form-control:-webkit-autofill,
+    .form-control:-webkit-autofill:hover,
+    .form-control:-webkit-autofill:focus {
+      -webkit-text-fill-color: #f5f7ff;
+      transition: background-color 9999s ease-in-out 0s;
+      box-shadow: 0 0 0px 1000px rgba(10, 13, 36, 0.9) inset;
+    }
+
     .btn-primary {
       background: linear-gradient(135deg, #3a4bff, #9f3aff);
       border: none;

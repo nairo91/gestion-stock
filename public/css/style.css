@@ -54,6 +54,10 @@ body.mode-sombre thead th {
     text-overflow: ellipsis;
   }
 
+  .table-stock .col-actions {
+    overflow: visible !important;
+  }
+
   /* Désignation : montrer le nom en entier, avec retour à la ligne si besoin */
   .table-stock .col-designation {
     white-space: normal !important;
@@ -80,3 +84,6 @@ body.mode-sombre thead th {
 /* Compact+ : ajuster min-width pour éviter chevauchements */
 body.compact-mobile .table-stock .col-emplacement { min-width: 120px; }
 body.compact-mobile .table-stock .col-rack { min-width: 80px; }
+body.compact-mobile .table-stock .col-actions {
+  overflow: visible !important;
+}
