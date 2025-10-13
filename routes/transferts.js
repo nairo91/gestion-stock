@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
+const { ensureAuthenticated } = require('./materiel');
 const { transferParNom } = require('../services/transfertService');
 
 const buildContext = ({ contextType, contextChantierId }) => {
@@ -17,7 +18,24 @@ const sendFlash = (req, type, message) => {
   }
 };
 
-router.post('/:action(entree|sortie)', async (req, res) => {
+const ensureTransferAuthorization = (req, res, next) => {
+  if (!req.user) {
+    sendFlash(req, 'error', 'Vous devez être connecté pour réaliser un transfert.');
+    return res.redirect('/auth/login');
+  }
+
+  const allowedRoles = new Set(['admin', 'user']);
+  const { role } = req.user;
+
+  if (role && !allowedRoles.has(role)) {
+    sendFlash(req, 'error', "Votre rôle ne permet pas d'effectuer cette opération.");
+    return res.redirect(req.get('referer') || '/');
+  }
+
+  return next();
+};
+
+router.post('/:action(entree|sortie)', ensureAuthenticated, ensureTransferAuthorization, async (req, res) => {
   const { action } = req.params;
   const {
     contextType,
