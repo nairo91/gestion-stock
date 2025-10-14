@@ -1028,7 +1028,11 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
           if (val === 'DÉSIGNATION' || val === 'DESIGNATION') headerMap.designation = idx;
           if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
           // QTE peut être écrit différemment ; on capture plusieurs variantes
-          if (val === 'QTE' || val === 'QTÉ' || val === 'QUANTITÉ' || val.startsWith('QTE')) headerMap.qte = idx;
+          if (val === 'QTE' || val === 'QTÉ' || val === 'QUANTITÉ') {
+            if (typeof headerMap.qte === 'undefined') {
+              headerMap.qte = idx;
+            }
+          }
         });
         return false; // sortir de la boucle eachRow
       }
