@@ -5,6 +5,7 @@ const router = express.Router();
 const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
+const ExcelJS = require('exceljs');
 const { storage, cloudinary } = require('../config/cloudinary.config');
 
 const Materiel = require('../models/Materiel');
@@ -123,6 +124,11 @@ async function loadCategories() {
 
 // Configuration Multer pour les uploads de photos sur Cloudinary
 const upload = multer({ storage });
+
+// Pour l'importation Excel, nous utilisons un stockage en mémoire afin de ne
+// pas envoyer les fichiers sur Cloudinary. L'option memoryStorage permet
+// d'accéder au fichier via req.file.buffer.
+const excelUpload = multer({ storage: multer.memoryStorage() });
 
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
@@ -947,8 +953,188 @@ router.get('/materielChantier/info/:id', ensureAuthenticated, async (req, res) =
   res.render('chantier/infoMaterielChantier', { mc, historique });
 });
 
+/*
+ * ===== IMPORT DE MATÉRIEL VIA EXCEL SUR UN CHANTIER =====
+ *
+ * Cette fonctionnalité permet de préremplir le stock d'un chantier en
+ * important un fichier Excel. L'utilisateur sélectionne un chantier et
+ * téléverse un fichier comprenant les colonnes suivantes :
+ *   - LOT : servira de nom de catégorie
+ *   - Désignation : nom du matériel
+ *   - Fournisseur : nom du fournisseur
+ *   - Qte : quantité prévue (stock théorique ou attendue)
+ *
+ * Les autres colonnes du fichier sont ignorées. Pour chaque ligne non
+ * vide, une entrée Materiel est créée (quantité = 0) avec sa catégorie,
+ * sa désignation et son fournisseur. Une entrée MaterielChantier est
+ * ensuite créée avec la quantité prévue. Un historique est enregistré.
+ */
+
+// Formulaire d'importation
+router.get('/import-excel', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const chantiers = await Chantier.findAll();
+    const selectedChantierId = req.query.chantierId || '';
+    res.render('chantier/importExcel', { chantiers, selectedChantierId });
+  } catch (error) {
+    console.error("Erreur lors du chargement du formulaire d'import Excel chantier", error);
+    res.send("Erreur lors du chargement du formulaire d'importation.");
+  }
+});
+
+// Traitement du fichier importé
+router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single('excel'), async (req, res) => {
+  try {
+    const chantierIdRaw = req.body.chantierId;
+    const chantierId = chantierIdRaw ? parseInt(chantierIdRaw, 10) : null;
+    if (!chantierId || Number.isNaN(chantierId)) {
+      return res.status(400).send('Chantier invalide.');
+    }
+    const chantier = await Chantier.findByPk(chantierId);
+    if (!chantier) {
+      return res.status(404).send('Chantier introuvable.');
+    }
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).send("Aucun fichier n'a été uploadé.");
+    }
+
+    // Chargement du classeur Excel à partir du buffer
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+    // On tente de trouver une feuille nommée "Listing general", sinon la première
+    let worksheet = workbook.getWorksheet('Listing general');
+    if (!worksheet) {
+      worksheet = workbook.worksheets[0];
+    }
+    if (!worksheet) {
+      return res.status(400).send('Le fichier Excel ne contient aucune feuille.');
+    }
+
+    // Recherche de la ligne d'en-tête contenant les libellés
+    let headerRowIdx = null;
+    let headerMap = {};
+    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      // On convertit les cellules en chaînes pour comparaison
+      const labels = row.values.map(v => {
+        const str = v && typeof v === 'string' ? v : (v != null ? v.toString() : '');
+        return str ? str.trim() : '';
+      });
+      const upper = labels.map(l => l.toUpperCase());
+      // Si la ligne contient LOT et Désignation
+      if (upper.includes('LOT') && (upper.includes('DÉSIGNATION') || upper.includes('DESIGNATION'))) {
+        headerRowIdx = rowNumber;
+        upper.forEach((val, idx) => {
+          if (val === 'LOT') headerMap.lot = idx;
+          if (val === 'DÉSIGNATION' || val === 'DESIGNATION') headerMap.designation = idx;
+          if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
+          // QTE peut être écrit différemment ; on capture plusieurs variantes
+          if (val === 'QTE' || val === 'QTÉ' || val === 'QUANTITÉ' || val.startsWith('QTE')) headerMap.qte = idx;
+        });
+        return false; // sortir de la boucle eachRow
+      }
+    });
+
+    if (!headerRowIdx) {
+      return res.status(400).send("Impossible de localiser les en-têtes LOT et Désignation dans le fichier.");
+    }
+    if (!headerMap.lot || !headerMap.designation || !headerMap.qte) {
+      return res.status(400).send('Les colonnes LOT, Désignation ou Qte sont manquantes dans le fichier.');
+    }
+
+    const startRow = headerRowIdx + 1;
+    const createdCount = { lignes: 0 };
+
+    // Parcourir chaque ligne après l'en-tête
+    for (let r = startRow; r <= worksheet.rowCount; r++) {
+      const row = worksheet.getRow(r);
+      // Récupération des données brutes
+      const lotVal = row.getCell(headerMap.lot).value;
+      const designationVal = row.getCell(headerMap.designation).value;
+      const fournisseurVal = headerMap.fournisseur ? row.getCell(headerMap.fournisseur).value : null;
+      const qteVal = row.getCell(headerMap.qte).value;
+
+      // Normalisation des valeurs
+      const lotStr = lotVal ? (typeof lotVal === 'string' ? lotVal.trim() : lotVal.toString().trim()) : '';
+      const designationStr = designationVal ? (typeof designationVal === 'string' ? designationVal.trim() : designationVal.toString().trim()) : '';
+      const fournisseurStr = fournisseurVal ? (typeof fournisseurVal === 'string' ? fournisseurVal.trim() : fournisseurVal.toString().trim()) : null;
+      // On ne retient que les lignes avec une catégorie et une désignation
+      if (!lotStr || !designationStr) {
+        continue;
+      }
+      // Parsing de la quantité prévue : peut être un nombre, du texte ou vide
+      let qteNumber = null;
+      if (typeof qteVal === 'number') {
+        qteNumber = qteVal;
+      } else if (qteVal != null) {
+        const parsed = parseFloat(qteVal.toString().replace(',', '.'));
+        qteNumber = Number.isNaN(parsed) ? null : parsed;
+      }
+      // Arrondi au nombre entier si défini
+      if (qteNumber != null) {
+        qteNumber = Math.round(qteNumber);
+      }
+
+      // Création ou récupération de la catégorie
+      const [categorie] = await Categorie.findOrCreate({ where: { nom: lotStr } });
+      // Création ou récupération de la désignation
+      if (categorie && categorie.id) {
+        await Designation.findOrCreate({
+          where: { nom: designationStr, categorieId: categorie.id },
+          defaults: { nom: designationStr, categorieId: categorie.id }
+        });
+      }
+
+      // Création du matériel (stock chantier commence à 0)
+      const nouveauMateriel = await Materiel.create({
+        nom: designationStr,
+        reference: null,
+        quantite: 0,
+        description: null,
+        prix: null,
+        categorie: lotStr,
+        fournisseur: fournisseurStr || null,
+        vehiculeId: null,
+        chantierId: null,
+        emplacementId: null,
+        rack: null,
+        compartiment: null,
+        niveau: null
+      });
+
+      // Création de l'association MaterielChantier
+      await MaterielChantier.create({
+        chantierId: chantierId,
+        materielId: nouveauMateriel.id,
+        quantite: 0,
+        quantitePrevue: qteNumber,
+        dateLivraisonPrevue: null,
+        remarque: null
+      });
+
+      // Enregistrement dans l'historique
+      await Historique.create({
+        materielId: nouveauMateriel.id,
+        oldQuantite: null,
+        newQuantite: 0,
+        userId: req.user ? req.user.id : null,
+        action: 'IMPORTÉ SUR CHANTIER',
+        materielNom: `${nouveauMateriel.nom} (Chantier : ${chantier.nom})`,
+        stockType: 'chantier'
+      });
+
+      createdCount.lignes++;
+    }
+
+    console.log(`Import Excel chantier : ${createdCount.lignes} lignes importées.`);
+    // Redirection avec indication du chantier sélectionné pour faciliter l'affichage
+    return res.redirect(`/chantier?chantierId=${encodeURIComponent(chantierId)}`);
+  } catch (error) {
+    console.error("Erreur lors de l'importation Excel chantier", error);
+    res.status(500).send("Erreur lors de l'importation du fichier Excel.");
+  }
+});
+
 // 📦 Exportations professionnelles
-const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
 function construireCheminEmplacement(emplacement) {
