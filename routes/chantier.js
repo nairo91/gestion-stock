@@ -33,6 +33,19 @@ const CHANTIER_FILTER_KEYS = [
   'recherche'
 ];
 
+function getCellString(cell) {
+  if (!cell) return '';
+  const v = cell.value;
+  if (typeof v === 'object') {
+    if (cell.text) return cell.text;
+    if (v && v.richText) {
+      return v.richText.map(rt => rt.text).join('');
+    }
+    return '';
+  }
+  return v != null ? String(v) : '';
+}
+
 async function fetchMaterielChantiersWithFilters(query, { includePhotos = true } = {}) {
   const {
     chantierId,
@@ -1051,31 +1064,20 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
     // Parcourir chaque ligne après l'en-tête
     for (let r = startRow; r <= worksheet.rowCount; r++) {
       const row = worksheet.getRow(r);
-      // Récupération des données brutes
-      const lotVal = row.getCell(headerMap.lot).value;
-      const designationVal = row.getCell(headerMap.designation).value;
-      const fournisseurVal = headerMap.fournisseur ? row.getCell(headerMap.fournisseur).value : null;
-      const qteVal = row.getCell(headerMap.qte).value;
-
-      // Normalisation des valeurs
-      const lotStr = lotVal ? (typeof lotVal === 'string' ? lotVal.trim() : lotVal.toString().trim()) : '';
-      const designationStr = designationVal ? (typeof designationVal === 'string' ? designationVal.trim() : designationVal.toString().trim()) : '';
-      const fournisseurStr = fournisseurVal ? (typeof fournisseurVal === 'string' ? fournisseurVal.trim() : fournisseurVal.toString().trim()) : null;
+      const lotStr = getCellString(row.getCell(headerMap.lot)).trim();
+      const designationStr = getCellString(row.getCell(headerMap.designation)).trim();
+      const fournisseurStr = headerMap.fournisseur
+        ? getCellString(row.getCell(headerMap.fournisseur)).trim()
+        : '';
+      const qteStr = getCellString(row.getCell(headerMap.qte)).trim();
       // On ne retient que les lignes avec une catégorie et une désignation
       if (!lotStr || !designationStr) {
         continue;
       }
       // Parsing de la quantité prévue : peut être un nombre, du texte ou vide
-      let qteNumber = null;
-      if (typeof qteVal === 'number') {
-        qteNumber = qteVal;
-      } else if (qteVal != null) {
-        const parsed = parseFloat(qteVal.toString().replace(',', '.'));
-        qteNumber = Number.isNaN(parsed) ? null : parsed;
-      }
-      // Arrondi au nombre entier si défini
-      if (qteNumber != null) {
-        qteNumber = Math.round(qteNumber);
+      let qteNumber = qteStr ? Math.round(parseFloat(qteStr.replace(',', '.'))) : null;
+      if (qteStr && Number.isNaN(qteNumber)) {
+        qteNumber = null;
       }
 
       // Création ou récupération de la catégorie
