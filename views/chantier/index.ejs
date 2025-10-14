@@ -650,6 +650,12 @@
   <a href="/chantier/export-pdf<%= exportQuery %>" class="btn btn-danger mb-3">📄 Exporter en PDF</a>
   <a href="/chantier/export-excel<%= exportQuery %>" class="btn btn-primary mb-3">📊 Exporter en Excel</a>
 
+  <!-- Bouton d'importation Excel pour préremplir le stock d'un chantier -->
+  <a
+    href="/chantier/import-excel<%= chantierCourant ? `?chantierId=${encodeURIComponent(chantierCourant.id)}` : '' %>"
+    class="btn btn-info mb-3"
+  >📥 Importer via Excel</a>
+
 
 <% } %>
 
