@@ -5,6 +5,8 @@
   <title>Aperçu import Excel</title>
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/style.css">
+  <!-- DataTables CSS (thème minimal, on garde notre charte violette) -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <style>
     :root{
       --violet-900:#160e33;
@@ -82,6 +84,25 @@
       border-radius:10px;
       padding:.75rem 1rem;
     }
+    /* Barre d’outils (recherche + filtres) */
+    .toolbar{
+      background:var(--card-bg);
+      border:1px solid var(--card-border);
+      border-radius:12px;
+      padding:12px;
+      margin-bottom:12px;
+      gap:12px;
+    }
+    .toolbar .form-label{ color: var(--muted); font-weight:600; }
+    .toolbar .form-select,.toolbar .form-control{
+      background: rgba(255,255,255,.06);
+      border-color: var(--card-border);
+      color: var(--text);
+    }
+    .toolbar .form-select:focus,.toolbar .form-control:focus{
+      box-shadow: 0 0 0 .25rem rgba(124,98,227,.25);
+      border-color: var(--violet-400);
+    }
   </style>
 </head>
 <body class="container mt-4">
@@ -112,8 +133,33 @@
     <a href="/chantier" class="btn btn-outline-light">Annuler</a>
   </div>
 
+  <!-- Barre d’outils : recherche globale & filtres colonnes -->
+  <div class="toolbar d-flex flex-wrap align-items-end">
+    <div class="me-3 flex-grow-1" style="min-width:260px">
+      <label for="global-search" class="form-label">Recherche</label>
+      <input id="global-search" type="search" class="form-control" placeholder="Rechercher dans le tableau (lot, désignation, fournisseur, ...)">
+    </div>
+    <div class="me-3" style="min-width:180px">
+      <label for="filtre-etat" class="form-label">Filtrer par État</label>
+      <select id="filtre-etat" class="form-select">
+        <option value="">Tous</option>
+        <option value="ok">OK</option>
+        <option value="warn">Avert.</option>
+        <option value="error">Erreur</option>
+      </select>
+    </div>
+    <div class="" style="min-width:180px">
+      <label for="filtre-op" class="form-label">Filtrer par Opération</label>
+      <select id="filtre-op" class="form-select">
+        <option value="">Toutes</option>
+        <option value="create">Create</option>
+        <option value="update">Update</option>
+      </select>
+    </div>
+  </div>
+
   <div class="table-responsive">
-    <table class="table table-bordered table-sm table-sticky">
+    <table id="previewTable" class="table table-bordered table-sm table-sticky">
       <thead>
         <tr>
           <th style="width:100px">État</th>
@@ -154,5 +200,47 @@
       </tbody>
     </table>
   </div>
+
+  <!-- jQuery + DataTables (CDN) -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script>
+    (function(){
+      // Initialisation DataTable
+      const table = $('#previewTable').DataTable({
+        paging: true,
+        pageLength: 25,
+        lengthMenu: [ [25,50,100,-1], [25,50,100,'Tous'] ],
+        order: [[1,'asc'], [2,'asc']], // Opération, puis LOT
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json' },
+        // On garde notre toolbar custom, donc on cache la barre de recherche DT native.
+        dom: 'lrtip'
+      });
+
+      // Recherche globale custom
+      $('#global-search').on('input', function(){
+        table.search(this.value).draw();
+      });
+
+      // Filtres de colonnes
+      const etatRegex = {
+        ok: '^\\s*OK\\s*$',
+        warn: 'Avert\\.',
+        error: 'Erreur'
+      };
+      const opRegex = {
+        create: '^\\s*Create\\s*$',
+        update: '^\\s*Update\\s*$'
+      };
+      $('#filtre-etat').on('change', function(){
+        const v = this.value;
+        table.column(0).search(v ? etatRegex[v] : '', true, false).draw();
+      });
+      $('#filtre-op').on('change', function(){
+        const v = this.value;
+        table.column(1).search(v ? opRegex[v] : '', true, false).draw();
+      });
+    })();
+  </script>
 </body>
 </html>
