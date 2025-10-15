@@ -6,13 +6,82 @@
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .badge-ok { background:#1cc88a; }
-    .badge-warn { background:#f6c23e; }
-    .badge-error { background:#e74a3b; }
-    .badge-create { background:#4e73df; }
-    .badge-update { background:#36b9cc; }
-    .table-sticky thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
-    .summary-card { background:#fff; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.06); padding:16px; }
+    :root{
+      --violet-900:#160e33;
+      --violet-800:#1b133a;
+      --violet-700:#261c55;
+      --violet-600:#352373;
+      --violet-500:#5c41c5;
+      --violet-400:#7b62e3;
+      --violet-300:#9a85f0;
+      --card-bg: rgba(255,255,255,0.06);
+      --card-border: rgba(255,255,255,0.08);
+      --text: #eef0ff;
+      --muted: #cfd3ff;
+      --ok:#1cc88a;
+      --warn:#f6c23e;
+      --err:#e74a3b;
+      --create:#5c41c5; /* violet brand */
+      --update:#36b9cc;
+    }
+    body{
+      color:var(--text);
+      background: linear-gradient(180deg, var(--violet-900) 0%, var(--violet-700) 45%, var(--violet-600) 100%);
+      min-height:100vh;
+    }
+    h2{ color:#fff; }
+    .summary-card{
+      background:var(--card-bg);
+      border:1px solid var(--card-border);
+      border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,.25);
+      padding:16px;
+      backdrop-filter: blur(4px);
+    }
+    .badge{ border-radius:999px; padding:.4rem .7rem; font-weight:600; }
+    .badge-ok{ background:var(--ok); }
+    .badge-warn{ background:var(--warn); color:#1b1b1b; }
+    .badge-error{ background:var(--err); }
+    .badge-create{ background:var(--create); }
+    .badge-update{ background:var(--update); }
+    .table-responsive{
+      background:var(--card-bg);
+      border:1px solid var(--card-border);
+      border-radius:12px;
+      overflow:hidden;
+    }
+    table.table{
+      color:var(--text);
+    }
+    .table thead th{
+      background: rgba(255,255,255,0.06);
+      color:var(--muted);
+      border-bottom:1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .table td, .table th{
+      border-color: var(--card-border);
+    }
+    .btn-brand{
+      background: var(--violet-500);
+      border-color: var(--violet-500);
+      color:#fff;
+      font-weight:600;
+    }
+    .btn-brand:hover{
+      background: var(--violet-400);
+      border-color: var(--violet-400);
+      color:#fff;
+    }
+    .alert-soft{
+      background: rgba(246,194,62,.15);
+      border:1px solid rgba(246,194,62,.35);
+      color:#ffe9a8;
+      border-radius:10px;
+      padding:.75rem 1rem;
+    }
   </style>
 </head>
 <body class="container mt-4">
@@ -30,12 +99,17 @@
   </div>
 
   <div class="mb-3">
+    <% if (stats.error > 0) { %>
+      <div class="alert-soft mb-2">
+        ⚠️ <strong><%= stats.error %></strong> ligne(s) en erreur seront ignorées pendant l’import (elles ne seront pas créées).
+      </div>
+    <% } %>
     <form action="/chantier/import-excel/confirm" method="POST" class="d-inline">
-      <button type="submit" class="btn btn-success" <%= stats.error > 0 ? 'disabled title="Corrigez d\'abord les erreurs"' : '' %>>
+      <button type="submit" class="btn btn-brand">
         ✅ Importer définitivement
       </button>
     </form>
-    <a href="/chantier" class="btn btn-outline-secondary">Annuler</a>
+    <a href="/chantier" class="btn btn-outline-light">Annuler</a>
   </div>
 
   <div class="table-responsive">
