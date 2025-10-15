@@ -656,6 +656,13 @@
     class="btn btn-info mb-3"
   >📥 Importer via Excel</a>
 
+  <% if (typeof isAdmin !== 'undefined' && isAdmin && chantierCourant) { %>
+    <form action="/chantier/<%= chantierCourant.id %>/vider" method="POST" class="d-inline"
+          onsubmit="return confirm('Confirmer le vidage complet du stock pour ce chantier ?');">
+      <button type="submit" class="btn btn-outline-danger mb-3">🗑️ Vider le chantier</button>
+    </form>
+  <% } %>
+
 
 <% } %>
 

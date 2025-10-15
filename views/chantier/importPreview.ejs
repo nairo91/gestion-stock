@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Aperçu import Excel</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .badge-ok { background:#1cc88a; }
+    .badge-warn { background:#f6c23e; }
+    .badge-error { background:#e74a3b; }
+    .badge-create { background:#4e73df; }
+    .badge-update { background:#36b9cc; }
+    .table-sticky thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+    .summary-card { background:#fff; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.06); padding:16px; }
+  </style>
+</head>
+<body class="container mt-4">
+  <h2>Aperçu avant import – <%= chantier ? chantier.nom : '' %></h2>
+
+  <div class="summary-card mb-3">
+    <div class="d-flex flex-wrap gap-3">
+      <span class="badge badge-ok">OK: <%= stats.ok %></span>
+      <span class="badge badge-warn">AVERT.: <%= stats.warn %></span>
+      <span class="badge badge-error">ERREURS: <%= stats.error %></span>
+      <span class="badge badge-create">Créations: <%= stats.create %></span>
+      <span class="badge badge-update">Mises à jour: <%= stats.update %></span>
+      <span class="ms-auto">Total: <strong><%= stats.total %></strong></span>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <form action="/chantier/import-excel/confirm" method="POST" class="d-inline">
+      <button type="submit" class="btn btn-success" <%= stats.error > 0 ? 'disabled title="Corrigez d\'abord les erreurs"' : '' %>>
+        ✅ Importer définitivement
+      </button>
+    </form>
+    <a href="/chantier" class="btn btn-outline-secondary">Annuler</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-sm table-sticky">
+      <thead>
+        <tr>
+          <th style="width:100px">État</th>
+          <th style="width:100px">Opération</th>
+          <th>LOT</th>
+          <th>Désignation</th>
+          <th>Fournisseur</th>
+          <th>Qte prévue</th>
+          <th>Raison</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% (rows || []).forEach(function(r){ %>
+          <tr>
+            <td>
+              <% if (r.status === 'ok') { %>
+                <span class="badge badge-ok">OK</span>
+              <% } else if (r.status === 'warn') { %>
+                <span class="badge badge-warn">Avert.</span>
+              <% } else { %>
+                <span class="badge badge-error">Erreur</span>
+              <% } %>
+            </td>
+            <td>
+              <% if (r.operation === 'update') { %>
+                <span class="badge badge-update">Update</span>
+              <% } else { %>
+                <span class="badge badge-create">Create</span>
+              <% } %>
+            </td>
+            <td><%= r.lot %></td>
+            <td><%= r.designation %></td>
+            <td><%= r.fournisseur || '' %></td>
+            <td><%= (r.qtePrevue != null) ? r.qtePrevue : '' %></td>
+            <td><%= r.reason || '' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

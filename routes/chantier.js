@@ -6,6 +6,7 @@ const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
 const ExcelJS = require('exceljs');
+const dayjs = require('dayjs');
 const { storage, cloudinary } = require('../config/cloudinary.config');
 
 const Materiel = require('../models/Materiel');
@@ -33,6 +34,17 @@ const CHANTIER_FILTER_KEYS = [
   'recherche'
 ];
 
+// Expose un flag admin aux vues (pour afficher/masquer des actions sensibles)
+router.use((req, res, next) => {
+  try {
+    res.locals.isAdmin = !!(req.user && (req.user.isAdmin || req.user.role === 'admin'));
+  } catch (e) {
+    res.locals.isAdmin = false;
+  }
+  next();
+});
+
+// Utilitaire: lecture robuste des cellules ExcelJS (évite "[object Object]")
 function getCellString(cell) {
   if (!cell) return '';
   const v = cell.value;
@@ -967,6 +979,219 @@ router.get('/materielChantier/info/:id', ensureAuthenticated, async (req, res) =
 });
 
 /*
+ * ===== DRY-RUN D'IMPORT EXCEL (APERÇU) =====
+ * - Parse le fichier, mais n'écrit rien en base
+ * - Classe les lignes en: ok / warn / error + détection create/update
+ * - Stocke l'aperçu en session pour confirmation
+ * - Rend une page EJS de prévisualisation
+ */
+router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUpload.single('excel'), async (req, res) => {
+  try {
+    const chantierIdRaw = req.body.chantierId;
+    const chantierId = chantierIdRaw ? parseInt(chantierIdRaw, 10) : null;
+    if (!chantierId || Number.isNaN(chantierId)) {
+      return res.status(400).send('Chantier invalide.');
+    }
+
+    const chantier = await Chantier.findByPk(chantierId);
+    if (!chantier) {
+      return res.status(404).send('Chantier introuvable.');
+    }
+
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).send("Aucun fichier n'a été uploadé.");
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+    let worksheet = workbook.getWorksheet('Listing general') || workbook.worksheets[0];
+    if (!worksheet) {
+      return res.status(400).send('Le fichier Excel ne contient aucune feuille.');
+    }
+
+    let headerRowIdx = null;
+    const headerMap = {};
+    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      const labels = row.values.map(v => (v != null ? String(v).trim() : ''));
+      const upper = labels.map(l => l.toUpperCase());
+      if (upper.includes('LOT') && (upper.includes('DÉSIGNATION') || upper.includes('DESIGNATION'))) {
+        headerRowIdx = rowNumber;
+        upper.forEach((val, idx) => {
+          if (val === 'LOT') headerMap.lot = idx;
+          if (val === 'DÉSIGNATION' || val === 'DESIGNATION') headerMap.designation = idx;
+          if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
+          if ((val === 'QTE' || val === 'QTÉ' || val === 'QUANTITÉ') && typeof headerMap.qte === 'undefined') {
+            headerMap.qte = idx;
+          }
+        });
+        return false;
+      }
+    });
+
+    if (!headerRowIdx || !headerMap.lot || !headerMap.designation || !headerMap.qte) {
+      return res.status(400).send('Colonnes obligatoires introuvables (LOT, Désignation, Qte).');
+    }
+
+    const startRow = headerRowIdx + 1;
+    const previewRows = [];
+
+    for (let r = startRow; r <= worksheet.rowCount; r++) {
+      const row = worksheet.getRow(r);
+      const lotStr = getCellString(row.getCell(headerMap.lot)).trim();
+      const designationStr = getCellString(row.getCell(headerMap.designation)).trim();
+      const fournisseurStr = headerMap.fournisseur ? getCellString(row.getCell(headerMap.fournisseur)).trim() : '';
+      const qteStr = getCellString(row.getCell(headerMap.qte)).trim();
+      const qteClean = qteStr.replace(/[^\d.,-]/g, '');
+      let qteNumber = qteClean ? Math.round(parseFloat(qteClean.replace(',', '.'))) : null;
+      if (Number.isNaN(qteNumber)) {
+        qteNumber = null;
+      }
+
+      if (!lotStr && !designationStr && !fournisseurStr && !qteStr) {
+        continue;
+      }
+
+      let status = 'ok';
+      let reason = '';
+      if (!lotStr || !designationStr) {
+        status = 'error';
+        reason = 'LOT ou Désignation manquant';
+      } else if (qteStr && qteNumber === null) {
+        status = 'warn';
+        reason = 'Quantité non numérique';
+      } else if (!qteStr) {
+        status = 'warn';
+        reason = 'Quantité vide';
+      }
+
+      let operation = 'create';
+      if (status !== 'error') {
+        const existingMat = await Materiel.findOne({ where: { nom: designationStr, categorie: lotStr } });
+        if (existingMat) {
+          const existingLink = await MaterielChantier.findOne({
+            where: { chantierId, materielId: existingMat.id }
+          });
+          if (existingLink) {
+            operation = 'update';
+          }
+        }
+      }
+
+      previewRows.push({
+        lot: lotStr,
+        designation: designationStr,
+        fournisseur: fournisseurStr || null,
+        qtePrevue: qteNumber,
+        status,
+        reason,
+        operation
+      });
+    }
+
+    req.session.importPreview = {
+      chantierId,
+      chantierNom: chantier.nom,
+      generatedAt: dayjs().toISOString(),
+      rows: previewRows
+    };
+
+    const stats = {
+      total: previewRows.length,
+      ok: previewRows.filter(r => r.status === 'ok').length,
+      warn: previewRows.filter(r => r.status === 'warn').length,
+      error: previewRows.filter(r => r.status === 'error').length,
+      create: previewRows.filter(r => r.operation === 'create' && r.status !== 'error').length,
+      update: previewRows.filter(r => r.operation === 'update' && r.status !== 'error').length
+    };
+
+    return res.render('chantier/importPreview', {
+      chantier,
+      stats,
+      rows: previewRows
+    });
+  } catch (err) {
+    console.error('Dry-run import error', err);
+    return res.status(500).send("Erreur lors de l'aperçu d'import.");
+  }
+});
+
+router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const preview = req.session.importPreview;
+    if (!preview || !Array.isArray(preview.rows)) {
+      return res.status(400).send('Aucun aperçu en session. Recommencez le dry-run.');
+    }
+
+    const chantier = await Chantier.findByPk(preview.chantierId);
+    if (!chantier) {
+      return res.status(404).send('Chantier introuvable.');
+    }
+
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const r of preview.rows) {
+      if (r.status === 'error') {
+        skipped += 1;
+        continue;
+      }
+
+      const [categorie] = await Categorie.findOrCreate({ where: { nom: r.lot } });
+      if (categorie && categorie.id) {
+        await Designation.findOrCreate({
+          where: { nom: r.designation, categorieId: categorie.id },
+          defaults: { nom: r.designation, categorieId: categorie.id }
+        });
+      }
+
+      const [materiel] = await Materiel.findOrCreate({
+        where: { nom: r.designation, categorie: r.lot },
+        defaults: {
+          nom: r.designation,
+          categorie: r.lot,
+          quantite: 0,
+          fournisseur: r.fournisseur || null
+        }
+      });
+
+      await MaterielChantier.upsert({
+        chantierId: preview.chantierId,
+        materielId: materiel.id,
+        quantite: 0,
+        quantitePrevue: r.qtePrevue,
+        dateLivraisonPrevue: null,
+        remarque: null
+      });
+
+      if (r.operation === 'update') {
+        updated += 1;
+      } else {
+        created += 1;
+      }
+
+      await Historique.create({
+        materielId: materiel.id,
+        oldQuantite: null,
+        newQuantite: 0,
+        userId: req.user ? req.user.id : null,
+        action: 'IMPORT EXCEL (confirmé)',
+        materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
+        stockType: 'chantier'
+      });
+    }
+
+    delete req.session.importPreview;
+
+    console.log(`Import confirmé: +${created} créés, ${updated} mis à jour, ${skipped} ignorés`);
+    return res.redirect(`/chantier?chantierId=${encodeURIComponent(chantier.id)}&import=ok&created=${created}&updated=${updated}&skipped=${skipped}`);
+  } catch (err) {
+    console.error('Confirm import error', err);
+    return res.status(500).send("Erreur lors de la confirmation d'import.");
+  }
+});
+
+/*
  * ===== IMPORT DE MATÉRIEL VIA EXCEL SUR UN CHANTIER =====
  *
  * Cette fonctionnalité permet de préremplir le stock d'un chantier en
@@ -1070,13 +1295,14 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         ? getCellString(row.getCell(headerMap.fournisseur)).trim()
         : '';
       const qteStr = getCellString(row.getCell(headerMap.qte)).trim();
+      const qteClean = qteStr.replace(/[^\d.,-]/g, '');
       // On ne retient que les lignes avec une catégorie et une désignation
       if (!lotStr || !designationStr) {
         continue;
       }
       // Parsing de la quantité prévue : peut être un nombre, du texte ou vide
-      let qteNumber = qteStr ? Math.round(parseFloat(qteStr.replace(',', '.'))) : null;
-      if (qteStr && Number.isNaN(qteNumber)) {
+      let qteNumber = qteClean ? Math.round(parseFloat(qteClean.replace(',', '.'))) : null;
+      if (qteClean && Number.isNaN(qteNumber)) {
         qteNumber = null;
       }
 
@@ -1137,6 +1363,25 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
   } catch (error) {
     console.error("Erreur lors de l'importation Excel chantier", error);
     res.status(500).send("Erreur lors de l'importation du fichier Excel.");
+  }
+});
+
+/*
+ * ===== VIDER LE CHANTIER (ADMIN) =====
+ */
+router.post('/:id/vider', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const chantierId = parseInt(req.params.id, 10);
+    if (!chantierId) {
+      return res.status(400).send('Chantier invalide.');
+    }
+
+    await MaterielChantier.destroy({ where: { chantierId } });
+    console.log(`Chantier ${chantierId} vidé par ${req.user ? req.user.email : 'user'}`);
+    return res.redirect(`/chantier?chantierId=${encodeURIComponent(chantierId)}&cleared=1`);
+  } catch (e) {
+    console.error('Erreur lors du vidage chantier', e);
+    return res.status(500).send('Erreur lors du vidage du chantier.');
   }
 });
 
