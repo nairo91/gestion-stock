@@ -1,35 +1,116 @@
 :root {
-    --bg-color: #ffffff;
-    --text-color: #000000;
-    --primary-color: #0d6efd;
-  }
-  
-  .mode-sombre {
-    /* Fond très foncé mais non noir pour le mode sombre */
-    --bg-color: #121212;
-    --text-color: #e0e0e0;
-    --primary-color: #bb86fc;
-  }
-  
-  body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-  }
-  
-  .btn-primary {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-  }
-
-/* Couleur du texte pour les informations de matériel */
-.table-materiel th,
-.table-materiel td {
-  color: #000;
+  --bg-color: #f8fafc;
+  --surface-color: #ffffff;
+  --text-color: #0f172a;
+  --muted-text: #475569;
+  --border-color: #e2e8f0;
+  --primary-color: #0d6efd;
+  --primary-color-strong: #0b5ed7;
+  --table-header-bg: #e2e8f0;
+  --table-header-text: #0f172a;
+  --table-row-alt-bg: rgba(15, 23, 42, 0.04);
+  --table-hover-bg: rgba(15, 23, 42, 0.08);
 }
 
-body.mode-sombre .table-materiel th,
-body.mode-sombre .table-materiel td {
-  color: #000000;
+.mode-sombre {
+  /* Palette douce mais contrastée pour le mode sombre */
+  --bg-color: #0f172a;
+  --surface-color: #111c2f;
+  --text-color: #f8fafc;
+  --muted-text: #94a3b8;
+  --border-color: #1f2a3d;
+  --primary-color: #8b5cf6;
+  --primary-color-strong: #a855f7;
+  --table-header-bg: #1e293b;
+  --table-header-text: #f8fafc;
+  --table-row-alt-bg: rgba(148, 163, 184, 0.08);
+  --table-hover-bg: rgba(139, 92, 246, 0.16);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a {
+  color: var(--primary-color);
+}
+
+a:hover,
+a:focus {
+  color: var(--primary-color-strong);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Surfaces et éléments de structure */
+.card,
+.modal-content,
+.dropdown-menu {
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.navbar,
+.offcanvas,
+.list-group-item {
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.text-muted,
+.form-text {
+  color: var(--muted-text) !important;
+}
+
+.form-control,
+.form-select,
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border-color: var(--border-color);
+  box-shadow: none;
+}
+
+body.mode-sombre .form-control:focus,
+body.mode-sombre .form-select:focus {
+  box-shadow: 0 0 0 0.15rem rgba(139, 92, 246, 0.25);
+}
+
+/* Tableaux */
+.table,
+.table-materiel,
+.table-stock {
+  color: var(--text-color);
+}
+
+.table thead th,
+.table-materiel thead th,
+.table-stock thead th {
+  background-color: var(--table-header-bg);
+  color: var(--table-header-text);
+  border-color: var(--border-color);
+}
+
+.table tbody td,
+.table-materiel tbody td,
+.table-stock tbody td {
+  border-color: var(--border-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: var(--table-row-alt-bg);
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--table-hover-bg);
 }
 
 
@@ -73,15 +154,23 @@ body.modal-open .content-wrapper {
 }
 
 body.mode-sombre thead th {
-    background-color: #2c2c2c !important;
-    color: #ffffff;
-  }
+  background-color: var(--table-header-bg) !important;
+  color: var(--table-header-text) !important;
+}
 
-  body.mode-sombre th,
-  body.mode-sombre td {
-    color: var(--text-color);
-  }
-  
+body.mode-sombre th,
+body.mode-sombre td {
+  color: var(--text-color);
+}
+
+body.mode-sombre .table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: var(--table-row-alt-bg);
+}
+
+body.mode-sombre .table-hover tbody tr:hover {
+  background-color: var(--table-hover-bg);
+}
+
   /* Ajoute d'autres styles personnalisés ici si nécessaire */
 
 /* === Mobile readability tweaks (≤ 768px) === */
