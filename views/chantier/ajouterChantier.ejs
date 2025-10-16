@@ -5,22 +5,220 @@
   <title>Ajouter un Chantier</title>
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body.chantier-page {
+      min-height: 100vh;
+      margin: 0;
+      font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at top, #4c1d95 0%, #2e1065 35%, #140029 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f3e8ff;
+    }
+
+    .chantier-wrapper {
+      width: 100%;
+      max-width: 700px;
+      padding: 2rem;
+    }
+
+    .chantier-card {
+      background: rgba(28, 0, 53, 0.92);
+      border-radius: 20px;
+      box-shadow: 0 20px 45px rgba(17, 12, 34, 0.55);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      padding: 3rem 3.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chantier-card::before,
+    .chantier-card::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(0.5rem);
+      opacity: 0.6;
+      z-index: 0;
+    }
+
+    .chantier-card::before {
+      width: 220px;
+      height: 220px;
+      background: rgba(168, 85, 247, 0.3);
+      top: -90px;
+      right: -80px;
+    }
+
+    .chantier-card::after {
+      width: 180px;
+      height: 180px;
+      background: rgba(129, 140, 248, 0.28);
+      bottom: -70px;
+      left: -70px;
+    }
+
+    .chantier-header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .chantier-logo {
+      width: 90px;
+      height: auto;
+      margin-bottom: 1rem;
+      filter: drop-shadow(0 6px 12px rgba(76, 29, 149, 0.35));
+    }
+
+    .chantier-title {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 0.03em;
+      color: #fdf4ff;
+    }
+
+    .chantier-description {
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+      color: rgba(224, 231, 255, 0.85);
+    }
+
+    .chantier-card form {
+      position: relative;
+      z-index: 1;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #ede9fe;
+      letter-spacing: 0.02em;
+    }
+
+    .form-control {
+      background: rgba(15, 6, 32, 0.65);
+      border: 1px solid rgba(167, 139, 250, 0.35);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      color: #f9f7ff;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    }
+
+    .form-control::placeholder {
+      color: rgba(196, 181, 253, 0.55);
+    }
+
+    .form-control:focus {
+      background: rgba(30, 14, 61, 0.85);
+      border-color: #a855f7;
+      box-shadow: 0 0 0 0.25rem rgba(129, 140, 248, 0.2);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 50%, #4c1d95 100%);
+      border: none;
+      border-radius: 999px;
+      padding: 0.9rem 2.4rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      box-shadow: 0 12px 25px rgba(109, 40, 217, 0.35);
+      color: #f4f4ff;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 16px 30px rgba(124, 58, 237, 0.45);
+      color: #ffffff;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(165, 180, 252, 0.6);
+      color: #c7d2fe;
+      border-radius: 999px;
+      padding: 0.75rem 2rem;
+      font-weight: 500;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.25s ease;
+    }
+
+    .btn-secondary:hover,
+    .btn-secondary:focus {
+      background: rgba(139, 92, 246, 0.2);
+      color: #ede9fe;
+      transform: translateY(-2px);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      margin-top: 2rem;
+      font-size: 0.95rem;
+      color: rgba(224, 231, 255, 0.9);
+      transition: color 0.3s ease;
+    }
+
+    .back-link:hover,
+    .back-link:focus {
+      color: #ede9fe;
+    }
+
+    .back-link svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 768px) {
+      .chantier-card {
+        padding: 2.5rem 1.75rem;
+      }
+
+      .chantier-title {
+        font-size: 1.7rem;
+      }
+
+      .btn-primary,
+      .btn-secondary {
+        width: 100%;
+      }
+
+      .btn-secondary {
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
-<body>
-  <div class="container mt-4">
-    <h1>Ajouter un nouveau Chantier</h1>
-    <form action="/chantier/ajouter-chantier" method="POST">
-      <div class="mb-3">
-        <label for="nom" class="form-label">Nom du chantier</label>
-        <input type="text" id="nom" name="nom" class="form-control" placeholder="Nom du chantier" required>
-      </div>
-      <div class="mb-3">
-        <label for="localisation" class="form-label">Localisation</label>
-        <input type="text" id="localisation" name="localisation" class="form-control" placeholder="Localisation" required>
-      </div>
-      <button type="submit" class="btn btn-primary">Ajouter le chantier</button>
-    </form>
-    <a href="/chantier" class="btn btn-secondary mt-3">Retour au Dashboard Chantier</a>
+<body class="chantier-page">
+  <div class="chantier-wrapper">
+    <div class="chantier-card">
+      <header class="chantier-header">
+        <img src="/images/logo.png" alt="Logo de l'application" class="chantier-logo">
+        <h1 class="chantier-title">Ajouter un nouveau chantier</h1>
+        <p class="chantier-description">Complétez les informations ci-dessous pour créer un nouveau chantier dans votre espace de gestion.</p>
+      </header>
+      <form action="/chantier/ajouter-chantier" method="POST">
+        <div class="mb-3">
+          <label for="nom" class="form-label">Nom du chantier</label>
+          <input type="text" id="nom" name="nom" class="form-control" placeholder="Nom du chantier" required>
+        </div>
+        <div class="mb-4">
+          <label for="localisation" class="form-label">Localisation</label>
+          <input type="text" id="localisation" name="localisation" class="form-control" placeholder="Localisation" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Ajouter le chantier</button>
+      </form>
+      <a href="/chantier" class="btn btn-secondary back-link mt-4">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+        Retour au tableau de bord Chantier
+      </a>
+    </div>
   </div>
   <script src="/js/bootstrap.bundle.min.js"></script>
 </body>
