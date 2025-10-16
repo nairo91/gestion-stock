@@ -71,15 +71,17 @@ h2 {
 }
 
 /* Champs inputs et selects plus larges et uniformes */
+
 .form-control,
 .form-select {
   border-radius: 0.5rem;
   border: 1px solid rgba(151, 130, 211, 0.45);
   background-color: rgba(18, 6, 35, 0.85);
-  color: #f4efff;
+  color: #ffffff;
   height: calc(1.5em + 1.2rem + 2px);
   padding: 0.6rem 0.85rem;
   transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+  caret-color: #ffffff;
 }
 
 .form-control:focus,
@@ -87,6 +89,21 @@ h2 {
   border-color: #9f7aea;
   box-shadow: 0 0 0 0.25rem rgba(159, 122, 234, 0.25);
   background-color: rgba(26, 11, 46, 0.9);
+  color: #ffffff;
+}
+
+.form-control option,
+.form-select option {
+  background-color: #23103f;
+  color: #ffffff;
+}
+
+.form-select option:checked,
+.form-select option:hover,
+.form-control option:checked,
+.form-control option:hover {
+  background-color: #3a1f6d;
+  color: #ffffff;
 }
 
 .form-text {
@@ -215,6 +232,11 @@ select#emplacementId.form-control {
     input::placeholder,
     textarea::placeholder {
       color: rgba(210, 194, 255, 0.55);
+    }
+
+    input,
+    textarea {
+      color: #ffffff;
     }
   </style>
 </head>
