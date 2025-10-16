@@ -1,23 +1,19 @@
-;Nom;Prenom;;email;;password
-1;ATHARI;Keivan;;athari.keivan@batirenov.info;;KeivanBR91Athari
-2;BLOT;Valentin;;blot.valentin@batirenov.info;;ValentinBR91Blot
-4;COULIBALY;Baba;;coulibaly.baba@batirenov.info;;BabaBR91Coulibaly
-5;DA COSTA;Andr�;;dacosta.andre@batirenov.info;;AndrBR91costa_-
-6;GOURDEL;Yoann;;gourdel.yoann@batirenov.info;;YoannBR91Gourdel
-7;GRECO;JB;;greco.jean-baptiste@batirenov.info;;JbBR91Greco
-8;GUEGAN;Maxime;;gueguan.maxime@batirenov.info;;MaximeBR91Guegan
-9;LAUNAY;J�r�my;;launay.jeremy@batirenov.info;;JLaunayBR91$_
-10;MARZOUKI ;Adam;;marzouki.adam@batirenov.info;;AdamBR91Marzouki
-;MAZZUCCO ;Ryan;;mazzucco.ryan@batirenov.info;;RyanBR91Mazzucco
-11;MIRONA;Orian;;mirona.orian@batirenov.info;;OMironaBR91$
-12;MONTEIRO;Maryline;;monteiro.maryline@batirenov.info;;MonteiroBR91Maryline
-13;MURCY;Gregory;;murcy.gregory@batirenov.info;;GregBR91Murcy
-14;PENA;Angel;;Pena.angel@batirenov.info;;AngelBR91Pena
-15;PEREIRA;Romain;;pereira.romain@batirenov.info;;RomainBR91Pereira
-3;ROUAULT;Christophe;;rouault.christophe@batirenov.info;;RouaultBR91Christophe
-16;SIMON;=;;simon.delphine@batirenov.info;;DelphineBR91Simon*
-17;Vauthier;Philippe;;vauthier.philippe@batirenov.info;;VauthierBR91
-18;VAZ;Xavier;;vaz.xavier@batirenov.info;;XavierBR91Vaz
-;RICHARD;Michael;;Richard.michael@batirenov.info;;MichaelBR91Richard
-20;Tablette;D�p�t;;TabletteDepot@batirenov.info;;TabletteBR91Depot
-;RADWAN;Mahmoud;;mahmoudBR91Radwan@batirenov.info;;MahmouBR91Radwan
+email,password
+athari.keivan@batirenov.info,KeivanBR91Athari
+blot.valentin@batirenov.info,ValentinBR91Blot
+coulibaly.baba@batirenov.info,BabaBR91Coulibaly
+dacosta.andre@batirenov.info,AndrBR91costa_-
+gourdel.yoann@batirenov.info,YoannBR91Gourdel
+launay.jeremy@batirenov.info,JLaunayBR91$_
+marzouki.adam@batirenov.info,AdamBR91Marzouki
+mazzucco.ryan@batirenov.info,RyanBR91Mazzucco
+mirona.orian@batirenov.info,OMironaBR91$
+monteiro.maryline@batirenov.info,MonteiroBR91Maryline
+Pena.angel@batirenov.info,AngelBR91Pena
+pereira.romain@batirenov.info,RomainBR91Pereira
+rouault.christophe@batirenov.info,RouaultBR91Christophe
+simon.delphine@batirenov.info,DelphineBR91Simon*
+vauthier.philippe@batirenov.info,VauthierBR91
+vaz.xavier@batirenov.info,XavierBR91Vaz
+TabletteDepot@batirenov.info,TabletteBR91Depot
+mahmoudBR91Radwan@batirenov.info,MahmouBR91Radwan
