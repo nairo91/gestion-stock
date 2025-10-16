@@ -99,6 +99,13 @@
       border-color: var(--card-border);
       color: var(--text);
     }
+    .toolbar .form-control::placeholder {
+      color: var(--muted);
+    }
+    /* lisibilité des options dans les menus déroulants */
+    .toolbar .form-select option {
+      color: #1b1b1b;
+    }
     .toolbar .form-select:focus,.toolbar .form-control:focus{
       box-shadow: 0 0 0 .25rem rgba(124,98,227,.25);
       border-color: var(--violet-400);
@@ -223,22 +230,14 @@
       });
 
       // Filtres de colonnes
-      const etatRegex = {
-        ok: '^\\s*OK\\s*$',
-        warn: 'Avert\\.',
-        error: 'Erreur'
-      };
-      const opRegex = {
-        create: '^\\s*Create\\s*$',
-        update: '^\\s*Update\\s*$'
-      };
+      // Filtres simples par texte (plus robustes) pour État et Opération
       $('#filtre-etat').on('change', function(){
         const v = this.value;
-        table.column(0).search(v ? etatRegex[v] : '', true, false).draw();
+        table.column(0).search(v || '', false, false).draw();
       });
       $('#filtre-op').on('change', function(){
         const v = this.value;
-        table.column(1).search(v ? opRegex[v] : '', true, false).draw();
+        table.column(1).search(v || '', false, false).draw();
       });
     })();
   </script>
