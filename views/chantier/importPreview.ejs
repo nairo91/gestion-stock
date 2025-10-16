@@ -216,42 +216,49 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script>
-    (function(){
-      // Initialisation DataTable
-      const table = $('#previewTable').DataTable({
-        paging: true,
-        pageLength: 25,
-        lengthMenu: [ [25,50,100,-1], [25,50,100,'Tous'] ],
-        order: [[1,'asc'], [2,'asc']], // Opération, puis LOT
-        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json' },
-        // On garde notre toolbar custom, donc on cache la barre de recherche DT native.
-        dom: 'lrtip'
-      });
+    (function () {
+      // --- 1) Filtre custom AVANT l'initialisation du DataTable
+      // On n'écrase pas le tableau existant, on pousse juste notre filtre.
+      $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+        // Récupère le <tr> de la ligne telle qu'elle est dans le DOM
+        const row = settings.aoData[dataIndex] && settings.aoData[dataIndex].nTr;
+        if (!row) return true;
 
-      // Recherche globale custom
-      $('#global-search').on('input', function(){
-        table.search(this.value).draw();
-      });
-
-      // ==== Filtre personnalisé basé sur les data-attributes, 100% fiable ====
-      // On lit les attributs du <tr> généré côté serveur : data-etat = "OK|Avert.|Erreur", data-op = "Create|Update"
-      $.fn.dataTable.ext.search = [];
-      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex){
-        const tr = settings.aoData[dataIndex].nTr;
-        const etatRow = (tr.getAttribute('data-etat') || '').trim();
-        const opRow   = (tr.getAttribute('data-op')   || '').trim();
+        const etatRow = (row.getAttribute('data-etat') || '').trim();   // "OK" | "Avert." | "Erreur"
+        const opRow   = (row.getAttribute('data-op')   || '').trim();   // "Create" | "Update"
 
         const etatSel = ($('#filtre-etat').val() || '').trim();
         const opSel   = ($('#filtre-op').val()   || '').trim();
 
         const etatOK = !etatSel || etatRow === etatSel;
         const opOK   = !opSel   || opRow === opSel;
+
         return etatOK && opOK;
       });
-      // Mise à jour du tableau à chaque changement de filtre
-      $('#filtre-etat, #filtre-op').on('change', function(){ table.draw(); });
 
-      // Astuce: premier draw pour garantir l’état initial
+      // --- 2) Initialisation du DataTable
+      const table = $('#previewTable').DataTable({
+        paging: true,
+        pageLength: 25,
+        lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'Tous']],
+        order: [[1, 'asc'], [2, 'asc']], // Opération, puis LOT
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json' },
+        dom: 'lrtip'
+      });
+
+      // --- 3) Recherche globale
+      $('#global-search').on('input', function () {
+        table.search(this.value).draw();
+      });
+
+      // --- 4) Filtres Etat / Opération
+      $('#filtre-etat, #filtre-op').on('change', function () {
+        // (facultatif) logs de debug si besoin
+        // console.log('Etat:', $('#filtre-etat').val(), 'Op:', $('#filtre-op').val());
+        table.draw();
+      });
+
+      // Premier draw pour appliquer le filtre avec l’état initial
       table.draw();
     })();
   </script>
