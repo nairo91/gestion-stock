@@ -231,22 +231,18 @@
       });
 
       // ==== Filtre personnalisé (plus fiable que column().search avec du HTML) ====
-      // data[0] = cellule État (contient badge HTML), data[1] = cellule Opération.
-      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex){
-        // Valeurs choisies dans les <select>
-        const etatSel = ($('#filtre-etat').val() || '').trim();     // ex: "OK", "Avert.", "Erreur"
-        const opSel   = ($('#filtre-op').val() || '').trim();       // ex: "Create", "Update"
-
-        // Texte des cellules (DataTables fournit le HTML; un test indexOf suffit)
-        const etatCell = (data[0] || '').toString();
-        const opCell   = (data[1] || '').toString();
-
-        const etatOK = !etatSel || etatCell.indexOf(etatSel) !== -1;
-        const opOK   = !opSel   || opCell.indexOf(opSel)   !== -1;
-        return etatOK && opOK;
+      $.fn.dataTable.ext.search.push(function(settings, data){
+        // Valeurs choisies dans les <select> : "OK", "Avert.", "Erreur"
+        const etatChoisi = ($('#filtre-etat').val() || '').trim();
+        const opChoisie  = ($('#filtre-op').val()   || '').trim();
+        // Texte affiché dans les cellules (DataTables fournit le HTML)
+        const contenuEtat = data[0] || '';
+        const contenuOp   = data[1] || '';
+        const okEtat = !etatChoisi || contenuEtat.indexOf(etatChoisi) !== -1;
+        const okOp   = !opChoisie  || contenuOp.indexOf(opChoisie)    !== -1;
+        return okEtat && okOp;
       });
-
-      // Déclenche le recalcul quand les menus changent
+      // Mise à jour du tableau à chaque changement de filtre
       $('#filtre-etat, #filtre-op').on('change', function(){
         table.draw();
       });
