@@ -180,8 +180,11 @@
         </tr>
       </thead>
       <tbody>
-        <% (rows || []).forEach(function(r){ %>
-          <tr>
+        <% (rows || []).forEach(function(r){
+             const etatText = (r.status === 'ok') ? 'OK' : (r.status === 'warn' ? 'Avert.' : 'Erreur');
+             const opText = (r.operation === 'update') ? 'Update' : 'Create';
+        %>
+          <tr data-etat="<%= etatText %>" data-op="<%= opText %>">
             <td>
               <% if (r.status === 'ok') { %>
                 <span class="badge badge-ok">OK</span>
@@ -230,22 +233,23 @@
         table.search(this.value).draw();
       });
 
-      // ==== Filtre personnalisé (plus fiable que column().search avec du HTML) ====
-      $.fn.dataTable.ext.search.push(function(settings, data){
-        // Valeurs choisies dans les <select> : "OK", "Avert.", "Erreur"
-        const etatChoisi = ($('#filtre-etat').val() || '').trim();
-        const opChoisie  = ($('#filtre-op').val()   || '').trim();
-        // Texte affiché dans les cellules (DataTables fournit le HTML)
-        const contenuEtat = data[0] || '';
-        const contenuOp   = data[1] || '';
-        const okEtat = !etatChoisi || contenuEtat.indexOf(etatChoisi) !== -1;
-        const okOp   = !opChoisie  || contenuOp.indexOf(opChoisie)    !== -1;
-        return okEtat && okOp;
+      // ==== Filtre personnalisé basé sur les data-attributes, 100% fiable ====
+      // On lit les attributs du <tr> généré côté serveur : data-etat = "OK|Avert.|Erreur", data-op = "Create|Update"
+      $.fn.dataTable.ext.search = [];
+      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex){
+        const tr = settings.aoData[dataIndex].nTr;
+        const etatRow = (tr.getAttribute('data-etat') || '').trim();
+        const opRow   = (tr.getAttribute('data-op')   || '').trim();
+
+        const etatSel = ($('#filtre-etat').val() || '').trim();
+        const opSel   = ($('#filtre-op').val()   || '').trim();
+
+        const etatOK = !etatSel || etatRow === etatSel;
+        const opOK   = !opSel   || opRow === opSel;
+        return etatOK && opOK;
       });
       // Mise à jour du tableau à chaque changement de filtre
-      $('#filtre-etat, #filtre-op').on('change', function(){
-        table.draw();
-      });
+      $('#filtre-etat, #filtre-op').on('change', function(){ table.draw(); });
 
       // Astuce: premier draw pour garantir l’état initial
       table.draw();
