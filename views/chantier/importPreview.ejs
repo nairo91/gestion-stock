@@ -230,16 +230,29 @@
         table.search(this.value).draw();
       });
 
-      // Filtres de colonnes
-      // Filtres simples par texte (plus robustes) pour État et Opération
-      $('#filtre-etat').on('change', function(){
-        const v = this.value;
-        table.column(0).search(v || '', false, false).draw();
+      // ==== Filtre personnalisé (plus fiable que column().search avec du HTML) ====
+      // data[0] = cellule État (contient badge HTML), data[1] = cellule Opération.
+      $.fn.dataTable.ext.search.push(function(settings, data, dataIndex){
+        // Valeurs choisies dans les <select>
+        const etatSel = ($('#filtre-etat').val() || '').trim();     // ex: "OK", "Avert.", "Erreur"
+        const opSel   = ($('#filtre-op').val() || '').trim();       // ex: "Create", "Update"
+
+        // Texte des cellules (DataTables fournit le HTML; un test indexOf suffit)
+        const etatCell = (data[0] || '').toString();
+        const opCell   = (data[1] || '').toString();
+
+        const etatOK = !etatSel || etatCell.indexOf(etatSel) !== -1;
+        const opOK   = !opSel   || opCell.indexOf(opSel)   !== -1;
+        return etatOK && opOK;
       });
-      $('#filtre-op').on('change', function(){
-        const v = this.value;
-        table.column(1).search(v || '', false, false).draw();
+
+      // Déclenche le recalcul quand les menus changent
+      $('#filtre-etat, #filtre-op').on('change', function(){
+        table.draw();
       });
+
+      // Astuce: premier draw pour garantir l’état initial
+      table.draw();
     })();
   </script>
 </body>
