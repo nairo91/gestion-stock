@@ -218,19 +218,29 @@
   <script>
     (function () {
       // --- 1) Filtre custom AVANT l'initialisation du DataTable
-      // On utilise les données passées par DataTables et on convertit les cellules HTML en texte.
-      const previewFilter = function (settings, data) {
-        const cellEtat = $('<div>').html(data[0]).text().trim();
-        const cellOp = $('<div>').html(data[1]).text().trim();
-
-        const etatSel = ($('#filtre-etat').val() || '').trim();
-        const opSel = ($('#filtre-op').val() || '').trim();
-
-        if (etatSel && cellEtat !== etatSel) return false;
-        if (opSel && cellOp !== opSel) return false;
-        return true;
+      // Lit le texte des cellules directement depuis le DOM pour être 100% fiable.
+      function normalize(s){ return (s || '').replace(/\u00A0/g,' ').trim(); } // enlève NBSP & espaces
+      const previewFilter = function (settings, data, dataIndex) {
+        // Ne filtre que le tableau #previewTable
+        if (!settings.nTable || settings.nTable.id !== 'previewTable') return true;
+        const $tr = $(settings.aoData[dataIndex].nTr);
+        // 0: État, 1: Opération
+        const etatRow = normalize($tr.find('td:eq(0)').text());
+        const opRow   = normalize($tr.find('td:eq(1)').text());
+        const etatSel = normalize($('#filtre-etat').val());
+        const opSel   = normalize($('#filtre-op').val());
+        // "contains" au lieu d'égalité stricte -> plus tolérant aux espaces/retours/labels
+        const etatOK = !etatSel || etatRow.indexOf(etatSel) !== -1;
+        const opOK   = !opSel   || opRow.indexOf(opSel)   !== -1;
+        return etatOK && opOK;
       };
-      $.fn.dataTable.ext.search.push(previewFilter);
+      // Évite les doublons si on re-rend la page
+      if (window.__previewFilter) {
+        const i = $.fn.dataTable.ext.search.indexOf(window.__previewFilter);
+        if (i !== -1) $.fn.dataTable.ext.search.splice(i, 1);
+      }
+      window.__previewFilter = previewFilter;
+      $.fn.dataTable.ext.search.push(window.__previewFilter);
 
       // --- 2) Initialisation du DataTable
       const table = $('#previewTable').DataTable({
@@ -247,15 +257,15 @@
         table.search(this.value).draw();
       });
 
-      // --- 4) Filtres Etat / Opération via filtre custom
+      // --- 4) Filtres État / Opération via le filtre custom
       $('#filtre-etat').on('change', function () {
-        void this;
         table.draw();
       });
       $('#filtre-op').on('change', function () {
-        void this;
         table.draw();
       });
+      // Applique l'état initial (utile si un filtre est pré-sélectionné)
+      table.draw();
     })();
   </script>
 </body>
