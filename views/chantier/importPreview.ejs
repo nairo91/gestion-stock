@@ -217,28 +217,7 @@
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script>
     (function () {
-      // --- 1) Filtre custom AVANT l'initialisation du DataTable
-      // On n'écrase pas le tableau existant, on pousse juste notre filtre.
-      const previewFilter = function (settings, data, dataIndex) {
-        // DataTables fournit le tableau "data" en second argument mais nous n'en avons pas besoin ici.
-        void data;
-        // Récupère le <tr> de la ligne telle qu'elle est dans le DOM
-        const row = settings.aoData[dataIndex] && settings.aoData[dataIndex].nTr;
-        if (!row) return true;
-
-        const etatRow = (row.getAttribute('data-etat') || '').trim();   // "OK" | "Avert." | "Erreur"
-        const opRow   = (row.getAttribute('data-op')   || '').trim();   // "Create" | "Update"
-
-        const etatSel = ($('#filtre-etat').val() || '').trim();
-        const opSel   = ($('#filtre-op').val()   || '').trim();
-
-        const etatOK = !etatSel || etatRow === etatSel;
-        const opOK   = !opSel   || opRow === opSel;
-
-        return etatOK && opOK;
-      };
-
-      $.fn.dataTable.ext.search.push(previewFilter);
+      // Pas de filtre global : on filtrera par colonne avec column().search()
 
       // --- 2) Initialisation du DataTable
       const table = $('#previewTable').DataTable({
@@ -255,15 +234,18 @@
         table.search(this.value).draw();
       });
 
-      // --- 4) Filtres Etat / Opération
-      $('#filtre-etat, #filtre-op').on('change', function () {
-        // (facultatif) logs de debug si besoin
-        // console.log('Etat:', $('#filtre-etat').val(), 'Op:', $('#filtre-op').val());
-        table.draw();
+      // --- 4) Filtres Etat / Opération par colonne
+      // Colonne 0 = État (OK / Avert. / Erreur)
+      $('#filtre-etat').on('change', function () {
+        const val = $(this).val();
+        // '^val$' en regex pour correspondance exacte ; chaîne vide pour réinitialiser
+        table.column(0).search(val ? '^' + val + '$' : '', true, false).draw();
       });
-
-      // Premier draw pour appliquer le filtre avec l’état initial
-      table.draw();
+      // Colonne 1 = Opération (Create / Update)
+      $('#filtre-op').on('change', function () {
+        const val = $(this).val();
+        table.column(1).search(val ? '^' + val + '$' : '', true, false).draw();
+      });
     })();
   </script>
 </body>
