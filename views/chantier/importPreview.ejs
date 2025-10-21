@@ -219,7 +219,7 @@
     (function () {
       // --- 1) Filtre custom AVANT l'initialisation du DataTable
       // On n'écrase pas le tableau existant, on pousse juste notre filtre.
-      $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+      const previewFilter = function (settings, data, dataIndex) {
         // Récupère le <tr> de la ligne telle qu'elle est dans le DOM
         const row = settings.aoData[dataIndex] && settings.aoData[dataIndex].nTr;
         if (!row) return true;
@@ -234,7 +234,9 @@
         const opOK   = !opSel   || opRow === opSel;
 
         return etatOK && opOK;
-      });
+      };
+
+      $.fn.dataTable.ext.search.push(previewFilter);
 
       // --- 2) Initialisation du DataTable
       const table = $('#previewTable').DataTable({
