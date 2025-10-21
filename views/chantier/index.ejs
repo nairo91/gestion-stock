@@ -641,6 +641,7 @@
   <% if (user && user.role === 'admin') { %>
   <!-- Bouton ici -->
    <!-- <a href="/chantier/ajouter" class="btn btn-primary">Ajouter une livraison chantier</a>-->
+  <a href="/chantier/scanner" class="btn btn-primary">Scanner QR/Code-barres</a>
   <a
     href="/chantier/ajouterMateriel<%= chantierCourant ? `?chantierId=${encodeURIComponent(chantierCourant.id)}` : '' %>"
     class="btn btn-success"
