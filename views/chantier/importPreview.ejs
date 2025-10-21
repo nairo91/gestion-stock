@@ -220,6 +220,8 @@
       // --- 1) Filtre custom AVANT l'initialisation du DataTable
       // On n'écrase pas le tableau existant, on pousse juste notre filtre.
       const previewFilter = function (settings, data, dataIndex) {
+        // DataTables fournit le tableau "data" en second argument mais nous n'en avons pas besoin ici.
+        void data;
         // Récupère le <tr> de la ligne telle qu'elle est dans le DOM
         const row = settings.aoData[dataIndex] && settings.aoData[dataIndex].nTr;
         if (!row) return true;
