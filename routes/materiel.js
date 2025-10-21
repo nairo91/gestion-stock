@@ -6,6 +6,7 @@ const { storage, cloudinary } = require('../config/cloudinary.config');
 const { Op, fn, col, where } = require('sequelize');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
 
 const Materiel = require('../models/Materiel');
 const Photo = require('../models/Photo');
@@ -651,30 +652,62 @@ router.get('/scanner', ensureAuthenticated, (req, res) => {
 });
 
 // Traite le code scanné
-router.post('/scan', ensureAuthenticated, async (req, res) => {
+router.post('/scan', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const rawBarcode = req.body ? req.body.barcode : undefined;
-    const barcode = typeof rawBarcode === 'string' ? rawBarcode.trim() : rawBarcode;
-    if (!barcode) {
+    const code = typeof rawBarcode === 'string' ? rawBarcode.trim() : '';
+
+    if (!code) {
       return res.json({ error: 'Aucun code reçu.' });
     }
 
-    // Vérifie si un matériel existe déjà avec ce code
-    const materiel = await Materiel.findOne({ where: { barcode } });
-    if (materiel) {
-      // On redirige vers un "détail" ou "modifier" ou autre
-      // Par exemple : /materiel/modifier/:id
-      return res.json({ redirect: `/materiel/modifier/${materiel.id}` });
-    } else {
-      // Aucun matériel => on redirige vers le formulaire d'ajout
-      // en passant le code scanné en query
-      return res.json({
-        redirect: `/materiel/ajouter?barcode=${encodeURIComponent(barcode)}`
-      });
+    // 1) Si le code est une URL complète (QR interne ou externe), on redirige directement
+    if (code.startsWith('http://') || code.startsWith('https://')) {
+      return res.json({ redirect: code });
     }
+
+    // 2) Si le code est un identifiant interne "MAT_<id>" (QR dépôt) ou "MC_<id>" (QR chantier)
+    if (/^MAT_\d+$/i.test(code)) {
+      const id = parseInt(code.split('_')[1], 10);
+      return res.json({ redirect: `/materiel/info/${id}` });
+    }
+
+    if (/^MC_\d+$/i.test(code)) {
+      const id = parseInt(code.split('_')[1], 10);
+      return res.json({ redirect: `/chantier/materielChantier/info/${id}` });
+    }
+
+    // 3) Code fabricant classique : recherche dans le stock dépôt
+    const materiel = await Materiel.findOne({ where: { barcode: code } });
+    if (materiel) {
+      return res.json({ redirect: `/materiel/modifier/${materiel.id}` });
+    }
+
+    // Aucun matériel => on redirige vers le formulaire d'ajout
+    return res.json({
+      redirect: `/materiel/ajouter?barcode=${encodeURIComponent(code)}`
+    });
   } catch (err) {
     console.error('Erreur lors du scan :', err);
     return res.json({ error: 'Erreur interne' });
+  }
+});
+
+/**
+ * Génère un QR-code PNG pour un matériel du dépôt.
+ * L’image encode l’URL de la fiche (materiel/info/:id).
+ * Accessible via /materiel/qr/:id
+ */
+router.get('/qr/:id', ensureAuthenticated, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const url = `${req.protocol}://${req.get('host')}/materiel/info/${id}`;
+    const buffer = await QRCode.toBuffer(url);
+    res.set('Content-Type', 'image/png');
+    return res.send(buffer);
+  } catch (err) {
+    console.error('Erreur génération QR dépôt:', err);
+    return res.status(500).send('Erreur QR');
   }
 });
 
