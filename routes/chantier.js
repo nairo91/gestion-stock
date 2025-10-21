@@ -6,6 +6,7 @@ const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
 const ExcelJS = require('exceljs');
+const QRCode = require('qrcode');
 const dayjs = require('dayjs');
 const { storage, cloudinary } = require('../config/cloudinary.config');
 
@@ -1732,6 +1733,24 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('Erreur lors de la génération du PDF.');
+  }
+});
+
+/**
+ * Génère un QR-code PNG pour un matériel de chantier.
+ * L’image encode l’URL de la fiche (chantier/materielChantier/info/:id).
+ * Utilise le préfixe "MC_" pour l’identifiant interne (fallback scanning).
+ */
+router.get('/materielChantier/qr/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const url = `${req.protocol}://${req.get('host')}/chantier/materielChantier/info/${id}`;
+    const buffer = await QRCode.toBuffer(url);
+    res.set('Content-Type', 'image/png');
+    return res.send(buffer);
+  } catch (err) {
+    console.error('Erreur génération QR chantier:', err);
+    return res.status(500).send('Erreur QR chantier');
   }
 });
 
