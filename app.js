@@ -48,6 +48,12 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Middleware pour le corps des requêtes et les fichiers statiques
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve vendor assets locally (jQuery + DataTables) to satisfy CSP 'self'
+app.use('/vendor/jquery', express.static(path.join(__dirname, 'node_modules/jquery/dist')));
+app.use('/vendor/datatables', express.static(path.join(__dirname, 'node_modules/datatables.net/js')));
+app.use('/vendor/datatables-dt', express.static(path.join(__dirname, 'node_modules/datatables.net-dt')));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Sessions et messages flash
