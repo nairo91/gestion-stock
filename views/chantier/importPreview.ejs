@@ -217,7 +217,20 @@
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script>
     (function () {
-      // Pas de filtre global : on filtrera par colonne avec column().search()
+      // --- 1) Filtre custom AVANT l'initialisation du DataTable
+      // On utilise les données passées par DataTables et on convertit les cellules HTML en texte.
+      const previewFilter = function (settings, data) {
+        const cellEtat = $('<div>').html(data[0]).text().trim();
+        const cellOp = $('<div>').html(data[1]).text().trim();
+
+        const etatSel = ($('#filtre-etat').val() || '').trim();
+        const opSel = ($('#filtre-op').val() || '').trim();
+
+        if (etatSel && cellEtat !== etatSel) return false;
+        if (opSel && cellOp !== opSel) return false;
+        return true;
+      };
+      $.fn.dataTable.ext.search.push(previewFilter);
 
       // --- 2) Initialisation du DataTable
       const table = $('#previewTable').DataTable({
@@ -234,17 +247,14 @@
         table.search(this.value).draw();
       });
 
-      // --- 4) Filtres Etat / Opération par colonne
-      // Colonne 0 = État (OK / Avert. / Erreur)
+      // --- 4) Filtres Etat / Opération via filtre custom
       $('#filtre-etat').on('change', function () {
-        const val = $(this).val();
-        // '^val$' en regex pour correspondance exacte ; chaîne vide pour réinitialiser
-        table.column(0).search(val ? '^' + val + '$' : '', true, false).draw();
+        void this;
+        table.draw();
       });
-      // Colonne 1 = Opération (Create / Update)
       $('#filtre-op').on('change', function () {
-        const val = $(this).val();
-        table.column(1).search(val ? '^' + val + '$' : '', true, false).draw();
+        void this;
+        table.draw();
       });
     })();
   </script>
