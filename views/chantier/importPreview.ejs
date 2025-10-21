@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/style.css">
   <!-- DataTables CSS (thème minimal, on garde notre charte violette) -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="/vendor/datatables-dt/css/jquery.dataTables.min.css">
   <style>
     :root{
       --violet-900:#160e33;
@@ -212,9 +212,9 @@
     </table>
   </div>
 
-  <!-- jQuery + DataTables (CDN) -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <!-- jQuery + DataTables (local, CSP-friendly) -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/datatables/jquery.dataTables.min.js"></script>
   <script>
     (function () {
       // --- 1) Filtre custom AVANT l'initialisation du DataTable
@@ -248,7 +248,7 @@
         pageLength: 25,
         lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'Tous']],
         order: [[1, 'asc'], [2, 'asc']], // Opération, puis LOT
-        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json' },
+        // Pas de langue distante pour respecter la CSP (optionnel)
         dom: 'lrtip'
       });
 
