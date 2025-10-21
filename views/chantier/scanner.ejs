@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Scanner un code-barres / QR</title>
+  <title>Scanner un matériel chantier</title>
 
   <!-- Bootstrap -->
   <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -10,9 +10,9 @@
 <body class="bg-light">
 
   <div class="container py-4">
-    <h1>Scanner un code-barres / QR</h1>
-    <p class="mb-3">Autorise l’accès à la caméra, puis place le code dans le cadre.</p>
-    <p class="small text-muted">Pour enregistrer manuellement un code-barres, renseigne simplement le champ « Code-barres » dans la fiche du matériel.</p>
+    <h1>Scanner un matériel chantier</h1>
+    <p class="mb-3">Autorise l’accès à la caméra, puis place le QR-code ou le code-barres dans le cadre.</p>
+    <p class="small text-muted">Le scan ouvre automatiquement la fiche chantier ou dépôt selon le code détecté. Tu peux toujours renseigner un code-barres manuellement depuis la fiche du matériel.</p>
 
     <!-- Flux vidéo -->
     <div id="video-container" style="max-width:500px">
@@ -27,7 +27,7 @@
 
   <!-- ZXing : doit être chargé AVANT scanner.js -->
   <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.2/umd/index.min.js" nonce="<%= nonce %>"></script>
-  <!-- Ton script -->
-  <script src="/js/scanner.js"     nonce="<%= nonce %>"></script>
+  <!-- Script de gestion du scanner (commun dépôt/chantier) -->
+  <script src="/js/scanner.js" nonce="<%= nonce %>"></script>
 </body>
 </html>

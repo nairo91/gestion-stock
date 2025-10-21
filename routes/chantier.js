@@ -649,6 +649,11 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
   }
 });
 
+/* ===== SCAN CHANTIER ===== */
+router.get('/scanner', ensureAuthenticated, checkAdmin, (req, res) => {
+  res.render('chantier/scanner');
+});
+
 /* ===== HISTORIQUE CHANTIER ===== */
 router.get('/historique', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
