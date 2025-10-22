@@ -53,6 +53,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/vendor/jquery', express.static(path.join(__dirname, 'node_modules/jquery/dist')));
 app.use('/vendor/datatables', express.static(path.join(__dirname, 'node_modules/datatables.net/js')));
 app.use('/vendor/datatables-dt', express.static(path.join(__dirname, 'node_modules/datatables.net-dt')));
+app.use(
+  '/vendor/zxing',
+  express.static(path.join(__dirname, 'node_modules', '@zxing', 'library'))
+);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
