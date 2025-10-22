@@ -19,12 +19,13 @@
   }
 
   // Vérifie ZXing UMD
-  if (!window.ZXing || !ZXing.BrowserMultiFormatReader) {
-    showError('Librairie ZXing non chargée. Vérifiez <script src="/vendor/zxing/index.umd.min.js">.');
+  if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) {
+    showError('Librairie ZXing non chargée. Vérifie /vendor/zxing/*.js');
     return;
   }
 
-  const codeReader = new ZXing.BrowserMultiFormatReader();
+  const { BrowserMultiFormatReader } = window.ZXing;
+  const codeReader = new BrowserMultiFormatReader();
 
   async function listVideoInputs() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
@@ -49,8 +50,16 @@
       await codeReader.decodeFromVideoDevice(chosen.deviceId, video, (result, err) => {
         if (result) {
           handleDecodedText(result.getText());
+        } else if (err) {
+          console.error(err);
+          if (err.name === 'NotAllowedError') {
+            showError('Accès caméra refusé.');
+          } else if (err.name === 'NotFoundError') {
+            showError('Aucune caméra détectée.');
+          } else {
+            showError('Erreur de lecture. Réessaie ou utilise l’entrée manuelle.');
+          }
         }
-        // err: NotFound/Checksum/FormatError fréquents => on ignore silencieusement
       });
     } catch (e) {
       console.error(e);
