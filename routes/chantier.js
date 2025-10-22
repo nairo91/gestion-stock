@@ -1770,4 +1770,13 @@ router.get('/materielChantier/:id/qr', ensureAuthenticated, async (req, res) => 
 
 
 
+// Back-compat : redirige les anciens liens /chantier/scan vers le nouveau module /scan
+router.get('/scan', ensureAuthenticated, (req, res) => res.redirect('/scan'));
+
+router.post('/scan', ensureAuthenticated, (req, res) => {
+  const code = (req.body && (req.body.code || req.body.barcode)) || '';
+  if (!code) return res.redirect('/scan');
+  return res.redirect(`/scan/resolve?code=${encodeURIComponent(code)}`);
+});
+
 module.exports = router;
