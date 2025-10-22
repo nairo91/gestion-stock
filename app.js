@@ -3,7 +3,6 @@ require('dotenv').config();
 
 const express       = require('express');
 const crypto        = require('crypto');
-const bodyParser    = require('body-parser');
 const session       = require('express-session');
 const flash         = require('connect-flash');
 const passport      = require('passport');
@@ -47,16 +46,13 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middleware pour le corps des requêtes et les fichiers statiques
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Serve vendor assets locally (jQuery + DataTables) to satisfy CSP 'self'
 app.use('/vendor/jquery', express.static(path.join(__dirname, 'node_modules/jquery/dist')));
 app.use('/vendor/datatables', express.static(path.join(__dirname, 'node_modules/datatables.net/js')));
 app.use('/vendor/datatables-dt', express.static(path.join(__dirname, 'node_modules/datatables.net-dt')));
-app.use(
-  '/vendor/zxing',
-  express.static(path.join(__dirname, 'node_modules', '@zxing', 'library'))
-);
 
 app.use(express.static(path.join(__dirname, 'public')));
 

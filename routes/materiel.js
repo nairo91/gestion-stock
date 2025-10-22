@@ -721,6 +721,13 @@ router.get('/:id/qr', ensureAuthenticated, async (req, res) => {
   }
 });
 
+router.get('/scan', ensureAuthenticated, (req, res) => res.redirect('/scan'));
+router.post('/scan', ensureAuthenticated, (req, res) => {
+  const code = (req.body && (req.body.code || req.body.barcode)) || '';
+  if (!code) return res.redirect('/scan');
+  return res.redirect(`/scan/resolve?code=${encodeURIComponent(code)}`);
+});
+
 module.exports.ensureAuthenticated = ensureAuthenticated;
 module.exports.checkAdmin = checkAdmin;
 router.ensureAuthenticated = ensureAuthenticated;
