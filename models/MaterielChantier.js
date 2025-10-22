@@ -41,10 +41,25 @@ const MaterielChantier = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+
+    barcode: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    qr_code_value: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
   },
   {
     tableName: 'materiel_chantiers',
     timestamps: true,    // createdAt / updatedAt
+    indexes: [
+      { fields: ['barcode'] },
+      { unique: true, fields: ['qr_code_value'] },
+    ],
   }
 );
 
@@ -75,5 +90,12 @@ Materiel.hasMany(MaterielChantier, {
 });
 
 */
+
+MaterielChantier.addHook('afterCreate', async materielChantier => {
+  if (!materielChantier.qr_code_value) {
+    materielChantier.qr_code_value = `MC_${materielChantier.id}`;
+    await materielChantier.save();
+  }
+});
 
 module.exports = MaterielChantier;

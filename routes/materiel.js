@@ -695,16 +695,26 @@ router.post('/scan', ensureAuthenticated, checkAdmin, async (req, res) => {
 
 /**
  * Génère un QR-code PNG pour un matériel du dépôt.
- * L’image encode l’URL de la fiche (materiel/info/:id).
- * Accessible via /materiel/qr/:id
+ * Le contenu encode la valeur qr_code_value (ex: MAT_<id>).
+ * Accessible via /materiel/:id/qr
  */
-router.get('/qr/:id', ensureAuthenticated, async (req, res) => {
+router.get('/:id/qr', ensureAuthenticated, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const url = `${req.protocol}://${req.get('host')}/materiel/info/${id}`;
-    const buffer = await QRCode.toBuffer(url);
-    res.set('Content-Type', 'image/png');
-    return res.send(buffer);
+    const materiel = await Materiel.findByPk(req.params.id);
+    if (!materiel) {
+      return res.status(404).end();
+    }
+
+    if (!materiel.qr_code_value) {
+      materiel.qr_code_value = `MAT_${materiel.id}`;
+      await materiel.save();
+    }
+
+    res.type('png');
+    await QRCode.toFileStream(res, materiel.qr_code_value, {
+      errorCorrectionLevel: 'M',
+      margin: 2
+    });
   } catch (err) {
     console.error('Erreur génération QR dépôt:', err);
     return res.status(500).send('Erreur QR');

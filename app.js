@@ -135,6 +135,7 @@ app.use('/bonLivraison', require('./routes/bonLivraison'));
 app.use('/chantier', require('./routes/chantier'));
 //app.use('/materielChantier', require('./routes/materielChantier')); // ← MANQUAIT
 app.use('/emplacements', require('./routes/emplacements'));
+app.use('/scan', require('./routes/scan'));
 
 app.use('/transferts', require('./routes/transferts'));
  

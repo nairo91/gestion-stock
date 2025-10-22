@@ -85,7 +85,7 @@
       form.submit();
     } else {
       // secours
-      window.location.href = '/materiel/scan?code=' + encodeURIComponent(t);
+      window.location.href = '/scan?code=' + encodeURIComponent(t);
     }
   }
 

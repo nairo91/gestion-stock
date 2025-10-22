@@ -1743,16 +1743,25 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
 
 /**
  * Génère un QR-code PNG pour un matériel de chantier.
- * L’image encode l’URL de la fiche (chantier/materielChantier/info/:id).
- * Utilise le préfixe "MC_" pour l’identifiant interne (fallback scanning).
+ * Le contenu encode la valeur qr_code_value (ex: MC_<id>).
  */
-router.get('/materielChantier/qr/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+router.get('/materielChantier/:id/qr', ensureAuthenticated, async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    const url = `${req.protocol}://${req.get('host')}/chantier/materielChantier/info/${id}`;
-    const buffer = await QRCode.toBuffer(url);
-    res.set('Content-Type', 'image/png');
-    return res.send(buffer);
+    const materielChantier = await MaterielChantier.findByPk(req.params.id);
+    if (!materielChantier) {
+      return res.status(404).end();
+    }
+
+    if (!materielChantier.qr_code_value) {
+      materielChantier.qr_code_value = `MC_${materielChantier.id}`;
+      await materielChantier.save();
+    }
+
+    res.type('png');
+    await QRCode.toFileStream(res, materielChantier.qr_code_value, {
+      errorCorrectionLevel: 'M',
+      margin: 2
+    });
   } catch (err) {
     console.error('Erreur génération QR chantier:', err);
     return res.status(500).send('Erreur QR chantier');
