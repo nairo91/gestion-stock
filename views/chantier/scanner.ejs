@@ -3,31 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <title>Scanner un matériel chantier</title>
-
-  <!-- Bootstrap -->
   <link rel="stylesheet" href="/css/bootstrap.min.css">
 </head>
-<body class="bg-light">
+<body class="container py-4">
+  <h1 class="mb-2">Scanner un matériel chantier</h1>
+  <p class="text-muted">Autorise la caméra, puis place le QR-code ou code-barres dans le cadre. Tu peux aussi saisir le code manuellement.</p>
 
-  <div class="container py-4">
-    <h1>Scanner un matériel chantier</h1>
-    <p class="mb-3">Autorise l’accès à la caméra, puis place le QR-code ou le code-barres dans le cadre.</p>
-    <p class="small text-muted">Le scan ouvre automatiquement la fiche chantier ou dépôt selon le code détecté. Tu peux toujours renseigner un code-barres manuellement depuis la fiche du matériel.</p>
+  <div id="scan-error" class="alert alert-danger" style="display:none"></div>
 
-    <!-- Flux vidéo -->
-    <div id="video-container" style="max-width:500px">
-      <video id="video" width="100%" height="auto" playsinline></video>
-    </div>
-
-    <button id="stopBtn" class="btn btn-danger mt-3">Arrêter le scan</button>
-
-    <!-- Message résultat -->
-    <div id="result" class="alert mt-3" style="display:none"></div>
+  <div class="mb-3">
+    <button id="btn-start-scan" class="btn btn-primary me-2">Démarrer le scan</button>
+    <button id="btn-stop-scan"  class="btn btn-outline-secondary">Arrêter le scan</button>
   </div>
 
-  <!-- ZXing : doit être chargé AVANT scanner.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.2/umd/index.min.js" nonce="<%= nonce %>"></script>
-  <!-- Script de gestion du scanner (commun dépôt/chantier) -->
-  <script src="/js/scanner.js" nonce="<%= nonce %>"></script>
+  <video id="preview" style="width:100%;max-width:520px;border-radius:10px;background:#000" muted playsinline></video>
+
+  <form id="manualScanForm" action="/chantier/scan" method="POST" class="mt-3" autocomplete="off">
+    <div class="input-group">
+      <input id="manualCode" name="code" class="form-control" placeholder="Saisir un code manuellement (ex: 14565656)">
+      <button class="btn btn-success" type="submit">Valider</button>
+    </div>
+  </form>
+
+  <script src="/vendor/zxing/index.umd.min.js"></script>
+  <script src="/js/scanner.js"></script>
 </body>
 </html>
