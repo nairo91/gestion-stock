@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Plusieurs correspondances</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="container py-4">
+  <h1 class="mb-3">Plusieurs correspondances</h1>
+  <p>Le code <strong><%= code %></strong> correspond à plusieurs éléments. Choisis la fiche à ouvrir&nbsp;:</p>
+
+  <div class="list-group mb-4">
+    <% matches.forEach(match => { %>
+      <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="<%= match.url %>">
+        <span>
+          <span class="badge bg-primary me-2"><%= match.type === 'materielChantier' ? 'Chantier' : 'Dépôt' %></span>
+          <%= match.label %>
+        </span>
+        <span class="text-muted">#<%= match.id %></span>
+      </a>
+    <% }) %>
+  </div>
+
+  <a href="/scan" class="btn btn-outline-secondary">Revenir au scan</a>
+</body>
+</html>

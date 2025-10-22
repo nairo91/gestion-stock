@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Code introuvable</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+</head>
+<body class="container py-4">
+  <h1 class="mb-3">Aucun résultat</h1>
+  <% const encodedCode = encodeURIComponent(code || ''); %>
+  <p>Aucun élément ne correspond au code <strong><%= code %></strong>.</p>
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="/scan" class="btn btn-outline-secondary">Revenir au scan</a>
+    <a href="/materiel/ajouter?barcode=<%= encodedCode %>" class="btn btn-primary">Créer un matériel avec ce code</a>
+  </div>
+</body>
+</html>

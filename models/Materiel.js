@@ -7,7 +7,8 @@ const Materiel = sequelize.define(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     nom: { type: DataTypes.STRING, allowNull: false },
     reference: { type: DataTypes.STRING },
-    barcode: { type: DataTypes.STRING, allowNull: true, unique: true },
+    barcode: { type: DataTypes.STRING, allowNull: true },
+    qr_code_value: { type: DataTypes.STRING, allowNull: true, unique: true },
     quantite: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
@@ -37,7 +38,8 @@ const Materiel = sequelize.define(
     tableName: 'materiels',
     timestamps: true,
     indexes: [
-      { unique: true, fields: ['barcode'] },
+      { fields: ['barcode'] },
+      { unique: true, fields: ['qr_code_value'] },
       { fields: ['categorie', 'nom'] }
     ]
   }
@@ -69,5 +71,12 @@ Materiel.associate = function (models) {
     onDelete: 'CASCADE'
   });
 };
+
+Materiel.addHook('afterCreate', async materiel => {
+  if (!materiel.qr_code_value) {
+    materiel.qr_code_value = `MAT_${materiel.id}`;
+    await materiel.save();
+  }
+});
 
 module.exports = Materiel;
