@@ -45,11 +45,19 @@ router.get('/login', (req, res) => {
 });
 
 // Traitement de la connexion
-router.post('/login', passport.authenticate('local', {
-    successRedirect: '/materiel',
-    failureRedirect: '/auth/login',
-    failureFlash: true
-}));
+router.post('/login',
+    passport.authenticate('local', {
+        failureRedirect: '/auth/login',
+        failureFlash: true
+    }),
+    (req, res) => {
+        const redirectUrl = (req.session && req.session.returnTo) || '/materiel';
+        if (req.session) {
+            delete req.session.returnTo;
+        }
+        return res.redirect(redirectUrl);
+    }
+);
 
 // Déconnexion (passer en POST)
 router.post('/logout', (req, res, next) => {

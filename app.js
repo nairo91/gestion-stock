@@ -75,6 +75,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Mémorise l'URL d'origine avant authentification pour rediriger l'utilisateur après login.
+app.use((req, res, next) => {
+  try {
+    if (typeof req.isAuthenticated === 'function' && !req.isAuthenticated() && req.method === 'GET') {
+      req.session.returnTo = req.originalUrl;
+    }
+  } catch (_) {}
+  next();
+});
+
 // Headers COEP/COOP
 app.use(setCrossOriginHeaders);
 
