@@ -276,7 +276,8 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       );
     }
     if (rack && rack.trim() !== '') {
-      whereClause.rack = rack;
+      const rackValue = rack.trim();
+      whereClause.rack = rackValue;
     }
     if (compartiment && compartiment.trim() !== '') {
       whereClause.compartiment = compartiment;
