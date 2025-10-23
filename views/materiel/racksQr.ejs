@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>QR des racks</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <style>
+    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:24px; }
+    .card { text-align:center; padding:16px; border-radius:12px; background:#14131a; color:#fff; }
+    img { background:#fff; padding:8px; border-radius:8px; max-width:100%; height:auto; }
+    body { background:#0e0d14; padding:24px; color:#ddd; }
+  </style>
+</head>
+<body>
+  <h1>QR-codes des racks</h1>
+  <p>Scannez pour ouvrir l’inventaire filtré sur le rack correspondant.</p>
+  <div class="grid">
+    <% racks.forEach(r => { %>
+      <div class="card">
+        <h5><%= r %></h5>
+        <img alt="QR <%= r %>" src="/materiel/rack/<%= encodeURIComponent(r) %>/qr">
+        <div class="mt-2 d-flex gap-2 justify-content-center">
+          <a class="btn btn-sm btn-outline-light"
+             href="/materiel/rack/<%= encodeURIComponent(r) %>/qr"
+             download="QR_<%= r.replace(/\s+/g,'_') %>.png">Télécharger</a>
+          <a class="btn btn-sm btn-outline-info"
+             href="/materiel?rack=<%= encodeURIComponent(r) %>">Tester le filtre</a>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</body>
+</html>

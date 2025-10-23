@@ -92,6 +92,15 @@ function checkAdmin(req, res, next) {
 // Configuration Multer pour upload photos sur Cloudinary
 const upload = multer({ storage });
 
+const RACKS = [
+  'RM1','RM2','RM3','RM4','RM5','RM6','RM7','RM8','RM9','RM10',
+  'GL','RK','Zone Sécu (ZS)','Mezza','Contenaire','A','B','C'
+];
+
+router.get('/racks/qr', ensureAuthenticated, (req, res) => {
+  res.render('materiel/racksQr', { racks: RACKS });
+});
+
 /* ======================
    QR RACKS
 ====================== */

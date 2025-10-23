@@ -1,14 +1,14 @@
 (function () {
-  // Vidéo inline pour iOS
   const video = document.getElementById('preview');
   if (video) {
     video.setAttribute('playsinline', 'true');
     video.setAttribute('webkit-playsinline', 'true');
     video.muted = true;
   }
-
-  // Zone d'erreur
   const $error = document.getElementById('scan-error');
+  const $cameraSelect = document.getElementById('cameraSelect');
+  const $btnSwitch = document.getElementById('btn-switch');
+
   function showError(msg) {
     if ($error) {
       $error.textContent = msg;
@@ -18,48 +18,68 @@
     }
   }
 
-  // Vérifie ZXing UMD
-  if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) {
-    showError('Librairie ZXing non chargée. Vérifie /vendor/zxing/*.js');
-    return;
+  function clearError() {
+    if ($error) {
+      $error.textContent = '';
+      $error.style.display = 'none';
+    }
   }
 
+  if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) {
+    showError('Librairie ZXing non chargée. Vérifie les <script> du scanner.');
+    return;
+  }
   const { BrowserMultiFormatReader } = window.ZXing;
   const codeReader = new BrowserMultiFormatReader();
 
-  async function listVideoInputs() {
+  let devices = [];
+  let currentDeviceId = null;
+
+  async function getVideoInputs() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-      throw new Error('enumerateDevices non supporté par ce navigateur.');
+      throw new Error('enumerateDevices non supporté.');
     }
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    return devices.filter(d => d.kind === 'videoinput');
+    const all = await navigator.mediaDevices.enumerateDevices();
+    return all.filter(d => d.kind === 'videoinput');
   }
 
-  function pickBackCamera(videoInputs) {
-    const back = videoInputs.find(d => /back|rear|environment/i.test(d.label));
-    return (back || videoInputs[0] || null);
+  function guessBackCamera(list) {
+    const byLabel = list.find(d => /back|rear|environment/i.test(d.label || ''));
+    return byLabel || list[list.length - 1] || list[0] || null;
   }
 
-  async function startScan() {
+  async function populateCameraSelect() {
+    devices = await getVideoInputs();
+    if ($cameraSelect) {
+      $cameraSelect.innerHTML = '';
+      devices.forEach((d, i) => {
+        const opt = document.createElement('option');
+        opt.value = d.deviceId;
+        opt.textContent = d.label || `Caméra ${i + 1}`;
+        $cameraSelect.appendChild(opt);
+      });
+      $cameraSelect.disabled = devices.length <= 1;
+    }
+    if ($btnSwitch) $btnSwitch.disabled = devices.length <= 1;
+  }
+
+  async function startScan(preferredId) {
     try {
-      const inputs = await listVideoInputs();
-      if (!inputs.length) throw new Error('Aucune caméra détectée.');
-      const chosen = pickBackCamera(inputs);
-      if (!chosen) throw new Error('Impossible de sélectionner une caméra.');
+      await populateCameraSelect();
+      if (!devices.length) throw new Error('Aucune caméra détectée.');
 
-      await codeReader.decodeFromVideoDevice(chosen.deviceId, video, (result, err) => {
-        if (result) {
-          handleDecodedText(result.getText());
-        } else if (err) {
-          console.error(err);
-          if (err.name === 'NotAllowedError') {
-            showError('Accès caméra refusé.');
-          } else if (err.name === 'NotFoundError') {
-            showError('Aucune caméra détectée.');
-          } else {
-            showError('Erreur de lecture. Réessaie ou utilise l’entrée manuelle.');
-          }
-        }
+      const chosen = preferredId
+        ? devices.find(d => d.deviceId === preferredId)
+        : guessBackCamera(devices);
+
+      if (!chosen) throw new Error('Impossible de sélectionner une caméra.');
+      currentDeviceId = chosen.deviceId;
+      if ($cameraSelect) $cameraSelect.value = currentDeviceId;
+      clearError();
+
+      await codeReader.decodeFromVideoDevice(currentDeviceId, video, (result, err) => {
+        if (result) handleDecodedText(result.getText());
+        else if (err && err.name && err.name !== 'NotFoundException') console.error(err);
       });
     } catch (e) {
       console.error(e);
@@ -68,7 +88,15 @@
   }
 
   function stopScan() {
-    try { codeReader.reset(); } catch (e) {}
+    try { codeReader.reset(); } catch (_) {}
+  }
+
+  function switchCamera() {
+    if (!devices.length) return;
+    const idx = devices.findIndex(d => d.deviceId === currentDeviceId);
+    const next = devices[(idx + 1) % devices.length];
+    stopScan();
+    startScan(next.deviceId);
   }
 
   function normalize(s){ return (s || '').replace(/\u00A0/g,' ').trim(); }
@@ -76,7 +104,6 @@
   function handleDecodedText(text) {
     const t = normalize(text);
 
-    // 1) QR internes
     const mMat = t.match(/^MAT_(\d+)$/i);
     if (mMat) { window.location.href = '/materiel/info/' + mMat[1]; return; }
 
@@ -89,29 +116,26 @@
         const rackDecoded = decodeURIComponent(mRack[1]);
         window.location.href = '/materiel?rack=' + encodeURIComponent(rackDecoded);
         return;
-      } catch (error) {
-        console.error('Erreur lors du décodage du QR rack :', error);
-      }
+      } catch (_) {}
     }
 
-    // 2) URL complète
     if (/^https?:\/\//i.test(t)) { window.location.href = t; return; }
 
-    // 3) Fallback: traiter comme code-barres texte via le formulaire manuel
     const form = document.getElementById('manualScanForm');
     const input = document.getElementById('manualCode');
-    if (form && input) {
-      input.value = t;
-      form.submit();
-    } else {
-      // secours
-      window.location.href = '/scan?code=' + encodeURIComponent(t);
-    }
+    if (form && input) { input.value = t; form.submit(); }
+    else { window.location.href = '/scan?code=' + encodeURIComponent(t); }
   }
 
-  // Boutons
   const $btnStart = document.getElementById('btn-start-scan');
   const $btnStop  = document.getElementById('btn-stop-scan');
-  if ($btnStart) $btnStart.addEventListener('click', startScan);
+
+  if ($btnStart) $btnStart.addEventListener('click', () => startScan());
   if ($btnStop)  $btnStop.addEventListener('click', stopScan);
+  if ($btnSwitch) $btnSwitch.addEventListener('click', switchCamera);
+  if ($cameraSelect) {
+    $cameraSelect.addEventListener('change', () => {
+      stopScan(); startScan($cameraSelect.value);
+    });
+  }
 })();
