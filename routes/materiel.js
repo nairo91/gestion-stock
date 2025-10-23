@@ -98,7 +98,9 @@ const upload = multer({ storage });
 router.get('/rack/:rack/qr', ensureAuthenticated, async (req, res) => {
   try {
     const rack = req.params.rack;
-    const payload = `RACK_${encodeURIComponent(rack)}`;
+    // Encode une URL complète : scan avec l'appareil photo => ouverture directe de la page filtrée
+    const base = `${req.protocol}://${req.get('host')}`;
+    const payload = `${base}/materiel?rack=${encodeURIComponent(rack)}`;
     res.type('png');
     await QRCode.toFileStream(res, payload, { errorCorrectionLevel: 'M', margin: 2 });
   } catch (e) {

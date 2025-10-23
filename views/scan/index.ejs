@@ -28,8 +28,9 @@
     </div>
   </form>
 
-  <script src="/vendor/zxing/library.min.js"></script>
-  <script src="/vendor/zxing/index.umd.min.js"></script>
+  <!-- ZXing depuis CDN (ordre : core puis browser) -->
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.4/umd/index.min.js"></script>
   <script src="/js/scanner.js"></script>
 </body>
 </html>
