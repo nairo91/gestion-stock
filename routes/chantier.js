@@ -650,8 +650,11 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
 });
 
 /* ===== SCAN CHANTIER ===== */
-router.get('/scanner', ensureAuthenticated, checkAdmin, (req, res) => {
-  res.render('chantier/scanner');
+router.get('/scanner', ensureAuthenticated, (req, res) => res.redirect('/scan'));
+router.post('/scanner', ensureAuthenticated, (req, res) => {
+  const code = (req.body && (req.body.code || req.body.barcode)) || '';
+  if (!code) return res.redirect('/scan');
+  return res.redirect(`/scan/resolve?code=${encodeURIComponent(code)}`);
 });
 
 /* ===== HISTORIQUE CHANTIER ===== */

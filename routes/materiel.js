@@ -667,9 +667,12 @@ router.get('/info/:id', ensureAuthenticated, async (req, res) => {
 /* ======================
    SCAN DU CODE-BARRES / QR
 ====================== */
-// Affiche la page de scan (caméra)
-router.get('/scanner', ensureAuthenticated, (req, res) => {
-  res.render('materiel/scanner');
+// ---- Back-compat: toutes les anciennes routes scanner -> nouveau module /scan ----
+router.get('/scanner', ensureAuthenticated, (req, res) => res.redirect('/scan'));
+router.post('/scanner', ensureAuthenticated, (req, res) => {
+  const code = (req.body && (req.body.code || req.body.barcode)) || '';
+  if (!code) return res.redirect('/scan');
+  return res.redirect(`/scan/resolve?code=${encodeURIComponent(code)}`);
 });
 
 /**
@@ -700,7 +703,7 @@ router.get('/:id/qr', ensureAuthenticated, async (req, res) => {
   }
 });
 
-// Back-compat: tout /materiel/scan -> nouveau module /scan
+// Sécurité: si des liens internes utilisent /materiel/scan, on les redirige aussi
 router.get('/scan', ensureAuthenticated, (req, res) => res.redirect('/scan'));
 router.post('/scan', ensureAuthenticated, (req, res) => {
   const code = (req.body && (req.body.code || req.body.barcode)) || '';
