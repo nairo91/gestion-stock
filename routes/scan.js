@@ -30,6 +30,17 @@ async function resolveCode(req, res, sourceCode) {
     return res.redirect(`/chantier/materielChantier/info/${mcMatch[1]}`);
   }
 
+  const rackMatch = code.match(/^RACK_(.+)$/i);
+  if (rackMatch) {
+    try {
+      const rackDecoded = decodeURIComponent(rackMatch[1]);
+      return res.redirect(`/materiel?rack=${encodeURIComponent(rackDecoded)}`);
+    } catch (error) {
+      console.error('Erreur lors du décodage du QR rack :', error);
+      return res.status(400).render('scan/notfound', { code, matches: [] });
+    }
+  }
+
   const [materiels, materielChantiers] = await Promise.all([
     Materiel.findAll({ where: { barcode: code } }),
     MaterielChantier.findAll({
