@@ -10,8 +10,19 @@
   const $btnSwitch = document.getElementById('btn-switch');
 
   function showError(msg) {
-    if ($error) { $error.textContent = msg; $error.style.display = 'block'; }
-    else { alert(msg); }
+    if ($error) {
+      $error.textContent = msg;
+      $error.style.display = 'block';
+    } else {
+      alert(msg);
+    }
+  }
+
+  function clearError() {
+    if ($error) {
+      $error.textContent = '';
+      $error.style.display = 'none';
+    }
   }
 
   if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) {
@@ -33,7 +44,7 @@
   }
 
   function guessBackCamera(list) {
-    const byLabel = list.find(d => /back|rear|environment/i.test(d.label));
+    const byLabel = list.find(d => /back|rear|environment/i.test(d.label || ''));
     return byLabel || list[list.length - 1] || list[0] || null;
   }
 
@@ -47,7 +58,9 @@
         opt.textContent = d.label || `Caméra ${i + 1}`;
         $cameraSelect.appendChild(opt);
       });
+      $cameraSelect.disabled = devices.length <= 1;
     }
+    if ($btnSwitch) $btnSwitch.disabled = devices.length <= 1;
   }
 
   async function startScan(preferredId) {
@@ -62,6 +75,7 @@
       if (!chosen) throw new Error('Impossible de sélectionner une caméra.');
       currentDeviceId = chosen.deviceId;
       if ($cameraSelect) $cameraSelect.value = currentDeviceId;
+      clearError();
 
       await codeReader.decodeFromVideoDevice(currentDeviceId, video, (result, err) => {
         if (result) handleDecodedText(result.getText());
