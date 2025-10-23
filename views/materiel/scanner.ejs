@@ -18,13 +18,14 @@
 
   <video id="preview" style="width:100%;max-width:520px;border-radius:10px;background:#000" muted playsinline></video>
 
-  <form id="manualScanForm" action="/materiel/scan" method="POST" class="mt-3" autocomplete="off">
+  <form id="manualScanForm" action="/scan/resolve" method="POST" class="mt-3" autocomplete="off">
     <div class="input-group">
       <input id="manualCode" name="code" class="form-control" placeholder="Saisir un code manuellement (ex: 14565656)">
       <button class="btn btn-success" type="submit">Valider</button>
     </div>
   </form>
 
+  <script src="/vendor/zxing/library.min.js"></script>
   <script src="/vendor/zxing/index.umd.min.js"></script>
   <script src="/js/scanner.js"></script>
 </body>

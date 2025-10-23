@@ -651,48 +651,6 @@ router.get('/scanner', ensureAuthenticated, (req, res) => {
   res.render('materiel/scanner');
 });
 
-// Traite le code scanné
-router.post('/scan', ensureAuthenticated, checkAdmin, async (req, res) => {
-  try {
-    const rawBarcode = req.body ? req.body.barcode : undefined;
-    const code = typeof rawBarcode === 'string' ? rawBarcode.trim() : '';
-
-    if (!code) {
-      return res.json({ error: 'Aucun code reçu.' });
-    }
-
-    // 1) Si le code est une URL complète (QR interne ou externe), on redirige directement
-    if (code.startsWith('http://') || code.startsWith('https://')) {
-      return res.json({ redirect: code });
-    }
-
-    // 2) Si le code est un identifiant interne "MAT_<id>" (QR dépôt) ou "MC_<id>" (QR chantier)
-    if (/^MAT_\d+$/i.test(code)) {
-      const id = parseInt(code.split('_')[1], 10);
-      return res.json({ redirect: `/materiel/info/${id}` });
-    }
-
-    if (/^MC_\d+$/i.test(code)) {
-      const id = parseInt(code.split('_')[1], 10);
-      return res.json({ redirect: `/chantier/materielChantier/info/${id}` });
-    }
-
-    // 3) Code fabricant classique : recherche dans le stock dépôt
-    const materiel = await Materiel.findOne({ where: { barcode: code } });
-    if (materiel) {
-      return res.json({ redirect: `/materiel/modifier/${materiel.id}` });
-    }
-
-    // Aucun matériel => on redirige vers le formulaire d'ajout
-    return res.json({
-      redirect: `/materiel/ajouter?barcode=${encodeURIComponent(code)}`
-    });
-  } catch (err) {
-    console.error('Erreur lors du scan :', err);
-    return res.json({ error: 'Erreur interne' });
-  }
-});
-
 /**
  * Génère un QR-code PNG pour un matériel du dépôt.
  * Le contenu encode la valeur qr_code_value (ex: MAT_<id>).
@@ -721,6 +679,7 @@ router.get('/:id/qr', ensureAuthenticated, async (req, res) => {
   }
 });
 
+// Back-compat: tout /materiel/scan -> nouveau module /scan
 router.get('/scan', ensureAuthenticated, (req, res) => res.redirect('/scan'));
 router.post('/scan', ensureAuthenticated, (req, res) => {
   const code = (req.body && (req.body.code || req.body.barcode)) || '';
