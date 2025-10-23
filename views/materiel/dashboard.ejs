@@ -1051,6 +1051,93 @@
   <!-- Scripts Bootstrap -->
   <script src="/js/bootstrap.bundle.min.js"></script>
 
+  <!-- Spinner de chargement -->
+  <style>
+    #page-loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(2px);
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #7b5cf1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+
+  <div id="page-loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Auto-submit pour les filtres + spinner -->
+  <script nonce="<%= nonce %>">
+    (function () {
+      const form = document.querySelector('form[action="/materiel"][method="GET"]');
+      if (!form) {
+        return;
+      }
+
+      const overlay = document.getElementById('page-loading-overlay');
+      const showOverlay = () => {
+        if (overlay) {
+          overlay.style.display = 'flex';
+        }
+      };
+
+      const autoNodes = form.querySelectorAll('select, input[type="checkbox"], input[type="radio"]');
+      let timer = null;
+
+      const debouncedSubmit = () => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+        timer = window.setTimeout(() => {
+          showOverlay();
+          if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+          } else {
+            form.submit();
+          }
+        }, 250);
+      };
+
+      autoNodes.forEach((el) => el.addEventListener('change', debouncedSubmit));
+
+      // Entrée dans champ texte = recherche
+      form.querySelectorAll('input[type="text"], input[type="number"]').forEach((inp) => {
+        inp.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            debouncedSubmit();
+          }
+        });
+      });
+
+      // Bouton reset
+      const resetBtn = form.querySelector('#resetFilters, button[type="reset"]');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => debouncedSubmit());
+      }
+    })();
+  </script>
+
   <script nonce="<%= nonce %>">
     (function () {
       function setNavbarPadding() {
