@@ -103,7 +103,8 @@ router.get('/racks/qr', ensureAuthenticated, (req, res) => {
 
 // Version A4 imprimable (mise en page optimisée)
 router.get('/racks/qr/print', ensureAuthenticated, (req, res) => {
-  res.render('materiel/racksQrPrint', { racks: RACKS });
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.render('materiel/racksQrPrint', { racks: RACKS, baseUrl });
 });
 
 /* ======================

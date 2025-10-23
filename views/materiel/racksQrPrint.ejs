@@ -118,7 +118,7 @@
             />
           </div>
           <div class="hint">Scannez pour ouvrir l’inventaire filtré :</div>
-          <div class="url"><%= `${req.protocol}://${req.get('host')}/materiel?rack=${encodeURIComponent(r)}` %></div>
+          <div class="url"><%= `${baseUrl}/materiel?rack=${encodeURIComponent(r)}` %></div>
         </div>
       <% }) %>
     </div>
