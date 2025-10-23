@@ -93,6 +93,21 @@ function checkAdmin(req, res, next) {
 const upload = multer({ storage });
 
 /* ======================
+   QR RACKS
+====================== */
+router.get('/rack/:rack/qr', ensureAuthenticated, async (req, res) => {
+  try {
+    const rack = req.params.rack;
+    const payload = `RACK_${encodeURIComponent(rack)}`;
+    res.type('png');
+    await QRCode.toFileStream(res, payload, { errorCorrectionLevel: 'M', margin: 2 });
+  } catch (e) {
+    console.error('Erreur génération QR rack:', e);
+    res.status(500).send('Erreur QR rack');
+  }
+});
+
+/* ======================
    EXPORT CSV / EXCEL / PDF
 ====================== */
 router.get('/export/csv', ensureAuthenticated, async (req, res) => {
@@ -261,7 +276,8 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       );
     }
     if (rack && rack.trim() !== '') {
-      whereClause.rack = rack;
+      const rackValue = rack.trim();
+      whereClause.rack = rackValue;
     }
     if (compartiment && compartiment.trim() !== '') {
       whereClause.compartiment = compartiment;
@@ -290,10 +306,13 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       include: [{ model: Photo, as: 'photos' }]
     });
 
+    const filtreRack = rack && rack.trim() !== '' ? rack : null;
+
     res.render('materiel/dashboard', {
       materiels,
       query: req.query,
-      user: req.user
+      user: req.user,
+      filtreRack
     });
   } catch (err) {
     console.error(err);

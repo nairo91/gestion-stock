@@ -695,6 +695,15 @@
       </div>
     </div>
 
+    <% if (filtreRack) { %>
+      <div class="alert alert-info d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4">
+        <div>
+          Filtre rack : <strong><%= filtreRack %></strong>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="/materiel">Retirer le filtre</a>
+      </div>
+    <% } %>
+
     <div class="card glass-card mb-4 filters-card">
       <div class="card-header">
         <strong>Filtrer le stock</strong>

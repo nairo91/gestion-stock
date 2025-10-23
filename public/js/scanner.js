@@ -83,6 +83,17 @@
     const mMc = t.match(/^MC_(\d+)$/i);
     if (mMc) { window.location.href = '/chantier/materielChantier/info/' + mMc[1]; return; }
 
+    const mRack = t.match(/^RACK_(.+)$/i);
+    if (mRack) {
+      try {
+        const rackDecoded = decodeURIComponent(mRack[1]);
+        window.location.href = '/materiel?rack=' + encodeURIComponent(rackDecoded);
+        return;
+      } catch (error) {
+        console.error('Erreur lors du décodage du QR rack :', error);
+      }
+    }
+
     // 2) URL complète
     if (/^https?:\/\//i.test(t)) { window.location.href = t; return; }
 
