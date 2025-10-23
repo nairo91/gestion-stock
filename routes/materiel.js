@@ -101,6 +101,11 @@ router.get('/racks/qr', ensureAuthenticated, (req, res) => {
   res.render('materiel/racksQr', { racks: RACKS });
 });
 
+// Version A4 imprimable (mise en page optimisée)
+router.get('/racks/qr/print', ensureAuthenticated, (req, res) => {
+  res.render('materiel/racksQrPrint', { racks: RACKS });
+});
+
 /* ======================
    QR RACKS
 ====================== */
