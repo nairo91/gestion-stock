@@ -11,9 +11,12 @@
 
   <div id="scan-error" class="alert alert-danger" style="display:none"></div>
 
-  <div class="mb-3 d-flex flex-wrap gap-2">
+  <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
     <button id="btn-start-scan" class="btn btn-primary">Démarrer le scan</button>
     <button id="btn-stop-scan" class="btn btn-outline-secondary">Arrêter le scan</button>
+
+    <select id="cameraSelect" class="form-select" style="width:auto;min-width:220px"></select>
+    <button id="btn-switch" class="btn btn-outline-primary">Changer caméra</button>
   </div>
 
   <video id="preview" style="width:100%;max-width:520px;border-radius:10px;background:#000" muted playsinline></video>
