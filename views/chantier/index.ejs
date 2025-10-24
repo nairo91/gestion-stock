@@ -1109,8 +1109,24 @@
               />
             </div>
             <div class="mb-3">
-              <label class="form-label">Date de réception</label>
-              <input type="date" class="form-control" name="dateReception" required>
+              <label class="form-label" for="receptionDate">Date de réception</label>
+              <div class="input-group">
+                <input
+                  type="date"
+                  class="form-control"
+                  name="dateReception"
+                  id="receptionDate"
+                  required
+                >
+                <button
+                  class="btn btn-outline-secondary d-none d-lg-inline-flex align-items-center"
+                  type="button"
+                  id="receptionDatePickerBtn"
+                  aria-label="Ouvrir le calendrier"
+                >
+                  📅
+                </button>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -1328,6 +1344,12 @@
         if (chantierSpan) chantierSpan.textContent = chantierName;
         const qty = document.getElementById('receptionQty');
         if (qty) qty.value = '';
+        const dateInput = document.getElementById('receptionDate');
+        if (dateInput) {
+          const now = new Date();
+          now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+          dateInput.value = now.toISOString().split('T')[0];
+        }
       });
 
       on('globalDeleteModal', 'show.bs.modal', (ev) => {
@@ -1357,6 +1379,27 @@
       window.addEventListener('resize', setNavbarPadding);
       document.addEventListener('readystatechange', setNavbarPadding);
     })();
+  </script>
+
+  <script nonce="<%= nonce %>">
+    document.addEventListener('DOMContentLoaded', function () {
+      var dateInput = document.getElementById('receptionDate');
+      var pickerBtn = document.getElementById('receptionDatePickerBtn');
+      if (!dateInput || !pickerBtn) {
+        return;
+      }
+
+      pickerBtn.addEventListener('click', function () {
+        if (typeof dateInput.showPicker === 'function') {
+          dateInput.showPicker();
+          return;
+        }
+        dateInput.focus();
+        if (typeof dateInput.click === 'function') {
+          dateInput.click();
+        }
+      });
+    });
   </script>
 
   <script nonce="<%= nonce %>">
