@@ -264,6 +264,55 @@
       color: #fff;
     }
 
+    .column-visibility-card {
+      margin-top: 1.5rem;
+    }
+
+    .column-visibility-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .column-visibility-header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .column-visibility-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .column-visibility-options .form-check {
+      min-width: 180px;
+      margin: 0;
+    }
+
+    .column-visibility-options .form-check-input {
+      cursor: pointer;
+    }
+
+    .column-visibility-options .form-check-label {
+      cursor: pointer;
+    }
+
+    .table-stock .hidden-column {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      .column-visibility-options {
+        gap: 0.5rem 1rem;
+      }
+
+      .column-visibility-options .form-check {
+        min-width: 140px;
+      }
+    }
+
     .table-wrapper {
       margin-top: 2.5rem;
       background: rgba(14, 4, 28, 0.78);
@@ -841,6 +890,68 @@
 </form>
 
 
+  <div class="glass-card column-visibility-card">
+    <div class="column-visibility-header">
+      <h2 class="h5 mb-0">Affichage des colonnes</h2>
+      <p class="subtitle mb-0">Sélectionnez les colonnes de matériel à afficher. La colonne Actions reste toujours visible.</p>
+    </div>
+    <div class="column-visibility-options">
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-designation" data-column-class="col-designation" checked>
+        <label class="form-check-label" for="toggle-col-designation">Désignation</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-photo" data-column-class="col-photo" checked>
+        <label class="form-check-label" for="toggle-col-photo">Photo</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-reference" data-column-class="col-reference" checked>
+        <label class="form-check-label" for="toggle-col-reference">Référence</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-categorie" data-column-class="col-categorie" checked>
+        <label class="form-check-label" for="toggle-col-categorie">Catégorie</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-description" data-column-class="col-description" checked>
+        <label class="form-check-label" for="toggle-col-description">Description</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-fournisseur" data-column-class="col-fournisseur" checked>
+        <label class="form-check-label" for="toggle-col-fournisseur">Fournisseur</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-emplacement" data-column-class="col-emplacement" checked>
+        <label class="form-check-label" for="toggle-col-emplacement">Emplacement</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-rack" data-column-class="col-rack" checked>
+        <label class="form-check-label" for="toggle-col-rack">Rack</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-compartiment" data-column-class="col-compartiment" checked>
+        <label class="form-check-label" for="toggle-col-compartiment">Compartiment</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-niveau" data-column-class="col-niveau" checked>
+        <label class="form-check-label" for="toggle-col-niveau">Niveau</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite" data-column-class="col-quantite" checked>
+        <label class="form-check-label" for="toggle-col-quantite">Quantité</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue" data-column-class="col-quantite-prevue" checked>
+        <label class="form-check-label" for="toggle-col-quantite-prevue">Quantité prévue</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-date" data-column-class="col-date" checked>
+        <label class="form-check-label" for="toggle-col-date">Date prévue</label>
+      </div>
+    </div>
+  </div>
+
+
     <div class="table-wrapper">
       <div class="stock-table-wrap">
         <table class="table table-bordered table-striped table-materiel align-middle table-stock">
@@ -866,30 +977,24 @@
       </thead>
       <tbody>
         <% if (materielChantiers && materielChantiers.length > 0) { %>
-          <% materielChantiers.forEach(function(mc){ %>
+          <% materielChantiers.forEach(function (mc) { %>
             <tr>
               <td class="d-none" data-label="ID"><%= mc.id %></td>
               <td class="d-none" data-label="Chantier">
-                <% if(mc.chantier) { %>
-                  <%= mc.chantier.nom %> - <%= mc.chantier.localisation %>
-                <% } else { %>
-                  N/A
-                <% } %>
+                <%= mc.chantier ? `${mc.chantier.nom} - ${mc.chantier.localisation || ''}` : '' %>
               </td>
-              <td data-label="Désignation" class="col-designation">
-                <% if(mc.materiel) { %>
-                  <%= mc.materiel.nom %>
-                <% } else { %>
-                  N/A
-                <% } %>
+
+              <td class="col-designation" data-label="Désignation">
+                <%= mc.materiel ? mc.materiel.nom : '' %>
               </td>
-              <td data-label="Photo" class="col-photo cell-photo">
+
+              <td class="col-photo cell-photo" data-label="Photo">
                 <% if (mc.materiel && mc.materiel.photos && mc.materiel.photos.length > 0) { %>
                   <% const fullPath = mc.materiel.photos[0].chemin
-                       .replace(
-                         `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/`,
-                         ''
-                       );
+                    .replace(
+                      `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/`,
+                      ''
+                    );
                   %>
                   <button
                     type="button"
@@ -902,7 +1007,7 @@
                     <img
                       src="/img-proxy/<%= fullPath %>"
                       width="80"
-                      alt="Photo de <%= mc.materiel.nom %>"
+                      alt="Photo de <%= mc.materiel ? mc.materiel.nom : '' %>"
                       class="img-thumbnail"
                     >
                   </button>
@@ -911,65 +1016,52 @@
                 <% } %>
               </td>
 
-              <td data-label="Référence" class="col-reference">
-                <% if(mc.materiel) { %>
-                  <%= mc.materiel.reference %>
+              <td class="col-reference" data-label="Référence">
+                <%= mc.materiel ? (mc.materiel.reference || '-') : '-' %>
+              </td>
+
+              <td class="col-categorie" data-label="Catégorie">
+                <%= mc.materiel && mc.materiel.categorie ? (mc.materiel.categorie.nom || mc.materiel.categorie) : '-' %>
+              </td>
+
+              <td class="col-description" data-label="Description">
+                <%= mc.materiel && mc.materiel.description ? mc.materiel.description : '-' %>
+              </td>
+
+              <td class="col-fournisseur" data-label="Fournisseur">
+                <%= mc.materiel && mc.materiel.fournisseur ? (mc.materiel.fournisseur.nom || mc.materiel.fournisseur) : '-' %>
+              </td>
+
+              <td class="col-emplacement" data-label="Emplacement">
+                <% if (mc.materiel && mc.materiel.emplacement) { %>
+                  <%
+                    function afficherChemin(emp) {
+                      let chemin = emp.nom;
+                      let courant = emp;
+                      while (courant.parent) {
+                        chemin = `${courant.parent.nom} > ${chemin}`;
+                        courant = courant.parent;
+                      }
+                      return chemin;
+                    }
+                  %>
+                  <%= afficherChemin(mc.materiel.emplacement) %>
                 <% } else { %>
                   -
                 <% } %>
               </td>
-              <td data-label="Categorie" class="col-categorie">
-                <% if(mc.materiel) { %>
-                  <%= mc.materiel.categorie %>
-                <% } else { %>
-                  -
-                <% } %>
-              </td>
-              <td data-label="Description" class="col-description">
-                <% if(mc.materiel && mc.materiel.description) { %>
-                  <%= mc.materiel.description %>
-                <% } else { %>
-                  -
-                <% } %>
-              </td>
-              <td data-label="Fournisseur" class="col-fournisseur">
-                <% if(mc.materiel && mc.materiel.fournisseur) { %>
-                  <%= mc.materiel.fournisseur %>
-                <% } else { %>
-                  -
-                <% } %>
+
+              <td class="col-rack" data-label="Rack"><%= mc.materiel && mc.materiel.rack ? mc.materiel.rack : '-' %></td>
+              <td class="col-compartiment" data-label="Compartiment"><%= mc.materiel && mc.materiel.compartiment ? mc.materiel.compartiment : '-' %></td>
+              <td class="col-niveau" data-label="Niveau"><%= mc.materiel && mc.materiel.niveau != null ? mc.materiel.niveau : '-' %></td>
+
+              <td class="col-quantite" data-label="Quantité"><%= mc.quantite != null ? mc.quantite : '-' %></td>
+              <td class="col-quantite-prevue" data-label="Quantité prévue"><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
+              <td class="col-date" data-label="Date prévue">
+                <%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %>
               </td>
 
-              <td data-label="Emplacement" class="col-emplacement">
-                <%
-                  function afficherChemin(emp) {
-                    let chemin = emp.nom;
-                    let courant = emp;
-                    while (courant.parent) {
-                    chemin = courant.parent.nom + " > " + chemin;
-                    courant = courant.parent;
-                  }
-                  return chemin;
-                }
-              %>
-
-              <% if (mc.materiel && mc.materiel.emplacement) { %>
-                <%= afficherChemin(mc.materiel.emplacement) %>
-              <% } else { %>
-                -
-              <% } %>
-
-                            </td>
-
-              <td data-label="Rack" class="col-rack"><%= mc.materiel && mc.materiel.rack ? mc.materiel.rack : '-' %></td>
-              <td data-label="Compartiment" class="col-compartiment"><%= mc.materiel && mc.materiel.compartiment ? mc.materiel.compartiment : '-' %></td>
-              <td data-label="Niveau" class="col-niveau"><%= mc.materiel && mc.materiel.niveau != null ? mc.materiel.niveau : '-' %></td>
-
-
-              <td data-label="Qte" class="col-quantite"><%= mc.quantite %></td>
-              <td data-label="Qte prévue" class="col-quantite-prevue"><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
-              <td data-label="Date prévue" class="col-date"><%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %></td>
-              <td data-label="Actions" class="actions col-actions">
+              <td class="actions col-actions" data-label="Actions">
                 <%
                   // Trouve la "ligne source" côté chantier courant (pas d'optional chaining ici)
                   var chantierCourantId = (chantierCourant && chantierCourant.id) || null;
@@ -990,9 +1082,9 @@
                     }
                   }
                   var sourceMatNom = (sourceMat && sourceMat.nom)
-                                   || (typeof mc !== 'undefined' && mc && mc.materiel && mc.materiel.nom)
-                                   || (typeof mc !== 'undefined' && mc && mc.nom)
-                                   || '';
+                    || (typeof mc !== 'undefined' && mc && mc.materiel && mc.materiel.nom)
+                    || (typeof mc !== 'undefined' && mc && mc.nom)
+                    || '';
                 %>
                 <div class="btn-wrap">
                   <button
@@ -1068,6 +1160,83 @@
     </div>
 
   </div>
+
+  <script nonce="<%= nonce %>">
+    (function () {
+      const toggles = Array.from(document.querySelectorAll('.column-toggle[data-column-class]'));
+      if (!toggles.length) {
+        return;
+      }
+
+      const STORAGE_KEY = 'gs_chantier_columns_v1';
+
+      const storage = (() => {
+        try {
+          if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+            return null;
+          }
+          const testKey = '__gs_columns_test__';
+          window.localStorage.setItem(testKey, '1');
+          window.localStorage.removeItem(testKey);
+          return window.localStorage;
+        } catch (_) {
+          return null;
+        }
+      })();
+
+      const loadState = () => {
+        if (!storage) {
+          return {};
+        }
+        try {
+          const raw = storage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : {};
+        } catch (_) {
+          return {};
+        }
+      };
+
+      const saveState = (state) => {
+        if (!storage) {
+          return;
+        }
+        try {
+          storage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (_) {}
+      };
+
+      const applyState = (colClass, visible) => {
+        document.querySelectorAll(`.table-stock .${colClass}`).forEach((cell) => {
+          cell.classList.toggle('hidden-column', !visible);
+        });
+      };
+
+      const state = loadState();
+
+      toggles.forEach((toggle) => {
+        const colClass = toggle.dataset.columnClass;
+        if (!colClass) {
+          return;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(state, colClass)) {
+          toggle.checked = Boolean(state[colClass]);
+        }
+
+        applyState(colClass, toggle.checked);
+
+        toggle.addEventListener('change', () => {
+          state[colClass] = toggle.checked;
+          applyState(colClass, toggle.checked);
+          saveState(state);
+        });
+      });
+
+      document.querySelectorAll('.table-stock .col-actions').forEach((cell) => {
+        cell.classList.remove('hidden-column');
+      });
+    })();
+  </script>
 
   <!-- Modales globales -->
   <div class="modal fade" id="globalPhotoModal" tabindex="-1" aria-hidden="true">
