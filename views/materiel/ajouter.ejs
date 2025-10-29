@@ -17,9 +17,9 @@
       &::-ms-expand {
         display: none;
       }
-      background-color: #fff;
-      color: #2d3436;
-      border: 1px solid #ced4da;
+      background-color: rgba(18, 6, 35, 0.85);
+      color: #f0eaff;
+      border: 1px solid rgba(151, 130, 211, 0.45);
       border-radius: 0.25rem;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath fill='%23FFFFFF' d='M1.41.59 8 7.17 14.59.59 16 2l-8 8-8-8L1.41.59Z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
@@ -28,36 +28,54 @@
       padding-right: 2rem;
     }
     body {
-      background-color: #f5f6fa;
-      color: #2d3436;
+      background: radial-gradient(circle at top, #381b63 0%, #1a082f 35%, #0d041c 100%);
+      color: #f0eaff;
     }
     .card-custom {
-      border: none;
+      border: 1px solid rgba(138, 110, 214, 0.35);
       border-radius: 0.75rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      background-color: #fff;
+      box-shadow: 0 25px 55px rgba(8, 2, 20, 0.65);
+      background: linear-gradient(160deg, rgba(36, 15, 64, 0.92), rgba(25, 9, 47, 0.95));
       margin-top: 2rem;
     }
     .card-header-custom {
-      background: linear-gradient(45deg, #0984e3, #74b9ff);
-      color: #fff;
+      background: linear-gradient(135deg, rgba(128, 90, 213, 0.85), rgba(93, 63, 211, 0.95));
+      color: #f7f3ff;
       padding: 1rem 1.5rem;
       border-top-left-radius: 0.75rem;
       border-top-right-radius: 0.75rem;
     }
     .card-body-custom {
       padding: 1.5rem;
+      color: #e8defd;
     }
     .form-label {
       font-weight: 500;
+      color: #c8b3ff;
     }
     .btn-submit {
-      background-color: #0984e3;
+      background: linear-gradient(135deg, #7c4dff, #5e3bd4);
       border: none;
-      transition: background-color 0.3s;
+      transition: background-color 0.3s, filter 0.3s;
+      color: #f9f5ff;
     }
     .btn-submit:hover {
-      background-color: #0776c2;
+      background: linear-gradient(135deg, #8765ff, #6a48e5);
+      filter: brightness(1.05);
+    }
+    .form-control {
+      background-color: rgba(18, 6, 35, 0.85);
+      color: #f0eaff;
+      border: 1px solid rgba(151, 130, 211, 0.45);
+    }
+    .form-control:focus {
+      border-color: #9f7aea;
+      box-shadow: 0 0 0 0.25rem rgba(159, 122, 234, 0.25);
+      background-color: rgba(26, 11, 46, 0.9);
+      color: #ffffff;
+    }
+    .form-control::placeholder {
+      color: rgba(208, 190, 255, 0.7);
     }
   </style>
 </head>
