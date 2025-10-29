@@ -1058,7 +1058,7 @@
               <td class="col-quantite" data-label="Quantité"><%= mc.quantite != null ? mc.quantite : '-' %></td>
               <td class="col-quantite-prevue" data-label="Quantité prévue"><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
               <td class="col-date" data-label="Date prévue">
-                <%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '-' %>
+                <%= formatDateFr(mc.dateLivraisonPrevue) || '-' %>
               </td>
 
               <td class="actions col-actions" data-label="Actions">

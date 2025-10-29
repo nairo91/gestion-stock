@@ -9,6 +9,7 @@ const passport      = require('passport');
 const path          = require('path');
 const helmet        = require('helmet');
 const https         = require('https');
+const dayjs         = require('dayjs');
 
 const app = express();
 
@@ -74,6 +75,12 @@ app.use((req, res, next) => {
   res.locals.user = req.user;
   next();
 });
+
+app.locals.formatDateFr = (date) => {
+  if (!date) return null;
+  const parsed = dayjs(date);
+  return parsed.isValid() ? parsed.format('DD-MM-YYYY') : null;
+};
 
 // Mémorise l'URL d'origine avant authentification pour rediriger l'utilisateur après login.
 app.use((req, res, next) => {
