@@ -5,6 +5,9 @@ const router = express.Router();
 const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
 const ExcelJS = require('exceljs');
 const QRCode = require('qrcode');
 const dayjs = require('dayjs');
@@ -148,6 +151,206 @@ async function loadCategories() {
   return cats.map(c => c.nom);
 }
 
+function construireCheminEmplacement(emplacement) {
+  const chemin = [];
+  let courant = emplacement;
+  while (courant) {
+    chemin.unshift(courant.nom);
+    courant = courant.parent;
+  }
+  return chemin.join(' > ');
+}
+
+const PDF_COLUMN_DEFINITIONS = [
+  {
+    key: 'chantier',
+    label: 'Chantier',
+    ratio: 1.25,
+    accessor: ({ chantier }) =>
+      chantier
+        ? `${chantier.nom}${chantier.localisation ? ` - ${chantier.localisation}` : ''}`
+        : 'N/A'
+  },
+  {
+    key: 'materiel',
+    label: 'Matériel',
+    ratio: 1.25,
+    accessor: ({ materiel }) => (materiel && materiel.nom ? materiel.nom : 'N/A')
+  },
+  {
+    key: 'reference',
+    label: 'Référence',
+    ratio: 0.9,
+    accessor: ({ materiel }) => (materiel && materiel.reference ? materiel.reference : '-')
+  },
+  {
+    key: 'categorie',
+    label: 'Catégorie',
+    ratio: 1,
+    accessor: ({ materiel }) => {
+      if (!materiel) return '-';
+      const cat = materiel.categorie;
+      if (!cat) return '-';
+      return typeof cat === 'string' ? cat : cat.nom || '-';
+    }
+  },
+  {
+    key: 'description',
+    label: 'Description',
+    ratio: 1.4,
+    accessor: ({ materiel }) => (materiel && materiel.description ? materiel.description : '-')
+  },
+  {
+    key: 'emplacement',
+    label: 'Emplacement',
+    ratio: 1.1,
+    accessor: ({ materiel }) =>
+      materiel && materiel.emplacement ? construireCheminEmplacement(materiel.emplacement) : '-'
+  },
+  {
+    key: 'rack',
+    label: 'Rack',
+    ratio: 0.65,
+    accessor: ({ materiel }) => (materiel && materiel.rack ? materiel.rack : '-')
+  },
+  {
+    key: 'compartiment',
+    label: 'Compartiment',
+    ratio: 0.75,
+    accessor: ({ materiel }) => (materiel && materiel.compartiment ? materiel.compartiment : '-')
+  },
+  {
+    key: 'niveau',
+    label: 'Niveau',
+    ratio: 0.6,
+    accessor: ({ materiel }) => {
+      if (!materiel || materiel.niveau == null) return '-';
+      return String(materiel.niveau);
+    }
+  },
+  {
+    key: 'quantite',
+    label: 'Quantité',
+    ratio: 0.6,
+    accessor: ({ materielChantier }) =>
+      materielChantier && materielChantier.quantite != null
+        ? String(materielChantier.quantite)
+        : '0'
+  },
+  {
+    key: 'quantitePrevue',
+    label: 'Quantité prévue',
+    ratio: 0.9,
+    accessor: ({ materielChantier }) =>
+      materielChantier && materielChantier.quantitePrevue != null
+        ? String(materielChantier.quantitePrevue)
+        : '-'
+  },
+  {
+    key: 'datePrevue',
+    label: 'Date prévue',
+    ratio: 0.85,
+    accessor: ({ materielChantier }) =>
+      materielChantier && materielChantier.dateLivraisonPrevue
+        ? dayjs(materielChantier.dateLivraisonPrevue).format('YYYY-MM-DD')
+        : '-'
+  },
+  {
+    key: 'fournisseur',
+    label: 'Fournisseur',
+    ratio: 1,
+    accessor: ({ materiel }) => {
+      if (!materiel || !materiel.fournisseur) {
+        return '-';
+      }
+      const fournisseur = materiel.fournisseur;
+      return typeof fournisseur === 'string' ? fournisseur : fournisseur.nom || '-';
+    }
+  }
+];
+
+const DEFAULT_PDF_COLUMNS = [
+  'chantier',
+  'materiel',
+  'reference',
+  'categorie',
+  'description',
+  'emplacement',
+  'rack',
+  'compartiment',
+  'niveau',
+  'quantite'
+];
+
+function resolveSelectedPdfColumns(columns) {
+  if (!columns || (Array.isArray(columns) && columns.length === 0)) {
+    return [...DEFAULT_PDF_COLUMNS];
+  }
+
+  const rawValues = Array.isArray(columns)
+    ? columns
+    : String(columns)
+        .split(',')
+        .map(value => value.trim())
+        .filter(Boolean);
+
+  const normalizedSet = new Set();
+  rawValues.forEach(value => {
+    if (typeof value === 'string' && value.trim()) {
+      normalizedSet.add(value.trim());
+    }
+  });
+
+  const validColumns = PDF_COLUMN_DEFINITIONS.filter(def => normalizedSet.has(def.key)).map(
+    def => def.key
+  );
+
+  return validColumns.length > 0 ? validColumns : [...DEFAULT_PDF_COLUMNS];
+}
+
+async function fetchImageBuffer(photoPath) {
+  if (!photoPath) {
+    return null;
+  }
+
+  const isHttp = /^https?:\/\//i.test(photoPath);
+
+  if (isHttp) {
+    const client = photoPath.startsWith('https') ? https : http;
+    return new Promise(resolve => {
+      try {
+        client
+          .get(photoPath, response => {
+            if (!response || (response.statusCode && response.statusCode >= 400)) {
+              resolve(null);
+              return;
+            }
+
+            const chunks = [];
+            response
+              .on('data', chunk => chunks.push(chunk))
+              .on('end', () => resolve(Buffer.concat(chunks)))
+              .on('error', () => resolve(null));
+          })
+          .on('error', () => resolve(null));
+      } catch (error) {
+        resolve(null);
+      }
+    });
+  }
+
+  const relativePath = photoPath.startsWith('public') ? photoPath : path.join('public', photoPath);
+  const absolutePath = path.isAbsolute(photoPath)
+    ? photoPath
+    : path.join(__dirname, '..', relativePath);
+
+  try {
+    return await fs.promises.readFile(absolutePath);
+  } catch (error) {
+    return null;
+  }
+}
+
 // Configuration Multer pour les uploads de photos sur Cloudinary
 const upload = multer({ storage });
 
@@ -220,6 +423,11 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       emplacements,
       fournisseurs,
       categories,
+      pdfColumnDefinitions: PDF_COLUMN_DEFINITIONS.map(column => ({
+        key: column.key,
+        label: column.label
+      })),
+      defaultPdfColumns: DEFAULT_PDF_COLUMNS,
       ...activeFilters
     });
 
@@ -1397,15 +1605,6 @@ router.post('/:id/vider', ensureAuthenticated, checkAdmin, async (req, res) => {
 // 📦 Exportations professionnelles
 const PDFDocument = require('pdfkit');
 
-function construireCheminEmplacement(emplacement) {
-  const chemin = [];
-  let courant = emplacement;
-  while (courant) {
-    chemin.unshift(courant.nom);
-    courant = courant.parent;
-  }
-  return chemin.join(' > ');
-}
 
 router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
@@ -1540,12 +1739,10 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
 
 router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
-    const materiels = await MaterielChantier.findAll({
-      include: [
-        { model: Materiel, as: 'materiel', include: [{ model: Emplacement, as: 'emplacement', include: [{ model: Emplacement, as: 'parent' }] }] },
-        { model: Chantier, as: 'chantier' }
-      ]
-    });
+    const selectedColumnKeys = resolveSelectedPdfColumns(req.query.columns);
+    const activeColumns = PDF_COLUMN_DEFINITIONS.filter(def => selectedColumnKeys.includes(def.key));
+
+    const materielChantiers = await fetchMaterielChantiersWithFilters(req.query, { includePhotos: true });
 
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
     res.setHeader('Content-Disposition', 'attachment; filename=stock_chantiers.pdf');
@@ -1556,8 +1753,8 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
 
     const addWatermark = () => {
       try {
-        const boundingWidth = doc.page.width * 0.5;
-        const boundingHeight = doc.page.height * 0.5;
+        const boundingWidth = doc.page.width * 0.55;
+        const boundingHeight = doc.page.height * 0.55;
         const x = (doc.page.width - boundingWidth) / 2;
         const y = (doc.page.height - boundingHeight) / 2;
 
@@ -1597,31 +1794,72 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
     doc.fontSize(18).text('Inventaire Matériel par Chantier', { align: 'center' });
     doc.moveDown(1.5);
 
+    if (!materielChantiers.length) {
+      ensureWatermark();
+      doc.fontSize(11);
+      doc.fillColor('#2c2c2c');
+      doc.text('Aucun matériel ne correspond aux filtres sélectionnés.', {
+        align: 'center'
+      });
+      doc.end();
+      return;
+    }
+
     const availableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-    const columnRatios = [0.15, 0.15, 0.1, 0.1, 0.2, 0.12, 0.05, 0.05, 0.04, 0.04];
-    const colWidths = [];
-    let usedWidth = 0;
-    columnRatios.forEach((ratio, index) => {
-      if (index === columnRatios.length - 1) {
-        colWidths.push(availableWidth - usedWidth);
-      } else {
-        const width = Math.floor(availableWidth * ratio);
-        colWidths.push(width);
-        usedWidth += width;
-      }
-    });
-
-    const headers = [
-      'Chantier', 'Matériel', 'Référence', 'Catégorie',
-      'Description', 'Emplacement', 'Rack', 'Compartiment', 'Niveau', 'Quantité'
-    ];
-
     const tableLeft = doc.page.margins.left;
-    let y = doc.y;
     const bottom = doc.page.height - doc.page.margins.bottom;
     const cellPadding = 6;
     const headerFontSize = 9;
     const bodyFontSize = 8;
+    const rowStripeColor = '#F4F1FB';
+    const rowNeutralColor = null;
+    const photoLabelFontSize = 9;
+    const photoBoxSize = 74;
+    const photoGap = 12;
+    const photoBlockSpacing = 8;
+
+    const totalRatio = activeColumns.reduce((sum, col) => sum + (col.ratio || 1), 0) || 1;
+    let usedWidth = 0;
+    const colWidths = activeColumns.map((col, index) => {
+      if (index === activeColumns.length - 1) {
+        return Math.max(availableWidth - usedWidth, 60);
+      }
+      const ratio = col.ratio || 1;
+      const width = Math.floor((availableWidth * ratio) / totalRatio);
+      usedWidth += width;
+      return Math.max(width, 60);
+    });
+
+    const headers = activeColumns.map(col => col.label);
+
+    const photosPerRow = Math.max(
+      1,
+      Math.floor((availableWidth - cellPadding * 2) / (photoBoxSize + photoGap))
+    );
+
+    const getPhotoLabelHeight = () => {
+      doc.save();
+      doc.font('Helvetica-Bold');
+      doc.fontSize(photoLabelFontSize);
+      const height = doc.heightOfString('Photos', { width: availableWidth });
+      doc.restore();
+      return height;
+    };
+
+    const photoLabelHeight = getPhotoLabelHeight();
+
+    const estimatePhotoBlockHeight = count => {
+      if (!count) {
+        return 0;
+      }
+      const rows = Math.ceil(count / photosPerRow);
+      if (!rows) {
+        return 0;
+      }
+      return photoLabelHeight + 6 + rows * photoBoxSize + (rows - 1) * photoGap + 8;
+    };
+
+    let y = doc.y;
 
     const getRowHeight = (row, { header = false } = {}) => {
       doc.save();
@@ -1639,7 +1877,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
       return Math.max(maxHeight + cellPadding * 2, header ? 24 : 20);
     };
 
-    const drawRow = (row, yPosition, { header = false, index = 0, rowHeight } = {}) => {
+    const drawRow = (row, startY, { header = false, index = 0, rowHeight } = {}) => {
       const height = rowHeight ?? getRowHeight(row, { header });
       let x = tableLeft;
 
@@ -1648,13 +1886,13 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         const background = header
           ? '#ECEFF7'
           : index % 2 === 1
-            ? '#F8F9FB'
-            : null;
+            ? rowStripeColor
+            : rowNeutralColor;
 
         if (background) {
           doc.save();
           doc.fillColor(background);
-          doc.rect(x, yPosition, width, height).fill();
+          doc.rect(x, startY, width, height).fill();
           doc.restore();
         }
 
@@ -1672,14 +1910,14 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         doc.save();
         doc.lineWidth(0.5);
         doc.strokeColor('#CDD4E0');
-        doc.rect(x, yPosition, width, height).stroke();
+        doc.rect(x, startY, width, height).stroke();
         doc.restore();
 
         doc.save();
         doc.font(header ? 'Helvetica-Bold' : 'Helvetica');
         doc.fontSize(header ? headerFontSize : bodyFontSize);
-        doc.fillColor('#000000');
-        doc.text(value, x + cellPadding, yPosition + cellPadding, {
+        doc.fillColor('#1F1B2E');
+        doc.text(value, x + cellPadding, startY + cellPadding, {
           width: width - cellPadding * 2,
           height: height - cellPadding * 2,
           align: 'left',
@@ -1695,51 +1933,148 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
     };
 
     const headerHeight = getRowHeight(headers, { header: true });
-    y += drawRow(headers, y, { header: true, rowHeight: headerHeight });
+
+    const drawHeaderRow = ({ resetToTop = false } = {}) => {
+      const startY = resetToTop ? doc.page.margins.top : y;
+      const height = drawRow(headers, startY, { header: true, rowHeight: headerHeight });
+      y = startY + height;
+    };
+
+    const ensureSpace = requiredHeight => {
+      if (y + requiredHeight <= bottom) {
+        return;
+      }
+
+      doc.addPage();
+      scheduleWatermark();
+      doc.opacity(1);
+      doc.fillColor('black');
+      drawHeaderRow({ resetToTop: true });
+    };
+
+    const drawPhotosBlock = async photos => {
+      if (!photos || !photos.length) {
+        return 0;
+      }
+
+      const startY = y;
+      const loadedEntries = [];
+      for (const photo of photos) {
+        const buffer = await fetchImageBuffer(photo.chemin);
+        loadedEntries.push({ buffer, chemin: photo.chemin });
+      }
+
+      const availableEntries = loadedEntries.filter(entry => entry.buffer);
+      let blockHeight;
+
+      if (availableEntries.length > 0) {
+        const rows = Math.ceil(availableEntries.length / photosPerRow);
+        blockHeight = photoLabelHeight + 6 + rows * photoBoxSize + (rows - 1) * photoGap + 8;
+      } else {
+        doc.save();
+        doc.font('Helvetica-Oblique');
+        doc.fontSize(bodyFontSize);
+        const fallbackText = 'Photos indisponibles pour cet élément.';
+        const fallbackHeight = doc.heightOfString(fallbackText, { width: availableWidth });
+        doc.restore();
+        blockHeight = photoLabelHeight + 6 + fallbackHeight + 4;
+      }
+
+      ensureSpace(blockHeight);
+      ensureWatermark();
+
+      doc.save();
+      doc.font('Helvetica-Bold');
+      doc.fontSize(photoLabelFontSize);
+      doc.fillColor('#2F2644');
+      doc.text('Photos', tableLeft, y, { width: availableWidth });
+      doc.restore();
+
+      let currentX = tableLeft;
+      let currentY = y + photoLabelHeight + 6;
+
+      if (!availableEntries.length) {
+        const fallbackText = 'Photos indisponibles pour cet élément.';
+        doc.save();
+        doc.font('Helvetica-Oblique');
+        doc.fontSize(bodyFontSize);
+        doc.fillColor('#6B6585');
+        doc.text(fallbackText, tableLeft, currentY, { width: availableWidth });
+        doc.restore();
+        y = startY + blockHeight;
+        return blockHeight;
+      }
+
+      const framePadding = 4;
+
+      availableEntries.forEach((entry, index) => {
+        if (index > 0 && index % photosPerRow === 0) {
+          currentX = tableLeft;
+          currentY += photoBoxSize + photoGap;
+        }
+
+        doc.save();
+        doc.roundedRect(
+          currentX - framePadding / 2,
+          currentY - framePadding / 2,
+          photoBoxSize + framePadding,
+          photoBoxSize + framePadding,
+          6
+        )
+          .strokeColor('#D9DFF0')
+          .lineWidth(0.5)
+          .stroke();
+
+        doc.image(entry.buffer, currentX, currentY, {
+          fit: [photoBoxSize, photoBoxSize],
+          align: 'center',
+          valign: 'center'
+        });
+        doc.restore();
+
+        currentX += photoBoxSize + photoGap;
+      });
+
+      y = startY + blockHeight;
+      return blockHeight;
+    };
+
+    drawHeaderRow();
 
     let rowIndex = 0;
-    for (const m of materiels) {
-      const mat = m.materiel;
-      const chantier = m.chantier;
+    for (const materielChantier of materielChantiers) {
+      const materiel = materielChantier.materiel || null;
+      const chantier = materielChantier.chantier || null;
+      const columnValues = activeColumns.map(column =>
+        column.accessor({
+          materiel,
+          chantier,
+          materielChantier
+        })
+      );
 
-      const emplacement = mat?.emplacement;
-      const chemin = [];
-      let courant = emplacement;
-      while (courant) {
-        chemin.unshift(courant.nom);
-        courant = courant.parent;
+      const rowHeight = getRowHeight(columnValues, { header: false });
+      const photos = Array.isArray(materiel?.photos) ? materiel.photos : [];
+      const estimatedPhotosHeight = estimatePhotoBlockHeight(photos.length);
+      const requiredHeight = rowHeight + (estimatedPhotosHeight ? estimatedPhotosHeight + photoBlockSpacing : 0);
+
+      ensureSpace(requiredHeight);
+
+      const drawnHeight = drawRow(columnValues, y, { index: rowIndex, rowHeight });
+      y += drawnHeight;
+
+      if (photos.length) {
+        y += photoBlockSpacing / 2;
+        await drawPhotosBlock(photos);
+        y += photoBlockSpacing / 2;
       }
 
-      const values = [
-        chantier?.nom || 'N/A',
-        mat?.nom || 'N/A',
-        mat?.reference || '-',
-        mat?.categorie || '-',
-        mat?.description || '-',
-        chemin.join(' > ') || '-',
-        mat?.rack || '-',
-        mat?.compartiment || '-',
-        mat?.niveau != null ? String(mat.niveau) : '-',
-        m.quantite != null ? String(m.quantite) : '0'
-      ];
-
-      const rowHeight = getRowHeight(values, { header: false });
-      if (y + rowHeight > bottom) {
-        doc.addPage();
-        scheduleWatermark();
-        doc.opacity(1);
-        doc.fillColor('black');
-        y = doc.page.margins.top;
-        y += drawRow(headers, y, { header: true, rowHeight: headerHeight });
-      }
-
-      y += drawRow(values, y, { index: rowIndex, rowHeight });
-      rowIndex++;
+      rowIndex += 1;
     }
 
     doc.end();
   } catch (err) {
-    console.error(err);
+    console.error('Erreur lors de la génération du PDF chantier:', err);
     res.status(500).send('Erreur lors de la génération du PDF.');
   }
 });
