@@ -301,7 +301,15 @@ select#emplacementId.form-control {
       <div class="mb-3">
         <label for="dateLivraisonPrevue" class="form-label">Date de livraison prévue</label>
         <div class="input-group">
-          <span class="input-group-text">📅</span>
+          <span
+            class="input-group-text"
+            id="dateLivraisonPrevueIcon"
+            role="button"
+            tabindex="0"
+            aria-label="Ouvrir le sélecteur de date"
+          >
+            📅
+          </span>
           <input type="date" name="dateLivraisonPrevue" id="dateLivraisonPrevue" class="form-control">
         </div>
       </div>
@@ -440,6 +448,25 @@ select#emplacementId.form-control {
             fournisseurSelect.value = val;
           });
         }
+      }
+      const dateInput = document.getElementById('dateLivraisonPrevue');
+      const dateIconTrigger = document.getElementById('dateLivraisonPrevueIcon');
+      if (dateIconTrigger && dateInput) {
+        dateIconTrigger.style.cursor = 'pointer';
+        const openDatePicker = () => {
+          if (typeof dateInput.showPicker === 'function') {
+            dateInput.showPicker();
+          } else {
+            dateInput.focus();
+          }
+        };
+        dateIconTrigger.addEventListener('click', openDatePicker);
+        dateIconTrigger.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openDatePicker();
+          }
+        });
       }
       const categorieSelect = document.getElementById('categorieSelect');
       const addBtn = document.getElementById('addCategoryBtn');
