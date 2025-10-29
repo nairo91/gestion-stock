@@ -751,11 +751,9 @@
 
   <%
     const exportParams = [];
-    const exportParamPairs = [];
     const pushParam = (key, value) => {
       if (value !== undefined && value !== null && value !== '') {
         exportParams.push(`${key}=${encodeURIComponent(value)}`);
-        exportParamPairs.push({ key, value });
       }
     };
     pushParam('chantierId', chantierId);
@@ -771,9 +769,7 @@
     const exportQuery = exportParams.length ? `?${exportParams.join('&')}` : '';
   %>
 
-  <button type="button" class="btn btn-danger mb-3" data-bs-toggle="modal" data-bs-target="#pdfExportModal">
-    📄 Exporter en PDF
-  </button>
+  <a href="/chantier/export-pdf<%= exportQuery %>" class="btn btn-danger mb-3">📄 Exporter en PDF</a>
   <a href="/chantier/export-excel<%= exportQuery %>" class="btn btn-primary mb-3">📊 Exporter en Excel</a>
 
   <!-- Bouton d'importation Excel pour préremplir le stock d'un chantier -->
@@ -1238,119 +1234,6 @@
 
       document.querySelectorAll('.table-stock .col-actions').forEach((cell) => {
         cell.classList.remove('hidden-column');
-      });
-    })();
-  </script>
-
-  <% const pdfColumns = Array.isArray(pdfColumnDefinitions) ? pdfColumnDefinitions : []; %>
-  <% const defaultPdfCols = Array.isArray(defaultPdfColumns) ? defaultPdfColumns : []; %>
-  <% const midIndex = Math.ceil(pdfColumns.length / 2) || 0; %>
-  <% const pdfColumnGroups = [pdfColumns.slice(0, midIndex), pdfColumns.slice(midIndex)]; %>
-
-  <div class="modal fade" id="pdfExportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <form class="modal-content" id="pdfExportForm" action="/chantier/export-pdf" method="GET">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title">Exporter en PDF</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-        </div>
-        <div class="modal-body">
-          <p class="mb-3">Choisissez les colonnes à inclure dans l'export PDF pour le matériel sélectionné.</p>
-          <div class="row g-3">
-            <% pdfColumnGroups.forEach(function(group, groupIndex) { %>
-              <div class="col-md-6">
-                <% group.forEach(function(column) { %>
-                  <div class="form-check">
-                    <input
-                      class="form-check-input pdf-column-option"
-                      type="checkbox"
-                      name="columns"
-                      id="pdf-col-<%= column.key %>"
-                      value="<%= column.key %>"
-                      <%= defaultPdfCols.includes(column.key) ? 'checked' : '' %>
-                    >
-                    <label class="form-check-label" for="pdf-col-<%= column.key %>">
-                      <%= column.label %>
-                    </label>
-                  </div>
-                <% }); %>
-              </div>
-            <% }); %>
-          </div>
-          <p class="small text-muted mt-3">
-            Les photos associées à chaque matériel seront automatiquement intégrées sous la ligne correspondante.
-          </p>
-        </div>
-        <div class="modal-footer justify-content-between">
-          <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-link text-decoration-none" id="pdfColumnsSelectAll">Tout sélectionner</button>
-            <button type="button" class="btn btn-link text-decoration-none" id="pdfColumnsClear">Effacer</button>
-          </div>
-          <div>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-danger">Exporter</button>
-          </div>
-        </div>
-        <div class="d-none">
-          <% exportParamPairs.forEach(function(param) { %>
-            <input type="hidden" name="<%= param.key %>" value="<%= param.value %>">
-          <% }); %>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script nonce="<%= nonce %>">
-    (function () {
-      const modal = document.getElementById('pdfExportModal');
-      if (!modal) {
-        return;
-      }
-
-      const form = modal.querySelector('#pdfExportForm');
-      const selectAllBtn = modal.querySelector('#pdfColumnsSelectAll');
-      const clearBtn = modal.querySelector('#pdfColumnsClear');
-      const checkboxes = Array.from(modal.querySelectorAll('.pdf-column-option'));
-      const defaultColumns = <%- JSON.stringify(defaultPdfCols) %>;
-
-      const restoreDefaults = () => {
-        checkboxes.forEach(checkbox => {
-          checkbox.checked = defaultColumns.includes(checkbox.value);
-        });
-      };
-
-      selectAllBtn?.addEventListener('click', event => {
-        event.preventDefault();
-        checkboxes.forEach(checkbox => {
-          checkbox.checked = true;
-        });
-      });
-
-      clearBtn?.addEventListener('click', event => {
-        event.preventDefault();
-        checkboxes.forEach(checkbox => {
-          checkbox.checked = false;
-        });
-      });
-
-      modal.addEventListener('show.bs.modal', () => {
-        if (!checkboxes.some(checkbox => checkbox.checked)) {
-          restoreDefaults();
-        }
-      });
-
-      form?.addEventListener('submit', event => {
-        if (checkboxes.some(checkbox => checkbox.checked)) {
-          return;
-        }
-
-        event.preventDefault();
-        restoreDefaults();
-        if (typeof form.requestSubmit === 'function') {
-          form.requestSubmit();
-        } else {
-          form.submit();
-        }
       });
     })();
   </script>
