@@ -5,11 +5,233 @@
   <meta charset="UTF-8">
   <title>Modifier l'enregistrement du chantier</title>
   <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <style>
+    body {
+      background: radial-gradient(circle at top, #381b63 0%, #1a082f 35%, #0d041c 100%);
+      color: #f0eaff;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    .page-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 2rem;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1.5rem 2rem;
+      background: linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(93, 63, 211, 0.35));
+      border: 1px solid rgba(150, 122, 255, 0.2);
+      border-radius: 1rem;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 20px 45px rgba(25, 8, 52, 0.45);
+      margin-bottom: 2rem;
+    }
+
+    .page-header img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+    }
+
+    .page-header h1 {
+      font-size: 1.85rem;
+      margin: 0;
+      color: #f7f3ff;
+      font-weight: 700;
+    }
+
+    .form-card {
+      background: linear-gradient(160deg, rgba(36, 15, 64, 0.92), rgba(25, 9, 47, 0.95));
+      border-radius: 1rem;
+      box-shadow: 0 25px 55px rgba(8, 2, 20, 0.65);
+      padding: 2.5rem;
+      border: 1px solid rgba(138, 110, 214, 0.35);
+    }
+
+    h2 {
+      font-size: 1.65rem;
+      margin-bottom: 1.5rem;
+      color: #d9c7ff;
+      font-weight: 600;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #c8b3ff;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 0.5rem;
+      border: 1px solid rgba(151, 130, 211, 0.45);
+      background-color: rgba(18, 6, 35, 0.85);
+      color: #ffffff;
+      height: calc(1.5em + 1.2rem + 2px);
+      padding: 0.6rem 0.85rem;
+      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+      caret-color: #ffffff;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: #9f7aea;
+      box-shadow: 0 0 0 0.25rem rgba(159, 122, 234, 0.25);
+      background-color: rgba(26, 11, 46, 0.9);
+      color: #ffffff;
+    }
+
+    .form-control option,
+    .form-select option {
+      background-color: #23103f;
+      color: #ffffff;
+    }
+
+    .form-select option:checked,
+    .form-select option:hover,
+    .form-control option:checked,
+    .form-control option:hover {
+      background-color: #3a1f6d;
+      color: #ffffff;
+    }
+
+    .form-text {
+      color: #bba7ff;
+    }
+
+    .text-muted {
+      color: rgba(230, 219, 255, 0.65) !important;
+    }
+
+    .input-group-text,
+    .input-group-button {
+      background-color: rgba(88, 63, 143, 0.6);
+      border: 1px solid rgba(151, 130, 211, 0.45);
+      color: #f0eaff;
+    }
+
+    .btn-outline-secondary {
+      color: #e2d7ff;
+      border-color: rgba(159, 122, 234, 0.45);
+      background: rgba(113, 84, 187, 0.15);
+    }
+
+    .btn-outline-secondary:hover,
+    .btn-outline-secondary:focus {
+      color: #ffffff;
+      background: rgba(159, 122, 234, 0.35);
+      border-color: rgba(159, 122, 234, 0.65);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #8f5cf3, #5b34c2);
+      border-color: #5b34c2;
+      font-weight: 600;
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      box-shadow: 0 12px 25px rgba(94, 52, 194, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-success:hover {
+      background: linear-gradient(135deg, #a77bff, #6b3fdd);
+      transform: translateY(-1px);
+      box-shadow: 0 18px 35px rgba(94, 52, 194, 0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(113, 84, 187, 0.25);
+      border: 1px solid rgba(159, 122, 234, 0.35);
+      color: #d8c8ff;
+      font-weight: 500;
+      border-radius: 999px;
+      transition: background-color 0.2s, color 0.2s, transform 0.2s;
+    }
+
+    .btn-secondary:hover,
+    .btn-secondary:focus {
+      background: rgba(159, 122, 234, 0.35);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #a023c0, #6b197a);
+      border-color: #6b197a;
+      color: #fff;
+      border-radius: 999px;
+      box-shadow: 0 12px 25px rgba(108, 25, 122, 0.35);
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #c446df, #7a2191);
+      border-color: #7a2191;
+    }
+
+    a.btn-secondary {
+      text-decoration: none;
+      margin-top: 1rem;
+    }
+
+    a.btn-secondary:hover {
+      text-decoration: none;
+    }
+
+    #preview-container p {
+      color: #c8b3ff;
+      font-weight: 500;
+    }
+
+    #preview-container img {
+      max-width: 320px;
+      width: 100%;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(151, 130, 211, 0.35);
+      box-shadow: 0 12px 24px rgba(8, 2, 20, 0.55);
+    }
+
+    #preview-container .current-photo {
+      margin-top: 0.75rem;
+    }
+
+    #preview-image {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    select#emplacementId.form-control {
+      background-color: rgba(18, 6, 35, 0.85);
+    }
+
+    @media (max-width: 576px) {
+      .form-card {
+        padding: 1.5rem;
+      }
+
+      .page-header {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="container mt-3">
-    <h2>Modifier l'enregistrement pour <%= mc.materiel.nom %> dans le chantier <%= mc.chantier.nom %></h2>
-    <form id="modifForm" action="/chantier/materielChantier/modifier/<%= mc.id %>" method="POST" enctype="multipart/form-data">
+  <div class="page-wrapper">
+    <header class="page-header">
+      <img src="/images/logo.png" alt="Logo Gestion Stock">
+      <div>
+        <h1>Modifier un matériel du chantier</h1>
+        <p class="mb-0 text-muted">Ajustez les informations de <strong><%= mc.materiel.nom %></strong> pour le chantier
+          <strong><%= mc.chantier.nom %></strong>.</p>
+      </div>
+    </header>
+    <div class="form-card">
+      <h2>Modifier l'enregistrement</h2>
+      <form id="modifForm" action="/chantier/materielChantier/modifier/<%= mc.id %>" method="POST" enctype="multipart/form-data">
 
       <div class="mb-3">
   <label for="categorieSelect" class="form-label">Catégorie</label>
@@ -50,7 +272,9 @@
       <div class="mb-3">
         <label for="dateLivraisonPrevue" class="form-label">Date de livraison prévue</label>
         <div class="input-group">
-          <span class="input-group-text">📅</span>
+          <button type="button" class="input-group-text input-group-button" id="datePickerButton" aria-label="Choisir une date">
+            📅
+          </button>
           <input type="date" name="dateLivraisonPrevue" id="dateLivraisonPrevue" class="form-control" value="<%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '' %>">
         </div>
       </div>
@@ -152,16 +376,19 @@
       <div id="preview-container" class="mt-3">
         <% if (mc.materiel.photos && mc.materiel.photos.length > 0) { %>
           <p>Photo actuelle :</p>
-          <img src="<%= mc.materiel.photos[0].chemin %>" alt="Photo actuelle de <%= mc.materiel.nom %>" style="max-width: 300px; border: 1px solid #ccc;">
+          <img src="<%= mc.materiel.photos[0].chemin %>" alt="Photo actuelle de <%= mc.materiel.nom %>" class="current-photo">
         <% } %>
-        
+
         <!--<p class="mt-2">Aperçu de la nouvelle photo :</p>-->
-        <img id="preview-image" src="#" alt="Aperçu de la nouvelle photo" style="max-width: 300px; display: none; border: 1px solid #ccc;" />
+        <img id="preview-image" src="#" alt="Aperçu de la nouvelle photo" />
       </div>
 
-      <button type="submit" class="btn btn-success mt-4">Enregistrer</button>
-      <a href="/chantier" class="btn btn-secondary mt-4">Retour</a>
+      <div class="d-flex flex-wrap gap-3 mt-4">
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+        <a href="/chantier" class="btn btn-secondary">Retour</a>
+      </div>
     </form>
+    </div>
   </div>
 
   <% if (user && user.role === 'admin') { %>
@@ -188,6 +415,8 @@
   document.addEventListener('DOMContentLoaded', function () {
     const inputPhoto = document.getElementById('photo');
     const previewImage = document.getElementById('preview-image');
+    const dateInput = document.getElementById('dateLivraisonPrevue');
+    const datePickerButton = document.getElementById('datePickerButton');
 
     if (inputPhoto) {
       inputPhoto.addEventListener('change', function () {
@@ -202,6 +431,23 @@
         } else {
           previewImage.src = '#';
           previewImage.style.display = 'none';
+        }
+      });
+    }
+
+    if (datePickerButton && dateInput) {
+      const openDatePicker = () => {
+        if (typeof dateInput.showPicker === 'function') {
+          dateInput.showPicker();
+        } else {
+          dateInput.focus();
+        }
+      };
+      datePickerButton.addEventListener('click', openDatePicker);
+      datePickerButton.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDatePicker();
         }
       });
     }
