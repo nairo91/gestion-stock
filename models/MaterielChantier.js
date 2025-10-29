@@ -37,6 +37,16 @@ const MaterielChantier = sequelize.define(
       allowNull: true,
     },
 
+    deliveryReminderSentAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    deliveryReminderFollowUpSentAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
     remarque: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -59,6 +69,8 @@ const MaterielChantier = sequelize.define(
     indexes: [
       { fields: ['barcode'] },
       { unique: true, fields: ['qr_code_value'] },
+      { fields: ['deliveryReminderSentAt'] },
+      { fields: ['deliveryReminderFollowUpSentAt'] },
     ],
   }
 );
