@@ -4,141 +4,284 @@
   <meta charset="UTF-8" />
   <title>Dashboard – Gestion de stock</title>
 
-  <!-- Si tu utilises déjà un CSS global, garde ton include habituel -->
+  <!-- Ton CSS global habituel -->
   <link rel="stylesheet" href="/css/style.css" />
 
   <style>
-    .dashboard-container {
-      max-width: 1200px;
+    /* ——— Layout global dashboard ——— */
+    .dashboard-page {
+      min-height: 100vh;
+      background: #f3f4f8;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #1f2933;
+    }
+
+    .dashboard-shell {
+      max-width: 1240px;
       margin: 0 auto;
-      padding: 1.5rem;
+      padding: 1.75rem 1.25rem 2.5rem;
     }
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1rem;
+
+    /* ——— Header ——— */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
     }
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+
+    .dashboard-title-block h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin: 0 0 .25rem;
     }
-    .card h2, .card h3 {
-      font-size: 1.1rem;
-      margin-bottom: 0.75rem;
+
+    .dashboard-title-block p {
+      margin: 0;
+      color: #6b7280;
+      font-size: .9rem;
     }
-    .muted {
-      color: #777;
-      font-size: 0.9rem;
+
+    .dashboard-user {
+      font-size: .85rem;
+      color: #9ca3af;
     }
-    .pill {
-      display: inline-block;
-      padding: 0.15rem 0.5rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      background: #eee;
-    }
-    .pill-danger {
-      background: #ffdddd;
-      color: #b30000;
-    }
-    .pill-ok {
-      background: #ddffdd;
-      color: #006600;
-    }
-    .btn-row {
+
+    /* ——— Barre d’actions ——— */
+    .dashboard-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
+      gap: .5rem;
+      margin-bottom: 1.75rem;
     }
+
     .btn {
-      display: inline-block;
-      padding: 0.35rem 0.7rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .45rem .9rem;
+      border-radius: .55rem;
+      font-size: .85rem;
+      font-weight: 500;
       text-decoration: none;
-      border: 1px solid #007bff;
-      color: #007bff;
-      background: #fff;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all .15s ease-out;
+      white-space: nowrap;
     }
+
     .btn-primary {
-      background: #007bff;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
       color: #fff;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, .25);
+      border-color: rgba(37, 99, 235, 0.9);
     }
-    .btn-outline {
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(37, 99, 235, .28);
+    }
+
+    .btn-ghost {
       background: #fff;
-      color: #007bff;
+      color: #2563eb;
+      border-color: #d1d5db;
     }
+    .btn-ghost:hover {
+      background: #eff6ff;
+      border-color: #2563eb;
+    }
+
+    /* ——— Grille de cartes ——— */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: .9rem;
+      padding: 1rem 1.1rem 1.15rem;
+      box-shadow: 0 12px 26px rgba(15, 23, 42, .05);
+      border: 1px solid #e5e7eb;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: .65rem;
+    }
+
+    .card-title {
+      font-size: .95rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    .card-subtitle {
+      font-size: .75rem;
+      color: #9ca3af;
+    }
+
+    /* ——— Badges / pills ——— */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      font-size: .72rem;
+      padding: .15rem .55rem;
+      border-radius: 999px;
+      background: #e5e7eb;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .pill-danger {
+      background: #ffe4e6;
+      color: #b91c1c;
+    }
+
+    .pill-ok {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    /* ——— Tableaux compacts ——— */
     .table-compact {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.85rem;
+      font-size: .8rem;
     }
     .table-compact th,
     .table-compact td {
-      border-bottom: 1px solid #eee;
-      padding: 0.35rem 0.4rem;
+      border-bottom: 1px solid #f1f2f6;
+      padding: .3rem .2rem;
       text-align: left;
     }
     .table-compact th {
       font-weight: 600;
-      background: #fafafa;
+      color: #6b7280;
+      background: #f9fafb;
     }
-    .section-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
+    .table-compact a {
+      color: #2563eb;
+      text-decoration: none;
     }
-    .section-title small {
-      font-size: 0.8rem;
-      color: #777;
+    .table-compact a:hover {
+      text-decoration: underline;
     }
-    canvas {
+
+    .muted {
+      color: #9ca3af;
+      font-size: .8rem;
+    }
+
+    /* ——— Section graphique ——— */
+    .card-chart {
+      margin-bottom: 1.25rem;
+    }
+    #mouvementsChart {
       max-width: 100%;
-      height: 260px;
+      height: 280px;
     }
+
+    /* ——— Grille secondaire ——— */
+    .dashboard-grid-secondary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (max-width: 900px) {
+      .dashboard-grid-secondary {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    /* ——— Derniers mouvements ——— */
+    .history-table-wrapper {
+      margin-top: .5rem;
+      overflow-x: auto;
+    }
+
+    /* ——— Liens boutons dans cartes ——— */
+    .card-actions {
+      margin-top: .7rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+
   </style>
 </head>
-<body>
-  <div class="dashboard-container">
-    <header style="margin-bottom: 1.5rem;">
-      <div class="section-title">
+<body class="dashboard-page">
+  <div class="dashboard-shell">
+    <!-- HEADER -->
+    <header class="dashboard-header">
+      <div class="dashboard-title-block">
         <h1>Dashboard stock & chantiers</h1>
-        <div class="muted">
-          Bonjour <%= user && user.nom ? user.nom : 'utilisateur' %>
-        </div>
+        <p>Vue synthétique de l’activité du dépôt, des véhicules et des chantiers.</p>
       </div>
-
-      <div class="btn-row">
-        <a href="/scan" class="btn btn-primary">📷 Scan QR / code-barres</a>
-        <a href="/bonLivraison/ajouter" class="btn btn-outline">➕ Bon de livraison</a>
-        <a href="/transferts/entree" class="btn btn-outline">🔁 Transfert (entrée)</a>
-        <a href="/transferts/sortie" class="btn btn-outline">🔁 Transfert (sortie)</a>
+      <div class="dashboard-user">
+        Bonjour <strong><%= user && user.nom ? user.nom : 'utilisateur' %></strong>
       </div>
     </header>
 
-    <!-- Ligne 1 : Alertes / Dépôt / Véhicules -->
-    <section class="dashboard-grid" style="margin-bottom: 1rem;">
+    <!-- ACTIONS -->
+    <div class="dashboard-actions">
+      <a href="/scan" class="btn btn-primary">
+        📷 <span>Scan QR / code-barres</span>
+      </a>
+      <a href="/bonLivraison/ajouter" class="btn btn-ghost">
+        ➕ <span>Bon de livraison</span>
+      </a>
+      <a href="/transferts/entree" class="btn btn-ghost">
+        🔁 <span>Transfert (entrée)</span>
+      </a>
+      <a href="/transferts/sortie" class="btn btn-ghost">
+        🔁 <span>Transfert (sortie)</span>
+      </a>
+    </div>
+
+    <!-- LIGNE 1 : alertes / dépôt / véhicules -->
+    <section class="dashboard-grid">
       <!-- Alertes -->
-      <div class="card">
-        <div class="section-title">
-          <h2>🔔 Alertes</h2>
-          <small>Stock critique & anomalies</small>
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🔔 Alertes</span>
+          </div>
+          <div class="card-subtitle">
+            Stock critique & anomalies
+          </div>
         </div>
 
         <% if (lowStock && lowStock.length > 0) { %>
           <p>
             <span class="pill pill-danger">
-              <%= lowStock.length %> matériel(s) en dessous de <%= lowStockThreshold %>
+              <strong><%= lowStock.length %></strong> matériel(s) &lt; <%= lowStockThreshold %>
             </span>
           </p>
           <table class="table-compact">
             <thead>
               <tr>
                 <th>Nom</th>
-                <th>Quantité</th>
+                <th>Qté</th>
               </tr>
             </thead>
             <tbody>
@@ -155,76 +298,99 @@
             </tbody>
           </table>
         <% } else { %>
-          <p><span class="pill pill-ok">Aucune alerte de stock critique</span></p>
+          <p class="muted">
+            <span class="pill pill-ok">Aucune alerte de stock critique</span>
+          </p>
         <% } %>
-      </div>
+      </article>
 
       <!-- Stock dépôt -->
-      <div class="card">
-        <div class="section-title">
-          <h2>📦 Stock dépôt</h2>
-          <small>Vue globale</small>
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title">
+            📦 Stock dépôt
+          </div>
+          <div class="card-subtitle">
+            Vue globale
+          </div>
         </div>
         <p>
           <strong><%= depotStats.count %></strong> lignes de matériel en dépôt<br />
-          Valeur estimée : <strong><%= depotStats.value.toFixed(2) %> €</strong>
+          Valeur estimée :
+          <strong><%= depotStats.value.toFixed(2) %> €</strong>
         </p>
-        <div class="btn-row">
-          <a href="/materiel" class="btn btn-outline">Voir le dépôt</a>
-          <a href="/materiel/export/excel" class="btn btn-outline">Export Excel</a>
-          <a href="/materiel/export/pdf" class="btn btn-outline">Export PDF</a>
+        <div class="card-actions">
+          <a href="/materiel" class="btn btn-ghost">Voir le dépôt</a>
+          <a href="/materiel/export/excel" class="btn btn-ghost">Export Excel</a>
+          <a href="/materiel/export/pdf" class="btn btn-ghost">Export PDF</a>
         </div>
-      </div>
+      </article>
 
       <!-- Véhicules -->
-      <div class="card">
-        <div class="section-title">
-          <h2>🚚 Véhicules</h2>
-          <small>Stock embarqué</small>
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title">
+            🚚 Véhicules
+          </div>
+          <div class="card-subtitle">
+            Stock embarqué
+          </div>
         </div>
         <p>
-          <strong><%= vehiculeStats.count %></strong> véhicule(s)<br />
+          <strong><%= vehiculeStats.count %></strong> véhicule(s) suivis<br />
           <strong><%= vehiculeStats.materiels %></strong> lignes de matériel dans les véhicules
         </p>
-        <div class="btn-row">
-          <a href="/vehicule" class="btn btn-outline">Voir le stock véhicules</a>
-          <a href="/vehicule/ajouter-vehicule" class="btn btn-outline">Ajouter un véhicule</a>
+        <div class="card-actions">
+          <a href="/vehicule" class="btn btn-ghost">Voir le stock véhicules</a>
+          <a href="/vehicule/ajouter-vehicule" class="btn btn-ghost">Ajouter un véhicule</a>
         </div>
-      </div>
+      </article>
     </section>
 
-    <!-- Graphique -->
-    <section class="card" style="margin-bottom: 1rem;">
-      <div class="section-title">
-        <h2>📊 Entrées / Sorties récentes</h2>
-        <small>Basé sur l’historique</small>
+    <!-- GRAPHIQUE -->
+    <section class="card card-chart">
+      <div class="card-header">
+        <div class="card-title">
+          📊 Entrées / Sorties récentes
+        </div>
+        <div class="card-subtitle">
+          Basé sur l’historique
+        </div>
       </div>
       <canvas id="mouvementsChart"></canvas>
     </section>
 
-    <!-- Ligne 2 : Chantiers & matériels les plus utilisés (simple) -->
-    <section class="dashboard-grid" style="margin-bottom: 1rem;">
+    <!-- LIGNE 2 : chantiers / top récents -->
+    <section class="dashboard-grid-secondary">
       <!-- Chantiers -->
-      <div class="card">
-        <div class="section-title">
-          <h2>🏗️ Chantiers</h2>
-          <small>Vue rapide</small>
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title">
+            🏗️ Chantiers
+          </div>
+          <div class="card-subtitle">
+            Vue rapide
+          </div>
         </div>
         <p>
           <strong><%= chantierStats.count %></strong> chantier(s) référencé(s)<br />
           <strong><%= chantierStats.materiels %></strong> lignes de matériel sur chantier
         </p>
-        <div class="btn-row">
-          <a href="/chantier" class="btn btn-outline">Inventaire chantiers</a>
-          <a href="/emplacements" class="btn btn-outline">Emplacements chantiers</a>
+        <div class="card-actions">
+          <a href="/chantier" class="btn btn-ghost">Inventaire chantiers</a>
+          <a href="/emplacements" class="btn btn-ghost">Emplacements chantiers</a>
         </div>
-      </div>
+      </article>
 
-      <!-- Placeholder "Top matériels" (simple liste depuis l’historique) -->
-      <div class="card">
-        <div class="section-title">
-          <h2>📈 Matériels récemment mouvementés</h2>
-          <small>Top récent (simple)</small>
+      <!-- Matériels récemment mouvementés -->
+      <article class="card">
+        <div class="card-header">
+          <div class="card-title">
+            📈 Matériels récemment mouvementés
+          </div>
+          <div class="card-subtitle">
+            Derniers flux
+          </div>
         </div>
         <% if (derniersMouvements && derniersMouvements.length > 0) { %>
           <ul class="muted">
@@ -241,49 +407,57 @@
         <% } else { %>
           <p class="muted">Pas encore de mouvements enregistrés.</p>
         <% } %>
-      </div>
+      </article>
     </section>
 
-    <!-- Derniers mouvements -->
+    <!-- DERNIERS MOUVEMENTS COMPLETS -->
     <section class="card">
-      <div class="section-title">
-        <h2>📜 Derniers mouvements</h2>
-        <small>Historique condensé</small>
+      <div class="card-header">
+        <div class="card-title">
+          📜 Derniers mouvements
+        </div>
+        <div class="card-subtitle">
+          Historique condensé
+        </div>
       </div>
 
       <% if (derniersMouvements && derniersMouvements.length > 0) { %>
-        <table class="table-compact">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Action</th>
-              <th>Matériel</th>
-              <th>Ancienne qté</th>
-              <th>Nouvelle qté</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% derniersMouvements.forEach(h => { %>
+        <div class="history-table-wrapper">
+          <table class="table-compact">
+            <thead>
               <tr>
-                <td><%= h.createdAt.toLocaleDateString('fr-FR') %></td>
-                <td><%= h.action %></td>
-                <td>
-                  <% if (h.materiel) { %>
-                    <a href="/materiel/info/<%= h.materielId %>">
-                      <%= h.materiel.nom %>
-                    </a>
-                  <% } else { %>
-                    –
-                  <% } %>
-                </td>
-                <td><%= h.oldQuantite != null ? h.oldQuantite : '-' %></td>
-                <td><%= h.newQuantite != null ? h.newQuantite : '-' %></td>
+                <th>Date</th>
+                <th>Action</th>
+                <th>Matériel</th>
+                <th>Ancienne qté</th>
+                <th>Nouvelle qté</th>
               </tr>
-            <% }) %>
-          </tbody>
-        </table>
-        <div class="btn-row" style="margin-top: 0.5rem;">
-          <a href="/materiel/historique" class="btn btn-outline">Voir tout l’historique dépôt</a>
+            </thead>
+            <tbody>
+              <% derniersMouvements.forEach(h => { %>
+                <tr>
+                  <td><%= h.createdAt.toLocaleDateString('fr-FR') %></td>
+                  <td><%= h.action %></td>
+                  <td>
+                    <% if (h.materiel) { %>
+                      <a href="/materiel/info/<%= h.materielId %>">
+                        <%= h.materiel.nom %>
+                      </a>
+                    <% } else { %>
+                      –
+                    <% } %>
+                  </td>
+                  <td><%= h.oldQuantite != null ? h.oldQuantite : '-' %></td>
+                  <td><%= h.newQuantite != null ? h.newQuantite : '-' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-actions" style="margin-top: .6rem;">
+          <a href="/materiel/historique" class="btn btn-ghost">
+            Voir tout l’historique dépôt
+          </a>
         </div>
       <% } else { %>
         <p class="muted">Aucun mouvement récent.</p>
@@ -291,12 +465,11 @@
     </section>
   </div>
 
-  <!-- Chart.js depuis jsDelivr (autorisé par ton CSP actuel) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     (function() {
       const data = <%- JSON.stringify(chartData || { labels: [], entrees: [], sorties: [] }) %>;
-
       const ctx = document.getElementById('mouvementsChart');
       if (!ctx || !data.labels.length) return;
 
@@ -317,12 +490,18 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
             x: {
-              ticks: { maxRotation: 60, minRotation: 30 }
+              ticks: { maxRotation: 55, minRotation: 25 }
             },
             y: {
               beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { boxWidth: 12, boxHeight: 12 }
             }
           }
         }
