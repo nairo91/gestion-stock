@@ -8,18 +8,35 @@
   <link rel="stylesheet" href="/css/style.css" />
 
   <style>
+    :root {
+      --bg-body: #020617;
+      --bg-main: #f3f4f8;
+      --accent: #6366f1;
+      --accent-soft: #e0e7ff;
+      --accent-strong: #4f46e5;
+      --danger: #f97373;
+      --success: #22c55e;
+    }
+
     /* ——— Layout global dashboard ——— */
     .dashboard-page {
       min-height: 100vh;
-      background: #f3f4f8;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 45%, #020617 100%);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #1f2933;
+      color: #111827;
     }
 
     .dashboard-shell {
       max-width: 1240px;
       margin: 0 auto;
       padding: 1.75rem 1.25rem 2.5rem;
+    }
+
+    .dashboard-inner {
+      background: var(--bg-main);
+      border-radius: 1.25rem;
+      padding: 1.4rem 1.4rem 1.8rem;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, .55);
     }
 
     /* ——— Header ——— */
@@ -31,10 +48,11 @@
     }
 
     .dashboard-title-block h1 {
-      font-size: 1.8rem;
+      font-size: 1.9rem;
       font-weight: 700;
-      letter-spacing: .02em;
-      margin: 0 0 .25rem;
+      letter-spacing: .03em;
+      margin: 0 0 .35rem;
+      color: #0f172a;
     }
 
     .dashboard-title-block p {
@@ -60,9 +78,9 @@
       display: inline-flex;
       align-items: center;
       gap: .35rem;
-      padding: .45rem .9rem;
-      border-radius: .55rem;
-      font-size: .85rem;
+      padding: .4rem .9rem;
+      border-radius: 999px;
+      font-size: .82rem;
       font-weight: 500;
       text-decoration: none;
       border: 1px solid transparent;
@@ -72,24 +90,24 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
       color: #fff;
-      box-shadow: 0 8px 18px rgba(37, 99, 235, .25);
-      border-color: rgba(37, 99, 235, 0.9);
+      box-shadow: 0 10px 25px rgba(79, 70, 229, .35);
+      border-color: rgba(79, 70, 229, 0.9);
     }
     .btn-primary:hover {
       transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(37, 99, 235, .28);
+      box-shadow: 0 14px 32px rgba(79, 70, 229, .45);
     }
 
     .btn-ghost {
       background: #fff;
-      color: #2563eb;
+      color: var(--accent-strong);
       border-color: #d1d5db;
     }
     .btn-ghost:hover {
-      background: #eff6ff;
-      border-color: #2563eb;
+      background: var(--accent-soft);
+      border-color: var(--accent-strong);
     }
 
     /* ——— Grille de cartes ——— */
@@ -112,10 +130,22 @@
 
     .card {
       background: #ffffff;
-      border-radius: .9rem;
+      border-radius: 1rem;
       padding: 1rem 1.1rem 1.15rem;
-      box-shadow: 0 12px 26px rgba(15, 23, 42, .05);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
       border: 1px solid #e5e7eb;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(99, 102, 241, .08), transparent);
+      opacity: .7;
+      pointer-events: none;
     }
 
     .card-header {
@@ -123,6 +153,8 @@
       justify-content: space-between;
       align-items: baseline;
       margin-bottom: .65rem;
+      position: relative;
+      z-index: 1;
     }
 
     .card-title {
@@ -131,11 +163,17 @@
       display: inline-flex;
       align-items: center;
       gap: .4rem;
+      color: #111827;
     }
 
     .card-subtitle {
       font-size: .75rem;
       color: #9ca3af;
+    }
+
+    .card-content {
+      position: relative;
+      z-index: 1;
     }
 
     /* ——— Badges / pills ——— */
@@ -152,7 +190,7 @@
     }
 
     .pill-danger {
-      background: #ffe4e6;
+      background: #fee2e2;
       color: #b91c1c;
     }
 
@@ -172,6 +210,7 @@
       border-bottom: 1px solid #f1f2f6;
       padding: .3rem .2rem;
       text-align: left;
+      background: transparent;
     }
     .table-compact th {
       font-weight: 600;
@@ -179,7 +218,7 @@
       background: #f9fafb;
     }
     .table-compact a {
-      color: #2563eb;
+      color: var(--accent-strong);
       text-decoration: none;
     }
     .table-compact a:hover {
@@ -187,7 +226,7 @@
     }
 
     .muted {
-      color: #9ca3af;
+      color: #6b7280;
       font-size: .8rem;
     }
 
@@ -195,9 +234,17 @@
     .card-chart {
       margin-bottom: 1.25rem;
     }
-    #mouvementsChart {
-      max-width: 100%;
-      height: 280px;
+
+    .card-chart .chart-wrapper {
+      position: relative;
+      height: 260px;   /* fixe la hauteur du graphique */
+      margin-top: .25rem;
+    }
+
+    .card-chart canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
     }
 
     /* ——— Grille secondaire ——— */
@@ -226,243 +273,258 @@
       flex-wrap: wrap;
       gap: .4rem;
     }
-
   </style>
 </head>
 <body class="dashboard-page">
   <div class="dashboard-shell">
-    <!-- HEADER -->
-    <header class="dashboard-header">
-      <div class="dashboard-title-block">
-        <h1>Dashboard stock & chantiers</h1>
-        <p>Vue synthétique de l’activité du dépôt, des véhicules et des chantiers.</p>
-      </div>
-      <div class="dashboard-user">
-        Bonjour <strong><%= user && user.nom ? user.nom : 'utilisateur' %></strong>
-      </div>
-    </header>
+    <div class="dashboard-inner">
+      <!-- HEADER -->
+      <header class="dashboard-header">
+        <div class="dashboard-title-block">
+          <h1>Dashboard stock & chantiers</h1>
+          <p>Vue synthétique de l’activité du dépôt, des véhicules et des chantiers.</p>
+        </div>
+        <div class="dashboard-user">
+          Bonjour <strong><%= user && user.nom ? user.nom : 'utilisateur' %></strong>
+        </div>
+      </header>
 
-    <!-- ACTIONS -->
-    <div class="dashboard-actions">
-      <a href="/scan" class="btn btn-primary">
-        📷 <span>Scan QR / code-barres</span>
-      </a>
-      <a href="/bonLivraison/ajouter" class="btn btn-ghost">
-        ➕ <span>Bon de livraison</span>
-      </a>
-      <a href="/transferts/entree" class="btn btn-ghost">
-        🔁 <span>Transfert (entrée)</span>
-      </a>
-      <a href="/transferts/sortie" class="btn btn-ghost">
-        🔁 <span>Transfert (sortie)</span>
-      </a>
-    </div>
-
-    <!-- LIGNE 1 : alertes / dépôt / véhicules -->
-    <section class="dashboard-grid">
-      <!-- Alertes -->
-      <article class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <span>🔔 Alertes</span>
-          </div>
-          <div class="card-subtitle">
-            Stock critique & anomalies
-          </div>
-        </div>
-
-        <% if (lowStock && lowStock.length > 0) { %>
-          <p>
-            <span class="pill pill-danger">
-              <strong><%= lowStock.length %></strong> matériel(s) &lt; <%= lowStockThreshold %>
-            </span>
-          </p>
-          <table class="table-compact">
-            <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Qté</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% lowStock.forEach(m => { %>
-                <tr>
-                  <td>
-                    <a href="/materiel/info/<%= m.id %>">
-                      <%= m.nom %>
-                    </a>
-                  </td>
-                  <td><%= m.quantite %></td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        <% } else { %>
-          <p class="muted">
-            <span class="pill pill-ok">Aucune alerte de stock critique</span>
-          </p>
-        <% } %>
-      </article>
-
-      <!-- Stock dépôt -->
-      <article class="card">
-        <div class="card-header">
-          <div class="card-title">
-            📦 Stock dépôt
-          </div>
-          <div class="card-subtitle">
-            Vue globale
-          </div>
-        </div>
-        <p>
-          <strong><%= depotStats.count %></strong> lignes de matériel en dépôt<br />
-          Valeur estimée :
-          <strong><%= depotStats.value.toFixed(2) %> €</strong>
-        </p>
-        <div class="card-actions">
-          <a href="/materiel" class="btn btn-ghost">Voir le dépôt</a>
-          <a href="/materiel/export/excel" class="btn btn-ghost">Export Excel</a>
-          <a href="/materiel/export/pdf" class="btn btn-ghost">Export PDF</a>
-        </div>
-      </article>
-
-      <!-- Véhicules -->
-      <article class="card">
-        <div class="card-header">
-          <div class="card-title">
-            🚚 Véhicules
-          </div>
-          <div class="card-subtitle">
-            Stock embarqué
-          </div>
-        </div>
-        <p>
-          <strong><%= vehiculeStats.count %></strong> véhicule(s) suivis<br />
-          <strong><%= vehiculeStats.materiels %></strong> lignes de matériel dans les véhicules
-        </p>
-        <div class="card-actions">
-          <a href="/vehicule" class="btn btn-ghost">Voir le stock véhicules</a>
-          <a href="/vehicule/ajouter-vehicule" class="btn btn-ghost">Ajouter un véhicule</a>
-        </div>
-      </article>
-    </section>
-
-    <!-- GRAPHIQUE -->
-    <section class="card card-chart">
-      <div class="card-header">
-        <div class="card-title">
-          📊 Entrées / Sorties récentes
-        </div>
-        <div class="card-subtitle">
-          Basé sur l’historique
-        </div>
-      </div>
-      <canvas id="mouvementsChart"></canvas>
-    </section>
-
-    <!-- LIGNE 2 : chantiers / top récents -->
-    <section class="dashboard-grid-secondary">
-      <!-- Chantiers -->
-      <article class="card">
-        <div class="card-header">
-          <div class="card-title">
-            🏗️ Chantiers
-          </div>
-          <div class="card-subtitle">
-            Vue rapide
-          </div>
-        </div>
-        <p>
-          <strong><%= chantierStats.count %></strong> chantier(s) référencé(s)<br />
-          <strong><%= chantierStats.materiels %></strong> lignes de matériel sur chantier
-        </p>
-        <div class="card-actions">
-          <a href="/chantier" class="btn btn-ghost">Inventaire chantiers</a>
-          <a href="/emplacements" class="btn btn-ghost">Emplacements chantiers</a>
-        </div>
-      </article>
-
-      <!-- Matériels récemment mouvementés -->
-      <article class="card">
-        <div class="card-header">
-          <div class="card-title">
-            📈 Matériels récemment mouvementés
-          </div>
-          <div class="card-subtitle">
-            Derniers flux
-          </div>
-        </div>
-        <% if (derniersMouvements && derniersMouvements.length > 0) { %>
-          <ul class="muted">
-            <% derniersMouvements.slice(0, 5).forEach(h => { %>
-              <li>
-                <%= h.createdAt.toLocaleDateString('fr-FR') %> –
-                <strong><%= h.action %></strong>
-                <% if (h.materiel && h.materiel.nom) { %>
-                  – <%= h.materiel.nom %>
-                <% } %>
-              </li>
-            <% }) %>
-          </ul>
-        <% } else { %>
-          <p class="muted">Pas encore de mouvements enregistrés.</p>
-        <% } %>
-      </article>
-    </section>
-
-    <!-- DERNIERS MOUVEMENTS COMPLETS -->
-    <section class="card">
-      <div class="card-header">
-        <div class="card-title">
-          📜 Derniers mouvements
-        </div>
-        <div class="card-subtitle">
-          Historique condensé
-        </div>
+      <!-- ACTIONS -->
+      <div class="dashboard-actions">
+        <a href="/scan" class="btn btn-primary">
+          📷 <span>Scan QR / code-barres</span>
+        </a>
+        <a href="/bonLivraison/ajouter" class="btn btn-ghost">
+          ➕ <span>Bon de livraison</span>
+        </a>
+        <a href="/transferts/entree" class="btn btn-ghost">
+          🔁 <span>Transfert (entrée)</span>
+        </a>
+        <a href="/transferts/sortie" class="btn btn-ghost">
+          🔁 <span>Transfert (sortie)</span>
+        </a>
       </div>
 
-      <% if (derniersMouvements && derniersMouvements.length > 0) { %>
-        <div class="history-table-wrapper">
-          <table class="table-compact">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Action</th>
-                <th>Matériel</th>
-                <th>Ancienne qté</th>
-                <th>Nouvelle qté</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% derniersMouvements.forEach(h => { %>
-                <tr>
-                  <td><%= h.createdAt.toLocaleDateString('fr-FR') %></td>
-                  <td><%= h.action %></td>
-                  <td>
-                    <% if (h.materiel) { %>
-                      <a href="/materiel/info/<%= h.materielId %>">
-                        <%= h.materiel.nom %>
-                      </a>
-                    <% } else { %>
-                      –
+      <!-- LIGNE 1 : alertes / dépôt / véhicules -->
+      <section class="dashboard-grid">
+        <!-- Alertes -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>🔔 Alertes</span>
+            </div>
+            <div class="card-subtitle">
+              Stock critique & anomalies
+            </div>
+          </div>
+          <div class="card-content">
+            <% if (lowStock && lowStock.length > 0) { %>
+              <p>
+                <span class="pill pill-danger">
+                  <strong><%= lowStock.length %></strong> matériel(s) &lt; <%= lowStockThreshold %>
+                </span>
+              </p>
+              <table class="table-compact">
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>Qté</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% lowStock.forEach(m => { %>
+                    <tr>
+                      <td>
+                        <a href="/materiel/info/<%= m.id %>">
+                          <%= m.nom %>
+                        </a>
+                      </td>
+                      <td><%= m.quantite %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            <% } else { %>
+              <p class="muted">
+                <span class="pill pill-ok">Aucune alerte de stock critique</span>
+              </p>
+            <% } %>
+          </div>
+        </article>
+
+        <!-- Stock dépôt -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title">
+              📦 Stock dépôt
+            </div>
+            <div class="card-subtitle">
+              Vue globale
+            </div>
+          </div>
+          <div class="card-content">
+            <p>
+              <strong><%= depotStats.count %></strong> lignes de matériel en dépôt<br />
+              Valeur estimée :
+              <strong><%= depotStats.value.toFixed(2) %> €</strong>
+            </p>
+            <div class="card-actions">
+              <a href="/materiel" class="btn btn-ghost">Voir le dépôt</a>
+              <a href="/materiel/export/excel" class="btn btn-ghost">Export Excel</a>
+              <a href="/materiel/export/pdf" class="btn btn-ghost">Export PDF</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Véhicules -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title">
+              🚚 Véhicules
+            </div>
+            <div class="card-subtitle">
+              Stock embarqué
+            </div>
+          </div>
+          <div class="card-content">
+            <p>
+              <strong><%= vehiculeStats.count %></strong> véhicule(s) suivis<br />
+              <strong><%= vehiculeStats.materiels %></strong> lignes de matériel dans les véhicules
+            </p>
+            <div class="card-actions">
+              <a href="/vehicule" class="btn btn-ghost">Voir le stock véhicules</a>
+              <a href="/vehicule/ajouter-vehicule" class="btn btn-ghost">Ajouter un véhicule</a>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- GRAPHIQUE -->
+      <section class="card card-chart">
+        <div class="card-header">
+          <div class="card-title">
+            📊 Entrées / Sorties récentes
+          </div>
+          <div class="card-subtitle">
+            Basé sur l’historique
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="chart-wrapper">
+            <canvas id="mouvementsChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- LIGNE 2 : chantiers / top récents -->
+      <section class="dashboard-grid-secondary">
+        <!-- Chantiers -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title">
+              🏗️ Chantiers
+            </div>
+            <div class="card-subtitle">
+              Vue rapide
+            </div>
+          </div>
+          <div class="card-content">
+            <p>
+              <strong><%= chantierStats.count %></strong> chantier(s) référencé(s)<br />
+              <strong><%= chantierStats.materiels %></strong> lignes de matériel sur chantier
+            </p>
+            <div class="card-actions">
+              <a href="/chantier" class="btn btn-ghost">Inventaire chantiers</a>
+              <a href="/emplacements" class="btn btn-ghost">Emplacements chantiers</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Matériels récemment mouvementés -->
+        <article class="card">
+          <div class="card-header">
+            <div class="card-title">
+              📈 Matériels récemment mouvementés
+            </div>
+            <div class="card-subtitle">
+              Derniers flux
+            </div>
+          </div>
+          <div class="card-content">
+            <% if (derniersMouvements && derniersMouvements.length > 0) { %>
+              <ul class="muted">
+                <% derniersMouvements.slice(0, 5).forEach(h => { %>
+                  <li>
+                    <%= h.createdAt.toLocaleDateString('fr-FR') %> –
+                    <strong><%= h.action %></strong>
+                    <% if (h.materiel && h.materiel.nom) { %>
+                      – <%= h.materiel.nom %>
                     <% } %>
-                  </td>
-                  <td><%= h.oldQuantite != null ? h.oldQuantite : '-' %></td>
-                  <td><%= h.newQuantite != null ? h.newQuantite : '-' %></td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
+                  </li>
+                <% }) %>
+              </ul>
+            <% } else { %>
+              <p class="muted">Pas encore de mouvements enregistrés.</p>
+            <% } %>
+          </div>
+        </article>
+      </section>
+
+      <!-- DERNIERS MOUVEMENTS COMPLETS -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            📜 Derniers mouvements
+          </div>
+          <div class="card-subtitle">
+            Historique condensé
+          </div>
         </div>
-        <div class="card-actions" style="margin-top: .6rem;">
-          <a href="/materiel/historique" class="btn btn-ghost">
-            Voir tout l’historique dépôt
-          </a>
+        <div class="card-content">
+          <% if (derniersMouvements && derniersMouvements.length > 0) { %>
+            <div class="history-table-wrapper">
+              <table class="table-compact">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Action</th>
+                    <th>Matériel</th>
+                    <th>Ancienne qté</th>
+                    <th>Nouvelle qté</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% derniersMouvements.forEach(h => { %>
+                    <tr>
+                      <td><%= h.createdAt.toLocaleDateString('fr-FR') %></td>
+                      <td><%= h.action %></td>
+                      <td>
+                        <% if (h.materiel) { %>
+                          <a href="/materiel/info/<%= h.materielId %>">
+                            <%= h.materiel.nom %>
+                          </a>
+                        <% } else { %>
+                          –
+                        <% } %>
+                      </td>
+                      <td><%= h.oldQuantite != null ? h.oldQuantite : '-' %></td>
+                      <td><%= h.newQuantite != null ? h.newQuantite : '-' %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-actions" style="margin-top: .6rem;">
+              <a href="/materiel/historique" class="btn btn-ghost">
+                Voir tout l’historique dépôt
+              </a>
+            </div>
+          <% } else { %>
+            <p class="muted">Aucun mouvement récent.</p>
+          <% } %>
         </div>
-      <% } else { %>
-        <p class="muted">Aucun mouvement récent.</p>
-      <% } %>
-    </section>
+      </section>
+    </div>
   </div>
 
   <!-- Chart.js -->
