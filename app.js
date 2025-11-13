@@ -156,6 +156,8 @@ app.use('/transferts', require('./routes/transferts'));
 const userRoutes = require('./routes/user');
 app.use('/user', userRoutes);
 
+app.use('/dashboard', require('./routes/dashboard'));
+
 const { scheduleDeliveryReminderJob } = require('./services/deliveryReminderService');
 if (process.env.JOB_RUNNER === '1') {
   scheduleDeliveryReminderJob();
