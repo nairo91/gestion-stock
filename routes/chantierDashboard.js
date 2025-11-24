@@ -50,7 +50,7 @@ function buildHistogramData(mouvements, chantier) {
   return { labels, values };
 }
 
-router.get('/dashboard', ensureAuthenticated, async (req, res) => {
+router.get('/', ensureAuthenticated, async (req, res) => {
   try {
     const chantiers = await Chantier.findAll({
       order: [['nom', 'ASC']]
