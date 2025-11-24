@@ -312,8 +312,13 @@
             Depuis la création du chantier jusqu’à aujourd’hui
           </div>
         </div>
+        <div class="cd-histo-wrapper" style="margin-bottom:1.5rem;">
+          <h3 style="font-size:.9rem; margin-bottom:.25rem;">Qté réelle par catégorie</h3>
+          <canvas id="chantierHistogramQuantite"></canvas>
+        </div>
         <div class="cd-histo-wrapper">
-          <canvas id="chantierHistogram"></canvas>
+          <h3 style="font-size:.9rem; margin-bottom:.25rem;">Qté prévue par catégorie</h3>
+          <canvas id="chantierHistogramQuantitePrevue"></canvas>
         </div>
       </section>
     <% } %>
@@ -343,40 +348,56 @@
     });
   </script>
   <script>
-    (function() {
-      const data = <%- JSON.stringify(histogramData || { labels: [], datasets: [] }) %>;
-      const ctx = document.getElementById('chantierHistogram');
-      if (!ctx || !data.labels || !data.labels.length) return;
-
-      const chartConfig = {
-        type: 'bar',
-        data: {
-          labels: data.labels,
-          datasets: Array.isArray(data.datasets) && data.datasets.length
-            ? data.datasets
-            : [{
-                label: 'Aucune donnée',
-                data: []
-              }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: {
-              stacked: true,
-              ticks: { maxRotation: 60, minRotation: 25 }
-            },
-            y: {
-              stacked: true,
-              beginAtZero: true
-            }
-          }
+      (function() {
+        const data = <%- JSON.stringify(histogramData || { labels: [], datasets: [] }) %>;
+        if (!data.labels || !data.labels.length || !Array.isArray(data.datasets) || !data.datasets.length) {
+          return;
         }
-      };
 
-      new Chart(ctx, chartConfig);
-    })();
+        const allDatasets = data.datasets;
+
+        // On sépare les séries "Qté" et "Qté prévue"
+        const quantiteDatasets = allDatasets.filter(ds =>
+          ds.stack === 'quantite' || /\(Qté\)/.test(ds.label || '')
+        );
+
+        const quantitePrevueDatasets = allDatasets.filter(ds =>
+          ds.stack === 'quantitePrevue' || /\(Qté prévue\)/i.test(ds.label || '')
+        );
+
+        function createChart(canvasId, datasets) {
+          const ctx = document.getElementById(canvasId);
+          if (!ctx || !datasets || !datasets.length) return;
+
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.labels,
+              datasets
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  stacked: false,
+                  ticks: { maxRotation: 60, minRotation: 25 }
+                },
+                y: {
+                  stacked: false,
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+        }
+
+        // 1 graphique : Qté réelle par catégorie
+        createChart('chantierHistogramQuantite', quantiteDatasets);
+
+        // 1 graphique : Qté prévue par catégorie
+        createChart('chantierHistogramQuantitePrevue', quantitePrevueDatasets);
+      })();
   </script>
 </body>
 </html>
