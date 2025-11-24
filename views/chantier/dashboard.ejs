@@ -344,32 +344,38 @@
   </script>
   <script>
     (function() {
-      const data = <%- JSON.stringify(histogramData || { labels: [], values: [] }) %>;
+      const data = <%- JSON.stringify(histogramData || { labels: [], datasets: [] }) %>;
       const ctx = document.getElementById('chantierHistogram');
-      if (!ctx || !data.labels.length) return;
+      if (!ctx || !data.labels || !data.labels.length) return;
 
-      new Chart(ctx, {
+      const chartConfig = {
         type: 'bar',
         data: {
           labels: data.labels,
-          datasets: [{
-            label: 'Quantité mouvementée (approx.)',
-            data: data.values
-          }]
+          datasets: Array.isArray(data.datasets) && data.datasets.length
+            ? data.datasets
+            : [{
+                label: 'Aucune donnée',
+                data: []
+              }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           scales: {
             x: {
+              stacked: true,
               ticks: { maxRotation: 60, minRotation: 25 }
             },
             y: {
+              stacked: true,
               beginAtZero: true
             }
           }
         }
-      });
+      };
+
+      new Chart(ctx, chartConfig);
     })();
   </script>
 </body>

@@ -8,46 +8,103 @@ const { ensureAuthenticated } = require('./materiel'); // tu as déjà ce middle
 
 const LOW_STOCK_THRESHOLD = 3;
 
-// Fonction utilitaire : construit les données pour l'histogramme
-function buildHistogramData(mouvements, chantier) {
-  if (!chantier || !mouvements || !mouvements.length) {
-    return { labels: [], values: [] };
+// Histogramme mensuel par catégorie (Qté / Qté prévue)
+function buildHistogramData(materielChantiers, chantier) {
+  if (!chantier) {
+    return { labels: [], datasets: [] };
+  }
+  if (!materielChantiers || !materielChantiers.length) {
+    return { labels: [], datasets: [] };
   }
 
-  const start = chantier.createdAt || mouvements[mouvements.length - 1].createdAt;
-  const startDate = new Date(start);
-  const endDate = new Date();
+  // Début : 1er jour du mois de création du chantier
+  const start = new Date(chantier.createdAt);
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
 
-  const byDay = {};
+  // Fin : mois courant
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth(), 1);
+  end.setHours(0, 0, 0, 0);
 
-  mouvements.forEach(m => {
-    const d = m.updatedAt || m.createdAt;
-    const dayKey = d.toISOString().slice(0, 10); // YYYY-MM-DD
-    if (!byDay[dayKey]) byDay[dayKey] = 0;
-    // On utilise ici la quantité actuelle comme “poids” du mouvement
-    byDay[dayKey] += Number(m.quantite || 0);
+  const monthKeys = [];
+  const monthsData = {};
+  const categoriesSet = new Set();
+
+  // On prépare la liste de tous les mois entre start et end
+  let cursor = new Date(start);
+  while (cursor <= end) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+    monthKeys.push(key);
+    monthsData[key] = {};
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  // Agrégation par mois + catégorie
+  materielChantiers.forEach(mc => {
+    const mat = mc.materiel || {};
+    const categorie = mat.categorie || 'Non catégorisé';
+
+    categoriesSet.add(categorie);
+
+    const createdAt = mc.createdAt ? new Date(mc.createdAt) : start;
+    const key = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}`;
+
+    if (!monthsData[key]) {
+      // En dehors de la plage de mois (avant création chantier par ex.)
+      return;
+    }
+
+    if (!monthsData[key][categorie]) {
+      monthsData[key][categorie] = {
+        quantite: 0,
+        quantitePrevue: 0
+      };
+    }
+
+    const q = mc.quantite != null ? Number(mc.quantite) : 0;
+    const qp = mc.quantitePrevue != null ? Number(mc.quantitePrevue) : 0;
+
+    monthsData[key][categorie].quantite += q;
+    monthsData[key][categorie].quantitePrevue += qp;
   });
 
-  const labels = [];
-  const values = [];
+  // Labels = mois (ex: "janv. 24")
+  const labels = monthKeys.map(key => {
+    const [yearStr, monthStr] = key.split('-');
+    const d = new Date(Number(yearStr), Number(monthStr) - 1, 1);
+    return d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+  });
 
-  const cursor = new Date(startDate);
-  cursor.setHours(0, 0, 0, 0);
+  const categories = Array.from(categoriesSet).sort();
+  const datasets = [];
 
-  while (cursor <= endDate) {
-    const key = cursor.toISOString().slice(0, 10);
-    const labelFr = cursor.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'short'
+  // Pour chaque catégorie, on crée 2 datasets : Qté et Qté prévue
+  categories.forEach(categorie => {
+    const dataQuantite = monthKeys.map(key => {
+      const catData = monthsData[key][categorie];
+      return catData ? catData.quantite : 0;
     });
 
-    labels.push(labelFr);
-    values.push(byDay[key] || 0);
+    const dataQuantitePrevue = monthKeys.map(key => {
+      const catData = monthsData[key][categorie];
+      return catData ? catData.quantitePrevue : 0;
+    });
 
-    cursor.setDate(cursor.getDate() + 1);
-  }
+    datasets.push({
+      label: `${categorie} (Qté)`,
+      data: dataQuantite,
+      stack: 'quantite'
+    });
 
-  return { labels, values };
+    datasets.push({
+      label: `${categorie} (Qté prévue)`,
+      data: dataQuantitePrevue,
+      stack: 'quantitePrevue'
+    });
+  });
+
+  return { labels, datasets };
 }
 
 router.get('/', ensureAuthenticated, async (req, res) => {
@@ -69,7 +126,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     let chantier = null;
     let alertes = [];
     let derniersMouvements = [];
-    let histogramData = { labels: [], values: [] };
+    let histogramData = { labels: [], datasets: [] };
 
     if (chantierId) {
       chantier = await Chantier.findByPk(chantierId);
@@ -92,13 +149,9 @@ router.get('/', ensureAuthenticated, async (req, res) => {
         limit: 10
       });
 
-      // 3) Histogramme basé sur l'évolution des MaterielChantier
-      const mouvementsPourHistogramme = await MaterielChantier.findAll({
-        where: { chantierId },
-        order: [['updatedAt', 'ASC']]
-      });
-
-      histogramData = buildHistogramData(mouvementsPourHistogramme, chantier);
+      // 3) Histogramme par mois et par catégorie (Qté / Qté prévue)
+      // On réutilise la liste complète materiel_chantiers (alertes) pour agréger
+      histogramData = buildHistogramData(alertes, chantier);
     }
 
     res.render('chantier/dashboard', {
