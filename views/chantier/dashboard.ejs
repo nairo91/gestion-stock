@@ -174,20 +174,18 @@
         </div>
       </div>
       <div class="cd-form-line">
-        <form method="get" action="/chantier/dashboard">
-          <label for="chantierId" style="font-size:.9rem; margin-right:.5rem;">Chantier :</label>
-          <select
-            name="chantierId"
-            id="chantierId"
-            onchange="window.location.href='/chantier/dashboard?chantierId=' + this.value;"
-          >
-            <% chantiers.forEach(ch => { %>
-              <option value="<%= ch.id %>" <%= String(chantierId) === String(ch.id) ? 'selected' : '' %>>
-                <%= ch.nom %>
-              </option>
-            <% }) %>
-          </select>
-        </form>
+        <label for="chantierId" style="font-size:.9rem; margin-right:.5rem;">Chantier :</label>
+        <select
+          name="chantierId"
+          id="chantierId"
+          onchange="window.location.href='/chantier/dashboard?chantierId=' + this.value;"
+        >
+          <% chantiers.forEach(ch => { %>
+            <option value="<%= ch.id %>" <%= String(chantierId) === String(ch.id) ? 'selected' : '' %>>
+              <%= ch.nom %>
+            </option>
+          <% }) %>
+        </select>
       </div>
       <% if (!chantier) { %>
         <p class="muted">Aucun chantier sélectionné.</p>
