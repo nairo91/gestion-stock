@@ -56,7 +56,15 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
       order: [['nom', 'ASC']]
     });
 
-    const chantierId = req.query.chantierId || (chantiers[0] && chantiers[0].id);
+    let chantierId = req.query.chantierId;
+    if (chantierId) {
+      const parsed = parseInt(String(chantierId), 10);
+      chantierId = !Number.isNaN(parsed) ? parsed : null;
+    }
+
+    if (!chantierId && chantiers[0]) {
+      chantierId = chantiers[0].id;
+    }
 
     let chantier = null;
     let alertes = [];
