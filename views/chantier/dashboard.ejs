@@ -314,6 +314,19 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectChantier = document.getElementById('chantierId');
+      if (!selectChantier) return;
+
+      selectChantier.addEventListener('change', function(event) {
+        const id = event.target.value;
+        if (id) {
+          window.location.href = '/chantier/dashboard?chantierId=' + id;
+        }
+      });
+    });
+  </script>
+  <script>
     (function() {
       const data = <%- JSON.stringify(histogramData || { labels: [], values: [] }) %>;
       const ctx = document.getElementById('chantierHistogram');
