@@ -73,7 +73,12 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
     recherche
   } = query;
 
-  const whereChantier = chantierId ? { chantierId } : {};
+  let chantierIdInt = null;
+  if (chantierId !== undefined && chantierId !== null && chantierId !== '') {
+    const parsed = parseInt(String(chantierId), 10);
+    chantierIdInt = !Number.isNaN(parsed) ? parsed : null;
+  }
+  const whereChantier = chantierIdInt ? { chantierId: chantierIdInt } : {};
   const whereMateriel = {};
 
   if (nomMateriel) {
