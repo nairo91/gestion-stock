@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard chantier – Gestion de stock</title>
+  <link rel="stylesheet" href="/css/style.css" />
+
+  <style>
+    .chantier-dashboard-page {
+      min-height: 100vh;
+      background: #f3f4f8;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #111827;
+    }
+    .chantier-dashboard-shell {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 2.5rem;
+    }
+    .cd-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+    }
+    .cd-header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .cd-header p {
+      margin: .25rem 0 0;
+      color: #6b7280;
+      font-size: .9rem;
+    }
+    .cd-user {
+      font-size: .85rem;
+      color: #9ca3af;
+    }
+
+    .cd-card {
+      background: #ffffff;
+      border-radius: 1rem;
+      padding: 1rem 1.1rem 1.2rem;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
+      border: 1px solid #e5e7eb;
+      margin-bottom: 1rem;
+    }
+
+    .cd-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: .7rem;
+    }
+    .cd-card-title {
+      font-size: .95rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .cd-card-subtitle {
+      font-size: .75rem;
+      color: #9ca3af;
+    }
+
+    .cd-grid {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 900px) {
+      .cd-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cd-form-line {
+      margin-bottom: 1rem;
+    }
+    select {
+      padding: .35rem .6rem;
+      border-radius: .5rem;
+      border: 1px solid #d1d5db;
+      font-size: .9rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      font-size: .72rem;
+      padding: .15rem .55rem;
+      border-radius: 999px;
+      background: #e5e7eb;
+      color: #374151;
+      font-weight: 500;
+    }
+    .pill-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .table-compact {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+    }
+    .table-compact th,
+    .table-compact td {
+      border-bottom: 1px solid #f1f2f6;
+      padding: .3rem .2rem;
+      text-align: left;
+    }
+    .table-compact th {
+      font-weight: 600;
+      color: #6b7280;
+      background: #f9fafb;
+    }
+
+    .progress-wrapper {
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+      height: .6rem;
+      width: 100%;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      width: 0%;
+      transition: width .2s ease-out;
+    }
+    .progress-text {
+      font-size: .7rem;
+      color: #6b7280;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: .8rem;
+    }
+
+    .cd-histo-wrapper {
+      position: relative;
+      height: 260px;
+    }
+    #chantierHistogram {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+  </style>
+</head>
+<body class="chantier-dashboard-page">
+  <div class="chantier-dashboard-shell">
+    <header class="cd-header">
+      <div>
+        <h1>Dashboard stock chantier</h1>
+        <p>Synthèse par chantier (alertes, mouvements, historique).</p>
+      </div>
+      <div class="cd-user">
+        Bonjour <strong><%= user && user.nom ? user.nom : 'utilisateur' %></strong>
+      </div>
+    </header>
+
+    <!-- Sélection du chantier -->
+    <section class="cd-card">
+      <div class="cd-card-header">
+        <div class="cd-card-title">
+          🏗️ Sélection du chantier
+        </div>
+      </div>
+      <div class="cd-form-line">
+        <form method="get" action="/chantier/dashboard">
+          <label for="chantierId" style="font-size:.9rem; margin-right:.5rem;">Chantier :</label>
+          <select name="chantierId" id="chantierId" onchange="this.form.submit()">
+            <% chantiers.forEach(ch => { %>
+              <option value="<%= ch.id %>" <%= String(chantierId) === String(ch.id) ? 'selected' : '' %>>
+                <%= ch.nom %>
+              </option>
+            <% }) %>
+          </select>
+        </form>
+      </div>
+      <% if (!chantier) { %>
+        <p class="muted">Aucun chantier sélectionné.</p>
+      <% } else { %>
+        <p class="muted">
+          Créé le <%= chantier.createdAt.toLocaleDateString('fr-FR') %>
+        </p>
+      <% } %>
+    </section>
+
+    <% if (chantier) { %>
+      <!-- Ligne 1 : Alertes + Derniers mouvements -->
+      <section class="cd-grid">
+        <!-- Alertes quantités -->
+        <article class="cd-card">
+          <div class="cd-card-header">
+            <div class="cd-card-title">🔔 Alertes quantités</div>
+            <div class="cd-card-subtitle">Matériels sous le niveau prévu</div>
+          </div>
+
+          <% 
+            const alertesCritiques = alertes.filter(mc => {
+              const qp = mc.quantitePrevue != null ? Number(mc.quantitePrevue) : null;
+              const q  = mc.quantite != null ? Number(mc.quantite) : null;
+              return qp != null && q != null && q < qp;
+            });
+          %>
+
+          <% if (alertesCritiques.length === 0) { %>
+            <p class="muted">Aucune alerte de quantité pour ce chantier.</p>
+          <% } else { %>
+            <p>
+              <span class="pill pill-danger">
+                <strong><%= alertesCritiques.length %></strong> matériel(s) sous la quantité prévue
+              </span>
+            </p>
+            <table class="table-compact">
+              <thead>
+                <tr>
+                  <th>Matériel</th>
+                  <th>Qté</th>
+                  <th>Qté prévue</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% alertesCritiques.forEach(mc => { %>
+                  <tr>
+                    <td><%= mc.materiel ? mc.materiel.nom : '–' %></td>
+                    <td><%= mc.quantite %></td>
+                    <td><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } %>
+        </article>
+
+        <!-- Derniers mouvements (approx : dernières modifs de stock chantier) -->
+        <article class="cd-card">
+          <div class="cd-card-header">
+            <div class="cd-card-title">📜 Derniers mouvements (chantier)</div>
+            <div class="cd-card-subtitle">10 dernières lignes modifiées</div>
+          </div>
+
+          <% if (!derniersMouvements || !derniersMouvements.length) { %>
+            <p class="muted">Aucun mouvement récent sur ce chantier.</p>
+          <% } else { %>
+            <table class="table-compact">
+              <thead>
+                <tr>
+                  <th>Matériel</th>
+                  <th>Qté</th>
+                  <th>Qté prévue</th>
+                  <th style="width:40%;">Progression</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% derniersMouvements.forEach(mc => {
+                  const q  = mc.quantite != null ? Number(mc.quantite) : 0;
+                  const qp = mc.quantitePrevue != null ? Number(mc.quantitePrevue) : 0;
+                  let percent = 0;
+                  if (qp > 0) {
+                    percent = Math.round((q / qp) * 100);
+                    if (percent > 130) percent = 130; // on limite un peu pour l'affichage
+                    if (percent < 0) percent = 0;
+                  }
+                %>
+                  <tr>
+                    <td><%= mc.materiel ? mc.materiel.nom : '–' %></td>
+                    <td><%= mc.quantite %></td>
+                    <td><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
+                    <td>
+                      <% if (qp > 0) { %>
+                        <div class="progress-wrapper">
+                          <div class="progress-bar" style="width:<%= percent %>%"></div>
+                        </div>
+                        <div class="progress-text">
+                          <%= percent %>% de l'objectif
+                        </div>
+                      <% } else { %>
+                        <span class="muted">Qté prévue non définie</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } %>
+        </article>
+      </section>
+
+      <!-- Histogramme -->
+      <section class="cd-card">
+        <div class="cd-card-header">
+          <div class="cd-card-title">📊 Historique chantier</div>
+          <div class="cd-card-subtitle">
+            Depuis la création du chantier jusqu’à aujourd’hui
+          </div>
+        </div>
+        <div class="cd-histo-wrapper">
+          <canvas id="chantierHistogram"></canvas>
+        </div>
+      </section>
+    <% } %>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    (function() {
+      const data = <%- JSON.stringify(histogramData || { labels: [], values: [] }) %>;
+      const ctx = document.getElementById('chantierHistogram');
+      if (!ctx || !data.labels.length) return;
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.labels,
+          datasets: [{
+            label: 'Quantité mouvementée (approx.)',
+            data: data.values
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              ticks: { maxRotation: 60, minRotation: 25 }
+            },
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
