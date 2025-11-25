@@ -312,26 +312,24 @@
             Depuis la création du chantier jusqu’à aujourd’hui
           </div>
           <div class="cd-card-actions">
-            <form
-              id="categorieForm"
-              method="get"
-              action="/chantier/dashboard"
-              class="cd-form-line"
-              style="gap:.5rem;"
+            <label for="categorie" style="font-size:.85rem;">Catégorie :</label>
+            <select
+              id="categorie"
+              onchange="
+                const cat = this.value;
+                const id  = '<%= chantierId %>';
+                let url = '/chantier/dashboard?chantierId=' + id;
+                if (cat) {
+                  url += '&categorie=' + encodeURIComponent(cat);
+                }
+                window.location.href = url;
+              "
             >
-              <input type="hidden" name="chantierId" value="<%= chantierId %>">
-              <label for="categorie" style="font-size:.85rem;">Catégorie :</label>
-              <select
-                name="categorie"
-                id="categorie"
-                onchange="document.getElementById('categorieForm').submit();"
-              >
-                <option value="">Toutes</option>
-                <% (categoriesDisponibles || []).forEach(function(cat) { %>
-                  <option value="<%= cat %>" <%= (selectedCategorie === cat) ? 'selected' : '' %>><%= cat %></option>
-                <% }); %>
-              </select>
-            </form>
+              <option value="">Toutes</option>
+              <% (categoriesDisponibles || []).forEach(function(cat) { %>
+                <option value="<%= cat %>" <%= (selectedCategorie === cat) ? 'selected' : '' %>><%= cat %></option>
+              <% }); %>
+            </select>
           </div>
         </div>
         <div class="cd-histo-wrapper">
@@ -358,8 +356,14 @@
 
       selectChantier.addEventListener('change', function(event) {
         const id = event.target.value;
+        const params = new URLSearchParams(window.location.search);
+        const cat = params.get('categorie');
         if (id) {
-          window.location.href = '/chantier/dashboard?chantierId=' + id;
+          let url = '/chantier/dashboard?chantierId=' + id;
+          if (cat) {
+            url += '&categorie=' + encodeURIComponent(cat);
+          }
+          window.location.href = url;
         }
       });
     });
