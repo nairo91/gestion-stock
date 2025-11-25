@@ -18,7 +18,9 @@ function buildHistogramData(materielChantiers, chantier, selectedCategorie) {
   }
 
   const categorieFiltre =
-    selectedCategorie && selectedCategorie !== 'ALL' ? selectedCategorie : null;
+    selectedCategorie && selectedCategorie !== 'ALL'
+      ? selectedCategorie.trim().toLowerCase()
+      : null;
 
   // Début : 1er jour du mois de création du chantier
   const start = new Date(chantier.createdAt);
@@ -48,7 +50,7 @@ function buildHistogramData(materielChantiers, chantier, selectedCategorie) {
   // Agrégation par mois pour la catégorie sélectionnée (ou toutes)
   materielChantiers.forEach(mc => {
     const mat = mc.materiel || {};
-    const categorie = mat.categorie || 'Non catégorisé';
+    const categorie = (mat.categorie || 'Non catégorisé').trim().toLowerCase();
 
     if (categorieFiltre && categorie !== categorieFiltre) {
       return;
@@ -120,13 +122,22 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       });
 
       // Liste des catégories disponibles sur ce chantier
-      categoriesDisponibles = Array.from(
-        new Set(
-          alertes
-            .map(mc => (mc.materiel && mc.materiel.categorie ? mc.materiel.categorie : null))
-            .filter(Boolean)
-        )
-      ).sort((a, b) => a.localeCompare(b, 'fr'));
+      const categorieMap = new Map();
+      alertes.forEach(mc => {
+        const categorieBrute = mc.materiel && mc.materiel.categorie ? mc.materiel.categorie : null;
+        if (!categorieBrute) return;
+        const categorieTrim = categorieBrute.trim();
+        if (!categorieTrim) return;
+
+        const categorieKey = categorieTrim.toLowerCase();
+        if (!categorieMap.has(categorieKey)) {
+          categorieMap.set(categorieKey, categorieTrim);
+        }
+      });
+
+      categoriesDisponibles = Array.from(categorieMap.values()).sort((a, b) =>
+        a.localeCompare(b, 'fr')
+      );
 
       // On considère qu'une alerte = quantite < quantitePrevue
       // et on filtre ici côté JS dans la vue si besoin.
