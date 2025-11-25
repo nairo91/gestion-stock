@@ -6,6 +6,17 @@
   <link rel="stylesheet" href="/css/style.css" />
 
   <style>
+    :root {
+      --brh-violet: #7b1e7a;
+      --brh-magenta: #c2185b;
+      --brh-turquoise: #03a89e;
+      --brh-gray: #555555;
+
+      --accent-color: var(--brh-violet);
+      --accent-light: var(--brh-magenta);
+      --accent-alt: var(--brh-turquoise);
+    }
+
     .chantier-dashboard-page {
       min-height: 100vh;
       background: #f3f4f8;
@@ -20,13 +31,24 @@
     .cd-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       margin-bottom: 1.5rem;
+    }
+    .cd-header-left {
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+    }
+    .cd-logo img {
+      height: 48px;
+      width: auto;
+      display: block;
     }
     .cd-header h1 {
       margin: 0;
       font-size: 1.8rem;
       font-weight: 700;
+      color: var(--brh-violet);
     }
     .cd-header p {
       margin: .25rem 0 0;
@@ -36,6 +58,7 @@
     .cd-user {
       font-size: .85rem;
       color: #9ca3af;
+      text-align: right;
     }
 
     .cd-card {
@@ -59,10 +82,11 @@
       display: inline-flex;
       align-items: center;
       gap: .4rem;
+      color: var(--brh-violet);
     }
     .cd-card-subtitle {
       font-size: .75rem;
-      color: #9ca3af;
+      color: var(--brh-gray);
     }
 
     .cd-grid {
@@ -129,7 +153,7 @@
     }
     .progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, #22c55e, #16a34a);
+      background: var(--brh-turquoise) !important;
       width: 0%;
       transition: width .2s ease-out;
     }
@@ -152,26 +176,41 @@
       height: 100% !important;
       display: block;
     }
+
+    .btn-primary {
+      background: var(--brh-violet);
+      border-color: var(--brh-violet);
+    }
+
+    .btn-primary:hover {
+      background: var(--brh-magenta);
+      border-color: var(--brh-magenta);
+    }
   </style>
 </head>
 <body class="chantier-dashboard-page">
   <div class="chantier-dashboard-shell">
     <header class="cd-header">
-      <a
-        href="/chantier"
-        class="btn btn-ghost"
-        style="margin-top:1rem; border:1px solid #d1d5db; display:inline-block;"
-      >
-        ← Retour aux chantiers
-      </a>
-      <div>
-        <h1>Dashboard stock chantier</h1>
-        <p>Synthèse par chantier (alertes, mouvements, historique).</p>
+      <div class="cd-header-left">
+        <div class="cd-logo">
+          <img src="/images/logo.png" alt="BRH Logo">
+        </div>
+        <div>
+          <h1>Dashboard stock chantier</h1>
+          <p>Synthèse par chantier (alertes, mouvements, historique).</p>
+        </div>
       </div>
       <div class="cd-user">
         Bonjour <strong><%= user && user.nom ? user.nom : 'utilisateur' %></strong>
       </div>
     </header>
+    <a
+      href="/chantier"
+      class="btn btn-ghost"
+      style="margin-top:0.5rem; border:1px solid #d1d5db; display:inline-block;"
+    >
+      ← Retour aux chantiers
+    </a>
 
     <!-- Sélection du chantier -->
     <section class="cd-card">
@@ -325,9 +364,10 @@
                 window.location.href = url;
               "
             >
-              <option value="">Toutes</option>
+              <option value="" <%= selectedCategorie === 'ALL' ? 'selected' : '' %>>Toutes</option>
               <% (categoriesDisponibles || []).forEach(function(cat) { %>
-                <option value="<%= cat %>" <%= (selectedCategorie === cat) ? 'selected' : '' %>><%= cat %></option>
+                <% const isSelected = selectedCategorieNormalisee && selectedCategorieNormalisee === cat.norm; %>
+                <option value="<%= cat.label %>" <%= isSelected ? 'selected' : '' %>><%= cat.label %></option>
               <% }); %>
             </select>
           </div>

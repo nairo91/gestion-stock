@@ -8,6 +8,14 @@ const { ensureAuthenticated } = require('./materiel'); // tu as déjà ce middle
 
 const LOW_STOCK_THRESHOLD = 3;
 
+// Normalise une catégorie : minuscules, accents supprimés, espaces enlevés
+const normalizeCat = str =>
+  str
+    .normalize('NFD') // décompose les accents
+    .replace(/[\u0300-\u036f]/g, '') // supprime les diacritiques
+    .toLowerCase() // met en minuscules
+    .trim(); // enlève espaces
+
 // Histogramme mensuel pour UNE catégorie : 2 séries (Qté / Qté prévue)
 function buildHistogramData(materielChantiers, chantier, selectedCategorie) {
   if (!chantier) {
@@ -19,7 +27,7 @@ function buildHistogramData(materielChantiers, chantier, selectedCategorie) {
 
   const categorieFiltre =
     selectedCategorie && selectedCategorie !== 'ALL'
-      ? selectedCategorie.trim().toLowerCase()
+      ? normalizeCat(selectedCategorie)
       : null;
 
   // Début : 1er jour du mois de création du chantier
@@ -50,9 +58,10 @@ function buildHistogramData(materielChantiers, chantier, selectedCategorie) {
   // Agrégation par mois pour la catégorie sélectionnée (ou toutes)
   materielChantiers.forEach(mc => {
     const mat = mc.materiel || {};
-    const categorie = (mat.categorie || 'Non catégorisé').trim().toLowerCase();
+    const categorie = mat.categorie || 'Non catégorisé';
+    const categorieNormalisee = mat.categorie ? normalizeCat(categorie) : 'non_categorise';
 
-    if (categorieFiltre && categorie !== categorieFiltre) {
+    if (categorieFiltre && categorieNormalisee !== categorieFiltre) {
       return;
     }
 
@@ -104,6 +113,10 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       req.query.categorie && req.query.categorie.trim() !== ''
         ? req.query.categorie.trim()
         : 'ALL';
+    const selectedCategorieNormalisee =
+      selectedCategorie && selectedCategorie !== 'ALL'
+        ? normalizeCat(selectedCategorie)
+        : null;
 
     let chantier = null;
     let alertes = [];
@@ -129,15 +142,15 @@ router.get('/', ensureAuthenticated, async (req, res) => {
         const categorieTrim = categorieBrute.trim();
         if (!categorieTrim) return;
 
-        const categorieKey = categorieTrim.toLowerCase();
+        const categorieKey = normalizeCat(categorieTrim);
         if (!categorieMap.has(categorieKey)) {
           categorieMap.set(categorieKey, categorieTrim);
         }
       });
 
-      categoriesDisponibles = Array.from(categorieMap.values()).sort((a, b) =>
-        a.localeCompare(b, 'fr')
-      );
+      categoriesDisponibles = Array.from(categorieMap.entries())
+        .map(([norm, label]) => ({ norm, label }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'fr'));
 
       // On considère qu'une alerte = quantite < quantitePrevue
       // et on filtre ici côté JS dans la vue si besoin.
@@ -164,6 +177,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       histogramData,
       categoriesDisponibles,
       selectedCategorie,
+      selectedCategorieNormalisee,
       LOW_STOCK_THRESHOLD
     });
   } catch (err) {
