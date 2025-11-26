@@ -702,6 +702,25 @@
       background-color: #fdecea;
     }
 
+    /* Alerte stock < 30% sur le tableau chantier */
+    .table-stock tr.stock-low-alert {
+      background-color: rgba(255, 99, 132, 0.25) !important;
+      box-shadow: inset 4px 0 0 #ff4d4d; /* barre rouge à gauche */
+    }
+
+    .table-stock tr.stock-low-alert:hover {
+      background-color: rgba(255, 99, 132, 0.40) !important;
+    }
+
+    .badge-stock-low {
+      background-color: #ff4d4d;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      vertical-align: middle;
+    }
+
     /* Renforcement visuel pour les lignes en stock faible (stock chantier) */
     .table-stock tr.table-danger {
       background-color: rgba(255, 99, 132, 0.28) !important;
@@ -1001,9 +1020,22 @@
         </tr>
       </thead>
       <tbody>
-        <% if (materielChantiers && materielChantiers.length > 0) { %>
-          <% materielChantiers.forEach(function (mc) { %>
-            <tr class="<%= mc.isLowStock ? 'table-danger' : '' %>">
+      <% if (materielChantiers && materielChantiers.length > 0) { %>
+        <% materielChantiers.forEach(function (mc) { 
+             const qRecue = Number(mc.quantite) || 0;
+             const qp1 = Number(
+               mc.quantitePrevue1 != null
+                 ? mc.quantitePrevue1
+                 : (mc.quantitePrevue != null ? mc.quantitePrevue : 0)
+             ) || 0;
+             const qp2 = Number(mc.quantitePrevue2) || 0;
+             const qp3 = Number(mc.quantitePrevue3) || 0;
+             const qp4 = Number(mc.quantitePrevue4) || 0;
+             const totalPrev = qp1 + qp2 + qp3 + qp4;
+             const seuil30 = totalPrev > 0 ? totalPrev * 0.3 : null;
+             const isLowClient = seuil30 !== null && qRecue <= seuil30;
+        %>
+          <tr class="<%= isLowClient ? 'table-danger stock-low-alert' : '' %>">
               <td class="d-none" data-label="ID"><%= mc.id %></td>
               <td class="d-none" data-label="Chantier">
                 <%= mc.chantier ? `${mc.chantier.nom} - ${mc.chantier.localisation || ''}` : '' %>
@@ -1083,8 +1115,8 @@
               <td class="col-quantite" data-label="Quantité reçue">
                 <%= mc.quantite != null ? mc.quantite : '-' %>
 
-                <% if (mc.isLowStock) { %>
-                  <span class="badge bg-danger ms-2">
+                <% if (isLowClient && mc.quantite != null) { %>
+                  <span class="badge-stock-low ms-2">
                     ⚠ Stock &lt; 30% du prévu
                   </span>
                 <% } %>
