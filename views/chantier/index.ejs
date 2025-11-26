@@ -1173,20 +1173,16 @@
               </td>
 
               <td class="col-bon-livraison" data-label="Bon de Livraison">
-                <% if (mc.bonLivraisonUrls && mc.bonLivraisonUrls.length > 0) { %>
+                <% if (Array.isArray(mc.bonLivraisonUrls) && mc.bonLivraisonUrls.length > 0) { %>
+                  <% const firstBdlUrl = mc.bonLivraisonUrls[0]; %>
                   <a
-                    href="<%= mc.bonLivraisonUrls[0] %>"
+                    href="<%= firstBdlUrl %>"
                     target="_blank"
-                    class="btn btn-info btn-sm"
+                    rel="noopener noreferrer"
+                    class="btn btn-sm btn-info"
                   >
-                    Voir
+                    Voir (<%= mc.bonLivraisonUrls.length %>)
                   </a>
-
-                  <% if (mc.bonLivraisonUrls.length > 1) { %>
-                    <span class="badge bg-secondary">
-                      +<%= mc.bonLivraisonUrls.length - 1 %>
-                    </span>
-                  <% } %>
                 <% } else { %>
                   -
                 <% } %>

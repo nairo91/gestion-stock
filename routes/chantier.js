@@ -277,23 +277,35 @@ router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, upload.sing
       return res.status(404).send('Matériel de chantier introuvable.');
     }
 
-    // Vérifier uniquement la présence d'un fichier ; certains champs (path) peuvent
-    // ne pas être définis selon le type ou le fournisseur d'upload.
+    // On vérifie seulement la présence du fichier (selon l'uploader, path peut ne pas être défini)
     if (!req.file) {
       return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
     }
 
+    // Avec Cloudinary, secure_url est prioritaire ; sinon on retombe sur path
     const uploadedUrl = req.file.secure_url || req.file.path;
 
     if (!uploadedUrl) {
       return res.status(500).send("URL d'upload manquante pour le bon de livraison.");
     }
 
-    const existingUrls = Array.isArray(mc.bonLivraisonUrls) ? mc.bonLivraisonUrls : [];
-    mc.bonLivraisonUrls = [...existingUrls, uploadedUrl];
-    await mc.save();
+    // On récupère proprement les URLs déjà présentes (JSONB ou string JSON)
+    let existingUrls = [];
+    if (Array.isArray(mc.bonLivraisonUrls)) {
+      existingUrls = mc.bonLivraisonUrls;
+    } else if (typeof mc.bonLivraisonUrls === 'string') {
+      try {
+        existingUrls = JSON.parse(mc.bonLivraisonUrls);
+      } catch (e) {
+        console.warn('Impossible de parser bonLivraisonUrls, utilisation de []', e);
+      }
+    }
 
-    console.log('✅ BDL enregistré pour MC', mc.id, mc.bonLivraisonUrls);
+    console.log('💾 BDL - avant :', existingUrls);
+    const newUrls = [...existingUrls, uploadedUrl];
+    mc.set('bonLivraisonUrls', newUrls);
+    console.log('💾 BDL - après  :', mc.bonLivraisonUrls);
+    await mc.save();
 
     res.redirect('/chantier');
   } catch (error) {
