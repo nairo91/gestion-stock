@@ -14,7 +14,10 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: { folder: 'gestion-stock' }
+  params: {
+    folder: 'gestion-stock',
+    resource_type: 'auto'
+  }
 });
 
 module.exports = { cloudinary, storage };
