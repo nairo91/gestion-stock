@@ -281,8 +281,14 @@ router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, upload.sing
       return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
     }
 
+    const uploadedUrl = req.file.path || req.file.secure_url;
+
+    if (!uploadedUrl) {
+      return res.status(500).send("URL d'upload manquante pour le bon de livraison.");
+    }
+
     const existingUrls = Array.isArray(mc.bonLivraisonUrls) ? mc.bonLivraisonUrls : [];
-    mc.bonLivraisonUrls = [...existingUrls, req.file.path];
+    mc.bonLivraisonUrls = [...existingUrls, uploadedUrl];
     await mc.save();
 
     res.redirect('/chantier');
