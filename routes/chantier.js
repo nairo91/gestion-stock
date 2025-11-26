@@ -237,19 +237,6 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       return mc;
     });
 
-    for (const mc of materielChantiers) {
-      try {
-        if (mc.getDataValue('isLowStock') && mc.materiel) {
-          await sendLowStockNotification({
-            nom: mc.materiel.nom,
-            quantite: mc.quantite
-          });
-        }
-      } catch (err) {
-        console.error("Erreur lors de l'envoi de la notification de stock faible :", err);
-      }
-    }
-
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
     const fournisseursRaw = await Materiel.findAll({
@@ -305,8 +292,9 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
     }
 
     const oldQuantite = mc.quantite || 0;
-    const totalPrevuAvantReception = computeTotalPrevu(mc);
     const newQuantite = oldQuantite + receptionQty;
+    const totalPrevuAvantReception = computeTotalPrevu(mc);
+    const seuil = totalPrevuAvantReception * 0.30;
 
     if (livraisonIdx && livraisonIdx >= 1 && livraisonIdx <= 4) {
       const prop = `quantitePrevue${livraisonIdx}`;
@@ -331,6 +319,13 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
         : 'Matériel chantier',
       stockType: 'chantier'
     });
+
+    if (oldQuantite > seuil && newQuantite <= seuil && mc.materiel) {
+      await sendLowStockNotification({
+        nom: mc.materiel.nom,
+        quantite: newQuantite
+      });
+    }
 
     const difference = newQuantite - (oldQuantite + totalPrevuAvantReception);
 
