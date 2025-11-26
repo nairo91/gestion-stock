@@ -277,6 +277,8 @@ router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, upload.sing
       return res.status(404).send('Matériel de chantier introuvable.');
     }
 
+    // Vérifier uniquement la présence d'un fichier ; certains champs (path) peuvent
+    // ne pas être définis selon le type ou le fournisseur d'upload.
     if (!req.file) {
       return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
     }
@@ -988,7 +990,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
         try { await cloudinary.uploader.destroy(publicId); } catch (e) { console.error(e); }
         await existingPhoto.destroy();
       }
-      const url = req.file.path || req.file.secure_url;
+      const url = req.file.secure_url || req.file.path;
       await Photo.create({
         chemin: url,
         materielId: mc.materiel.id
@@ -1071,7 +1073,7 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
 
     // Gérer la photo si fournie
     if (req.file) {
-      const url = req.file.path || req.file.secure_url;
+      const url = req.file.secure_url || req.file.path;
       await Photo.create({
         chemin: url,
         materielId: nouveauMateriel.id
