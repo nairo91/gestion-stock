@@ -277,11 +277,11 @@ router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, upload.sing
       return res.status(404).send('Matériel de chantier introuvable.');
     }
 
-    if (!req.file || !req.file.path) {
+    if (!req.file) {
       return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
     }
 
-    const uploadedUrl = req.file.path || req.file.secure_url;
+    const uploadedUrl = req.file.secure_url || req.file.path;
 
     if (!uploadedUrl) {
       return res.status(500).send("URL d'upload manquante pour le bon de livraison.");
