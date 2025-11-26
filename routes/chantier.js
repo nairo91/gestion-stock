@@ -20,7 +20,7 @@ const { ensureAuthenticated, checkAdmin } = require('./materiel');
 const Categorie = require('../models/Categorie');
 const Designation = require('../models/Designation');
 const { sequelize } = require('../config/database');
-const { sendReceptionGapNotification } = require('../utils/mailer');
+const { sendLowStockNotification, sendReceptionGapNotification } = require('../utils/mailer');
 
 const CHANTIER_FILTER_KEYS = [
   'chantierId',
@@ -236,6 +236,19 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       mc.setDataValue('isLowStock', isLowStock);
       return mc;
     });
+
+    for (const mc of materielChantiers) {
+      try {
+        if (mc.getDataValue('isLowStock') && mc.materiel) {
+          await sendLowStockNotification({
+            nom: mc.materiel.nom,
+            quantite: mc.quantite
+          });
+        }
+      } catch (err) {
+        console.error("Erreur lors de l'envoi de la notification de stock faible :", err);
+      }
+    }
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
