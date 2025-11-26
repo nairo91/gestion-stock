@@ -269,6 +269,29 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   }
 });
 
+router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, upload.single('bdl'), async (req, res) => {
+  try {
+    const mc = await MaterielChantier.findByPk(req.params.id);
+
+    if (!mc) {
+      return res.status(404).send('Matériel de chantier introuvable.');
+    }
+
+    if (!req.file || !req.file.path) {
+      return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
+    }
+
+    const existingUrls = Array.isArray(mc.bonLivraisonUrls) ? mc.bonLivraisonUrls : [];
+    mc.bonLivraisonUrls = [...existingUrls, req.file.path];
+    await mc.save();
+
+    res.redirect('/chantier');
+  } catch (error) {
+    console.error('Erreur lors de l\'ajout du bon de livraison :', error);
+    res.status(500).send('Erreur lors de l\'ajout du bon de livraison.');
+  }
+});
+
 
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {

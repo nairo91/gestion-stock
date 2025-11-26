@@ -99,6 +99,12 @@ const MaterielChantier = sequelize.define(
       allowNull: true,
     },
 
+    bonLivraisonUrls: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+    },
+
     remarque: {
       type: DataTypes.TEXT,
       allowNull: true,

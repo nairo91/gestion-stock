@@ -1049,6 +1049,7 @@
           <th class="col-date">Date 3</th>
           <th class="col-quantite-prevue">Qte prévue 4</th>
           <th class="col-date">Date 4</th>
+          <th class="col-bon-livraison">Bon de Livraison</th>
           <th class="col-actions">Actions</th>
         </tr>
       </thead>
@@ -1171,6 +1172,22 @@
                 <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
               </td>
 
+              <td class="col-bon-livraison" data-label="Bon de Livraison">
+                <% if (Array.isArray(mc.bonLivraisonUrls) && mc.bonLivraisonUrls.length > 0) { %>
+                  <ul class="list-unstyled mb-0">
+                    <% mc.bonLivraisonUrls.forEach((url, index) => { %>
+                      <li>
+                        <a href="<%= url %>" target="_blank" rel="noopener noreferrer">
+                          BDL <%= index + 1 %>
+                        </a>
+                      </li>
+                    <% }); %>
+                  </ul>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+
               <td class="actions col-actions" data-label="Actions">
                 <%
                   // Trouve la "ligne source" côté chantier courant (pas d'optional chaining ici)
@@ -1255,6 +1272,23 @@
                   >
                     Réceptionner
                   </button>
+                  <form
+                    action="/chantier/materielChantier/<%= mc.id %>/ajouterBDL"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    class="d-inline"
+                  >
+                    <label class="btn btn-outline-secondary btn-sm mb-1">
+                      Ajouter BDL
+                      <input
+                        type="file"
+                        name="bdl"
+                        accept="image/*,application/pdf"
+                        class="d-none"
+                        onchange="this.form.submit()"
+                      >
+                    </label>
+                  </form>
                     <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
                     <button
                       type="button"
@@ -1274,7 +1308,7 @@
           <% }); %>
         <% } else { %>
           <tr>
-            <td colspan="22" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
+            <td colspan="23" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
           </tr>
         <% } %>
       </tbody>
