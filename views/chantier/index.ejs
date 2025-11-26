@@ -701,6 +701,16 @@
     .table-danger {
       background-color: #fdecea;
     }
+
+    /* Renforcement visuel pour les lignes en stock faible (stock chantier) */
+    .table-stock tr.table-danger {
+      background-color: rgba(255, 99, 132, 0.28) !important;
+      box-shadow: inset 4px 0 0 #ff4d4d; /* petite barre rouge à gauche */
+    }
+
+    .table-stock tr.table-danger:hover {
+      background-color: rgba(255, 99, 132, 0.4) !important;
+    }
   </style>
 </head>
 <body>
@@ -1070,7 +1080,15 @@
               <td class="col-compartiment" data-label="Compartiment"><%= mc.materiel && mc.materiel.compartiment ? mc.materiel.compartiment : '-' %></td>
               <td class="col-niveau" data-label="Niveau"><%= mc.materiel && mc.materiel.niveau != null ? mc.materiel.niveau : '-' %></td>
 
-              <td class="col-quantite" data-label="Quantité reçue"><%= mc.quantite != null ? mc.quantite : '-' %></td>
+              <td class="col-quantite" data-label="Quantité reçue">
+                <%= mc.quantite != null ? mc.quantite : '-' %>
+
+                <% if (mc.isLowStock) { %>
+                  <span class="badge bg-danger ms-2">
+                    ⚠ Stock &lt; 30% du prévu
+                  </span>
+                <% } %>
+              </td>
               <td class="col-quantite-prevue" data-label="Quantité prévue 1"><%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %></td>
               <td class="col-date" data-label="Date prévue 1">
                 <%= formatDateFr(mc.dateLivraisonPrevue1 || mc.dateLivraisonPrevue) || '-' %>
