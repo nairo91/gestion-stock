@@ -697,6 +697,10 @@
         margin-top: 2.5rem;
       }
     }
+
+    .table-danger {
+      background-color: #fdecea;
+    }
   </style>
 </head>
 <body>
@@ -943,7 +947,7 @@
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite" data-column-class="col-quantite" checked>
-        <label class="form-check-label" for="toggle-col-quantite">Quantité</label>
+        <label class="form-check-label" for="toggle-col-quantite">Quantité reçue</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue" data-column-class="col-quantite-prevue" checked>
@@ -974,16 +978,22 @@
           <th class="col-rack">Rack</th>
           <th class="col-compartiment">Compartiment</th>
           <th class="col-niveau">Niveau</th>
-          <th class="col-quantite">Qte</th>
-          <th class="col-quantite-prevue">Qte prévue</th>
-          <th class="col-date">Date prévue</th>
+          <th class="col-quantite">Qte reçue</th>
+          <th class="col-quantite-prevue">Qte prévue 1</th>
+          <th class="col-date">Date 1</th>
+          <th class="col-quantite-prevue">Qte prévue 2</th>
+          <th class="col-date">Date 2</th>
+          <th class="col-quantite-prevue">Qte prévue 3</th>
+          <th class="col-date">Date 3</th>
+          <th class="col-quantite-prevue">Qte prévue 4</th>
+          <th class="col-date">Date 4</th>
           <th class="col-actions">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% if (materielChantiers && materielChantiers.length > 0) { %>
           <% materielChantiers.forEach(function (mc) { %>
-            <tr>
+            <tr class="<%= mc.isLowStock ? 'table-danger' : '' %>">
               <td class="d-none" data-label="ID"><%= mc.id %></td>
               <td class="d-none" data-label="Chantier">
                 <%= mc.chantier ? `${mc.chantier.nom} - ${mc.chantier.localisation || ''}` : '' %>
@@ -1060,10 +1070,22 @@
               <td class="col-compartiment" data-label="Compartiment"><%= mc.materiel && mc.materiel.compartiment ? mc.materiel.compartiment : '-' %></td>
               <td class="col-niveau" data-label="Niveau"><%= mc.materiel && mc.materiel.niveau != null ? mc.materiel.niveau : '-' %></td>
 
-              <td class="col-quantite" data-label="Quantité"><%= mc.quantite != null ? mc.quantite : '-' %></td>
-              <td class="col-quantite-prevue" data-label="Quantité prévue"><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
-              <td class="col-date" data-label="Date prévue">
-                <%= formatDateFr(mc.dateLivraisonPrevue) || '-' %>
+              <td class="col-quantite" data-label="Quantité reçue"><%= mc.quantite != null ? mc.quantite : '-' %></td>
+              <td class="col-quantite-prevue" data-label="Quantité prévue 1"><%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %></td>
+              <td class="col-date" data-label="Date prévue 1">
+                <%= formatDateFr(mc.dateLivraisonPrevue1 || mc.dateLivraisonPrevue) || '-' %>
+              </td>
+              <td class="col-quantite-prevue" data-label="Quantité prévue 2"><%= mc.quantitePrevue2 != null ? mc.quantitePrevue2 : '-' %></td>
+              <td class="col-date" data-label="Date prévue 2">
+                <%= formatDateFr(mc.dateLivraisonPrevue2) || '-' %>
+              </td>
+              <td class="col-quantite-prevue" data-label="Quantité prévue 3"><%= mc.quantitePrevue3 != null ? mc.quantitePrevue3 : '-' %></td>
+              <td class="col-date" data-label="Date prévue 3">
+                <%= formatDateFr(mc.dateLivraisonPrevue3) || '-' %>
+              </td>
+              <td class="col-quantite-prevue" data-label="Quantité prévue 4"><%= mc.quantitePrevue4 != null ? mc.quantitePrevue4 : '-' %></td>
+              <td class="col-date" data-label="Date prévue 4">
+                <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
               </td>
 
               <td class="actions col-actions" data-label="Actions">
@@ -1135,13 +1157,21 @@
                       type="button"
                       class="btn btn-success btn-sm"
                       data-bs-toggle="modal"
-                      data-bs-target="#globalReceptionModal"
-                      data-mc-id="<%= mc.id %>"
-                      data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
-                      data-chantier-name="<%= mc.chantier ? mc.chantier.nom : '' %>"
-                    >
-                      Réceptionner
-                    </button>
+                    data-bs-target="#globalReceptionModal"
+                    data-mc-id="<%= mc.id %>"
+                    data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
+                    data-chantier-name="<%= mc.chantier ? mc.chantier.nom : '' %>"
+                    data-quantite-prevue1="<%= mc.quantitePrevue1 || '' %>"
+                    data-quantite-prevue2="<%= mc.quantitePrevue2 || '' %>"
+                    data-quantite-prevue3="<%= mc.quantitePrevue3 || '' %>"
+                    data-quantite-prevue4="<%= mc.quantitePrevue4 || '' %>"
+                    data-date-prevue1="<%= mc.dateLivraisonPrevue1 ? mc.dateLivraisonPrevue1.toISOString() : '' %>"
+                    data-date-prevue2="<%= mc.dateLivraisonPrevue2 ? mc.dateLivraisonPrevue2.toISOString() : '' %>"
+                    data-date-prevue3="<%= mc.dateLivraisonPrevue3 ? mc.dateLivraisonPrevue3.toISOString() : '' %>"
+                    data-date-prevue4="<%= mc.dateLivraisonPrevue4 ? mc.dateLivraisonPrevue4.toISOString() : '' %>"
+                  >
+                    Réceptionner
+                  </button>
                     <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
                     <button
                       type="button"
@@ -1161,7 +1191,7 @@
           <% }); %>
         <% } else { %>
           <tr>
-            <td colspan="16" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
+            <td colspan="22" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
           </tr>
         <% } %>
       </tbody>
@@ -1275,6 +1305,10 @@
           <div class="modal-body">
             <p class="mb-2"><strong>Matériel :</strong> <span id="receptionMatName"></span></p>
             <p class="mb-3"><strong>Chantier :</strong> <span id="receptionChantierName"></span></p>
+            <div class="mb-3">
+              <label class="form-label">Livraison prévue :</label>
+              <select name="livraisonIndex" class="form-select" id="receptionLivraison"></select>
+            </div>
             <div class="mb-3">
               <label class="form-label">Quantité reçue</label>
               <input
@@ -1524,6 +1558,37 @@
         if (chantierSpan) chantierSpan.textContent = chantierName;
         const qty = document.getElementById('receptionQty');
         if (qty) qty.value = '';
+        const livraisonSelect = document.getElementById('receptionLivraison');
+        if (livraisonSelect) {
+          livraisonSelect.innerHTML = '';
+          const addOption = (idx, qtyValue, dateValue) => {
+            const parsedQty = Number.parseInt(qtyValue, 10);
+            if (Number.isNaN(parsedQty) || parsedQty <= 0) return;
+            const option = document.createElement('option');
+            option.value = String(idx);
+            let dateLabel = '-';
+            if (dateValue) {
+              const parsedDate = new Date(dateValue);
+              if (!Number.isNaN(parsedDate.getTime())) {
+                dateLabel = parsedDate.toLocaleDateString('fr-FR');
+              }
+            }
+            option.textContent = `Livraison ${idx} – ${dateLabel}`;
+            livraisonSelect.appendChild(option);
+          };
+
+          addOption(1, btn?.dataset.quantitePrevue1, btn?.dataset.datePrevue1);
+          addOption(2, btn?.dataset.quantitePrevue2, btn?.dataset.datePrevue2);
+          addOption(3, btn?.dataset.quantitePrevue3, btn?.dataset.datePrevue3);
+          addOption(4, btn?.dataset.quantitePrevue4, btn?.dataset.datePrevue4);
+
+          if (!livraisonSelect.options.length) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Réception sans livraison prévue';
+            livraisonSelect.appendChild(option);
+          }
+        }
         const dateInput = document.getElementById('receptionDate');
         if (dateInput) {
           const now = new Date();
