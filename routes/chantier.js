@@ -293,6 +293,8 @@ router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, upload.sing
     mc.bonLivraisonUrls = [...existingUrls, uploadedUrl];
     await mc.save();
 
+    console.log('✅ BDL enregistré pour MC', mc.id, mc.bonLivraisonUrls);
+
     res.redirect('/chantier');
   } catch (error) {
     console.error('Erreur lors de l\'ajout du bon de livraison :', error);
