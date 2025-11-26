@@ -266,16 +266,31 @@
         </div>
       </div>
       <div class="mb-3">
-        <label for="quantitePrevue" class="form-label">Quantité prévue</label>
-        <input type="number" name="quantitePrevue" id="quantitePrevue" class="form-control" value="<%= mc.quantitePrevue || '' %>" min="0">
-      </div>
-      <div class="mb-3">
-        <label for="dateLivraisonPrevue" class="form-label">Date de livraison prévue</label>
-        <div class="input-group">
-          <button type="button" class="input-group-text input-group-button" id="datePickerButton" aria-label="Choisir une date">
-            📅
-          </button>
-          <input type="date" name="dateLivraisonPrevue" id="dateLivraisonPrevue" class="form-control" value="<%= mc.dateLivraisonPrevue ? mc.dateLivraisonPrevue.toISOString().split('T')[0] : '' %>">
+        <div class="row">
+          <div class="col-md-3">
+            <label>Qte prévue 1</label>
+            <input type="number" name="quantitePrevue1" class="form-control" value="<%= mc.quantitePrevue1 || '' %>">
+            <label>Date prévue 1</label>
+            <input type="date" name="dateLivraisonPrevue1" class="form-control" value="<%= mc.dateLivraisonPrevue1 ? mc.dateLivraisonPrevue1.toISOString().split('T')[0] : '' %>">
+          </div>
+          <div class="col-md-3">
+            <label>Qte prévue 2</label>
+            <input type="number" name="quantitePrevue2" class="form-control" value="<%= mc.quantitePrevue2 || '' %>">
+            <label>Date prévue 2</label>
+            <input type="date" name="dateLivraisonPrevue2" class="form-control" value="<%= mc.dateLivraisonPrevue2 ? mc.dateLivraisonPrevue2.toISOString().split('T')[0] : '' %>">
+          </div>
+          <div class="col-md-3">
+            <label>Qte prévue 3</label>
+            <input type="number" name="quantitePrevue3" class="form-control" value="<%= mc.quantitePrevue3 || '' %>">
+            <label>Date prévue 3</label>
+            <input type="date" name="dateLivraisonPrevue3" class="form-control" value="<%= mc.dateLivraisonPrevue3 ? mc.dateLivraisonPrevue3.toISOString().split('T')[0] : '' %>">
+          </div>
+          <div class="col-md-3">
+            <label>Qte prévue 4</label>
+            <input type="number" name="quantitePrevue4" class="form-control" value="<%= mc.quantitePrevue4 || '' %>">
+            <label>Date prévue 4</label>
+            <input type="date" name="dateLivraisonPrevue4" class="form-control" value="<%= mc.dateLivraisonPrevue4 ? mc.dateLivraisonPrevue4.toISOString().split('T')[0] : '' %>">
+          </div>
         </div>
       </div>
 

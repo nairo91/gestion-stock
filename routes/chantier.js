@@ -161,6 +161,32 @@ const upload = multer({ storage });
 // d'accéder au fichier via req.file.buffer.
 const excelUpload = multer({ storage: multer.memoryStorage() });
 
+const toIntOrNull = value => {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const toDateOrNull = value => {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const computeTotalPrevu = mc => {
+  const plannedBySlot = [1, 2, 3, 4].reduce((sum, idx) => {
+    const key = `quantitePrevue${idx}`;
+    const val = mc[key];
+    return sum + (val ? Number(val) : 0);
+  }, 0);
+  const legacy = mc.quantitePrevue ? Number(mc.quantitePrevue) : 0;
+  return plannedBySlot + legacy;
+};
+
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
@@ -200,7 +226,16 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       }, {});
     }
 
-    const materielChantiers = await fetchMaterielChantiersWithFilters(activeFilters, { includePhotos: true });
+    let materielChantiers = await fetchMaterielChantiersWithFilters(activeFilters, { includePhotos: true });
+
+    materielChantiers = materielChantiers.map(mc => {
+      const totalPrevu = computeTotalPrevu(mc);
+      const seuil = totalPrevu * 0.30;
+      const isLowStock = mc.quantite <= seuil;
+      mc.setDataValue('totalPrevu', totalPrevu);
+      mc.setDataValue('isLowStock', isLowStock);
+      return mc;
+    });
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
@@ -237,8 +272,9 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
-    const { quantiteReceptionnee } = req.body;
+    const { quantiteReceptionnee, livraisonIndex } = req.body;
     const receptionQty = parseInt(quantiteReceptionnee, 10);
+    const livraisonIdx = livraisonIndex ? parseInt(livraisonIndex, 10) : null;
 
     if (Number.isNaN(receptionQty) || receptionQty <= 0) {
       return res.status(400).send('Quantité de réception invalide.');
@@ -256,14 +292,19 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
     }
 
     const oldQuantite = mc.quantite || 0;
-    const oldQuantitePrevue = mc.quantitePrevue ?? 0;
-    const quantitePrevueTotale = oldQuantite + oldQuantitePrevue;
-
+    const totalPrevuAvantReception = computeTotalPrevu(mc);
     const newQuantite = oldQuantite + receptionQty;
-    const newQuantitePrevue = Math.max(oldQuantitePrevue - receptionQty, 0);
+
+    if (livraisonIdx && livraisonIdx >= 1 && livraisonIdx <= 4) {
+      const prop = `quantitePrevue${livraisonIdx}`;
+      const prevueActuelle = mc[prop] || 0;
+      mc[prop] = Math.max(prevueActuelle - receptionQty, 0);
+    } else if (mc.quantitePrevue !== null && mc.quantitePrevue !== undefined) {
+      const prevueActuelle = mc.quantitePrevue || 0;
+      mc.quantitePrevue = Math.max(prevueActuelle - receptionQty, 0);
+    }
 
     mc.quantite = newQuantite;
-    mc.quantitePrevue = newQuantitePrevue;
     await mc.save();
 
     await Historique.create({
@@ -278,14 +319,14 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       stockType: 'chantier'
     });
 
-    const difference = newQuantite - quantitePrevueTotale;
+    const difference = newQuantite - (oldQuantite + totalPrevuAvantReception);
 
     if (difference !== 0 && mc.materiel && mc.chantier) {
       await sendReceptionGapNotification({
         difference,
         materielNom: mc.materiel.nom,
         chantierNom: mc.chantier.nom,
-        quantitePrevue: quantitePrevueTotale,
+        quantitePrevue: oldQuantite + totalPrevuAvantReception,
         quantiteReelle: newQuantite
       });
     }
@@ -484,10 +525,18 @@ router.post('/supprimer-designation', ensureAuthenticated, checkAdmin, async (re
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau, remarque } = req.body;
+    const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau, remarque, quantitePrevue1, quantitePrevue2, quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3, dateLivraisonPrevue4 } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
     const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
     const datePrevue = dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null;
+    const qtePrevueSlot1 = toIntOrNull(quantitePrevue1);
+    const qtePrevueSlot2 = toIntOrNull(quantitePrevue2);
+    const qtePrevueSlot3 = toIntOrNull(quantitePrevue3);
+    const qtePrevueSlot4 = toIntOrNull(quantitePrevue4);
+    const datePrevueSlot1 = toDateOrNull(dateLivraisonPrevue1);
+    const datePrevueSlot2 = toDateOrNull(dateLivraisonPrevue2);
+    const datePrevueSlot3 = toDateOrNull(dateLivraisonPrevue3);
+    const datePrevueSlot4 = toDateOrNull(dateLivraisonPrevue4);
 
     await Categorie.findOrCreate({ where: { nom: categorie } });
 
@@ -527,6 +576,14 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
       quantite: qte,
       quantitePrevue: qtePrevue,
       dateLivraisonPrevue: datePrevue,
+      quantitePrevue1: qtePrevueSlot1,
+      quantitePrevue2: qtePrevueSlot2,
+      quantitePrevue3: qtePrevueSlot3,
+      quantitePrevue4: qtePrevueSlot4,
+      dateLivraisonPrevue1: datePrevueSlot1,
+      dateLivraisonPrevue2: datePrevueSlot2,
+      dateLivraisonPrevue3: datePrevueSlot3,
+      dateLivraisonPrevue4: datePrevueSlot4,
       remarque: remarque || null
     });
 
@@ -750,7 +807,9 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
   try {
       const {
         quantite, quantitePrevue, dateLivraisonPrevue, nomMateriel, categorie, fournisseur, emplacementId,
-        rack, compartiment, niveau, reference, description, prix, remarque
+        rack, compartiment, niveau, reference, description, prix, remarque, quantitePrevue1, quantitePrevue2,
+        quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3,
+        dateLivraisonPrevue4
       } = req.body;
 
     const mc = await MaterielChantier.findByPk(req.params.id, {
@@ -770,6 +829,20 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newDatePrevue = (dateLivraisonPrevue === undefined || dateLivraisonPrevue === '')
       ? mc.dateLivraisonPrevue
       : new Date(dateLivraisonPrevue);
+    const newQuantitesPrevues = [quantitePrevue1, quantitePrevue2, quantitePrevue3, quantitePrevue4].map((val, idx) => {
+      if (val === undefined || val === '') {
+        return mc[`quantitePrevue${idx + 1}`];
+      }
+      const parsed = parseInt(val, 10);
+      return Number.isNaN(parsed) ? mc[`quantitePrevue${idx + 1}`] : parsed;
+    });
+    const newDatesPrevues = [dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3, dateLivraisonPrevue4].map((val, idx) => {
+      if (val === undefined || val === '') {
+        return mc[`dateLivraisonPrevue${idx + 1}`];
+      }
+      const parsed = new Date(val);
+      return Number.isNaN(parsed.getTime()) ? mc[`dateLivraisonPrevue${idx + 1}`] : parsed;
+    });
 
     if (
       isNaN(newQte) || newQte < 0 ||
@@ -794,6 +867,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       const oldRemarque = mc.remarque;
     const oldQtePrevue = mc.quantitePrevue;
     const oldDatePrevue = mc.dateLivraisonPrevue;
+    const oldQuantitesPrevues = [mc.quantitePrevue1, mc.quantitePrevue2, mc.quantitePrevue3, mc.quantitePrevue4];
+    const oldDatesPrevues = [mc.dateLivraisonPrevue1, mc.dateLivraisonPrevue2, mc.dateLivraisonPrevue3, mc.dateLivraisonPrevue4];
 
     const newNom = nomMateriel.trim();
     const newCategorie = categorie;
@@ -823,11 +898,26 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldQtePrevue !== newQtePrevue) changementsDetail.push(`Quantité prévue: ${oldQtePrevue || '-'} ➔ ${newQtePrevue || '-'}`);
     if ( (oldDatePrevue ? oldDatePrevue.toISOString().split('T')[0] : '') !== (newDatePrevue ? newDatePrevue.toISOString().split('T')[0] : '') )
       changementsDetail.push(`Date prévue: ${oldDatePrevue ? oldDatePrevue.toISOString().split('T')[0] : '-'} ➔ ${newDatePrevue ? newDatePrevue.toISOString().split('T')[0] : '-'}`);
+    newQuantitesPrevues.forEach((val, idx) => {
+      if (oldQuantitesPrevues[idx] !== val) {
+        changementsDetail.push(`Quantité prévue ${idx + 1}: ${oldQuantitesPrevues[idx] || '-'} ➔ ${val || '-'}`);
+      }
+    });
+    newDatesPrevues.forEach((val, idx) => {
+      const oldVal = oldDatesPrevues[idx];
+      if ((oldVal ? oldVal.toISOString().split('T')[0] : '') !== (val ? val.toISOString().split('T')[0] : '')) {
+        changementsDetail.push(`Date prévue ${idx + 1}: ${oldVal ? oldVal.toISOString().split('T')[0] : '-'} ➔ ${val ? val.toISOString().split('T')[0] : '-'}`);
+      }
+    });
 
     // Mise à jour
     mc.quantite = newQte;
     mc.quantitePrevue = newQtePrevue;
     mc.dateLivraisonPrevue = newDatePrevue;
+    [1, 2, 3, 4].forEach((idx, i) => {
+      mc[`quantitePrevue${idx}`] = newQuantitesPrevues[i];
+      mc[`dateLivraisonPrevue${idx}`] = newDatesPrevues[i];
+    });
     mc.materiel.nom = newNom;
     mc.materiel.categorie = newCategorie;
     mc.materiel.emplacementId = newEmplacement;
