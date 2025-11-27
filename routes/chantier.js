@@ -8,7 +8,7 @@ const path = require('path');
 const ExcelJS = require('exceljs');
 const QRCode = require('qrcode');
 const dayjs = require('dayjs');
-const { storage, cloudinary } = require('../config/cloudinary.config');
+const { storage, cloudinary, uploadBDL } = require('../config/cloudinary.config');
 
 const Materiel = require('../models/Materiel');
 const Photo = require('../models/Photo');
@@ -269,7 +269,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   }
 });
 
-router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, upload.single('bdl'), async (req, res) => {
+router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, uploadBDL.single('bdl'), async (req, res) => {
   try {
     const mc = await MaterielChantier.findByPk(req.params.id);
 
@@ -282,8 +282,12 @@ router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, upload.sing
       return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
     }
 
-    // Avec Cloudinary, secure_url est prioritaire ; sinon on retombe sur path
-    const uploadedUrl = req.file.secure_url || req.file.path;
+    // Cloudinary RAW files n'ont pas secure_url → file.path = l'URL cloudinary
+    let uploadedUrl = null;
+    if (req.file.secure_url) uploadedUrl = req.file.secure_url;
+    else if (req.file.path) uploadedUrl = req.file.path;
+
+    console.log('BDL UPLOADED URL :', uploadedUrl);
 
     if (!uploadedUrl) {
       return res.status(500).send("URL d'upload manquante pour le bon de livraison.");
