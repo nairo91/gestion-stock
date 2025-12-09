@@ -1195,16 +1195,21 @@
               </td>
 
               <td class="col-bon-livraison" data-label="Bon de Livraison">
-                <% if (Array.isArray(mc.bonLivraisonUrls) && mc.bonLivraisonUrls.length > 0) { %>
-                  <% const firstBdlUrl = mc.bonLivraisonUrls[0]; %>
-                  <a
-                    href="<%= firstBdlUrl %>"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="btn btn-sm btn-info"
+                <%
+                  const bdlUrls = Array.isArray(mc.bonLivraisonUrls)
+                    ? mc.bonLivraisonUrls
+                    : (mc.bonLivraisonUrls ? [mc.bonLivraisonUrls] : []);
+                %>
+                <% if (bdlUrls.length > 0) { %>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-info btn-show-bdl"
+                    data-bs-toggle="modal"
+                    data-bs-target="#globalBdlModal"
+                    data-bdl-urls="<%= encodeURIComponent(JSON.stringify(bdlUrls)) %>"
                   >
-                    Voir (<%= mc.bonLivraisonUrls.length %>)
-                  </a>
+                    Voir (<%= bdlUrls.length %>)
+                  </button>
                 <% } else { %>
                   -
                 <% } %>
@@ -1574,6 +1579,31 @@
     </div>
   </div>
 
+
+  <!-- Modale globale pour afficher la liste des BDL -->
+  <div class="modal fade" id="globalBdlModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Bons de livraison</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <ul id="globalBdlList" class="list-unstyled mb-0">
+            <!-- rempli dynamiquement en JS -->
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 1) Bootstrap d'abord -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -1668,7 +1698,7 @@
   <!-- 2) Déplacer les modales SOUS <body> une fois le DOM prêt -->
   <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
-      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','fournisseurContactModal']
+      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','fournisseurContactModal']
         .forEach(function (id) {
           var el = document.getElementById(id);
           if (el && el.parentNode !== document.body) {
@@ -2302,6 +2332,57 @@
             hideSpinner();
             input.value = '';
           }
+        });
+      });
+    })();
+  </script>
+
+
+  <!-- Script pour la modale BDL : liste de tous les bons de livraison -->
+  <script nonce="<%= nonce %>">
+    (function () {
+      var bdlModal = document.getElementById('globalBdlModal');
+      if (!bdlModal) return;
+
+      var listEl = document.getElementById('globalBdlList');
+      if (!listEl) return;
+
+      bdlModal.addEventListener('show.bs.modal', function (event) {
+        var btn = event.relatedTarget;
+        if (!btn) return;
+
+        var raw = btn.getAttribute('data-bdl-urls') || '[]';
+        var urls = [];
+        try {
+          urls = JSON.parse(decodeURIComponent(raw));
+        } catch (e) {
+          console.warn('Impossible de parser la liste des BDL :', e);
+          urls = [];
+        }
+
+        // nettoyage
+        listEl.innerHTML = '';
+
+        if (!urls.length) {
+          var liEmpty = document.createElement('li');
+          liEmpty.textContent = 'Aucun bon de livraison enregistré.';
+          listEl.appendChild(liEmpty);
+          return;
+        }
+
+        urls.forEach(function (u, idx) {
+          if (!u) return;
+          var li = document.createElement('li');
+          li.className = 'mb-2';
+
+          var a = document.createElement('a');
+          a.href = u;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.textContent = 'Bon de livraison ' + (idx + 1);
+
+          li.appendChild(a);
+          listEl.appendChild(li);
         });
       });
     })();
