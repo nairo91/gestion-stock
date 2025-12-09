@@ -125,6 +125,18 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
 
   let materielChantiers = await MaterielChantier.findAll({
     where: whereChantier,
+    // IMPORTANT : on s'assure que bonLivraisonUrls est bien renvoyé
+    attributes: {
+      include: [
+        'bonLivraisonUrls',
+        'quantite',
+        'quantitePrevue',
+        'quantitePrevue1',
+        'quantitePrevue2',
+        'quantitePrevue3',
+        'quantitePrevue4'
+      ]
+    },
     include: [
       { model: Chantier, as: 'chantier' },
       materielInclude
@@ -279,19 +291,17 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   }
 });
 
-// Route BDL avec gestion explicite des erreurs d'upload (Cloudinary / Multer)
+// Nouvelle route BDL avec gestion d'erreurs Cloudinary/Multer
 router.post(
   '/materielChantier/:id/ajouterBDL',
   ensureAuthenticated,
   (req, res) => {
-    // On appelle manuellement le middleware multer pour pouvoir logger les erreurs
+    // on appelle uploadBDL.single à la main pour avoir accès à "err"
     uploadBDL.single('bdl')(req, res, async (err) => {
       if (err) {
         console.error('❌ Erreur upload BDL (Cloudinary / Multer) :', err);
-
-        // Si c'est un AggregateError (nouveau Node >=18), on affiche le détail des sous-erreurs
         if (err.name === 'AggregateError' && Array.isArray(err.errors)) {
-          console.error('📡 Détail AggregateError (tentatives de connexion) :');
+          console.error('📡 Détail AggregateError :');
           for (const sub of err.errors) {
             console.error(
               '  →',
@@ -302,28 +312,27 @@ router.post(
             );
           }
         }
-
-        // Si c'est un timeout réseau, ce sera plus visible ici
         return res
           .status(500)
-          .send("Erreur lors de l'upload du bon de livraison (connexion).");
+          .send("Erreur lors de l'upload du bon de livraison (problème de connexion externe).");
       }
 
       try {
         const mc = await MaterielChantier.findByPk(req.params.id);
+
         if (!mc) {
           return res.status(404).send('Matériel de chantier introuvable.');
         }
 
         if (!req.file) {
-          return res
-            .status(400)
-            .send('Aucun fichier fourni pour le bon de livraison.');
+          return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
         }
 
+        // Cloudinary envoie généralement .path pour les RAW, sinon .secure_url
         const uploadedUrl = req.file.secure_url || req.file.path || null;
-        console.log('BDL UPLOADED FILE :', req.file);
-        console.log('BDL UPLOADED URL  :', uploadedUrl);
+
+        console.log('📄 BDL - fichier reçu :', req.file);
+        console.log('📄 BDL - URL retenue  :', uploadedUrl);
 
         if (!uploadedUrl) {
           return res
@@ -331,35 +340,26 @@ router.post(
             .send("URL d'upload manquante pour le bon de livraison.");
         }
 
-        let existingUrls = [];
+        // normalisation de bonLivraisonUrls
+        let existing = [];
         if (Array.isArray(mc.bonLivraisonUrls)) {
-          existingUrls = mc.bonLivraisonUrls;
+          existing = mc.bonLivraisonUrls;
         } else if (typeof mc.bonLivraisonUrls === 'string') {
-          try {
-            existingUrls = JSON.parse(mc.bonLivraisonUrls);
-          } catch (e) {
-            console.warn(
-              'Impossible de parser bonLivraisonUrls, on repart à zéro',
-              e
-            );
-            existingUrls = [];
-          }
+          try { existing = JSON.parse(mc.bonLivraisonUrls); } catch (_) { existing = []; }
         } else if (mc.bonLivraisonUrls && typeof mc.bonLivraisonUrls === 'object') {
-          existingUrls = mc.bonLivraisonUrls;
+          existing = mc.bonLivraisonUrls;
         }
 
-        console.log('💾 BDL - avant :', existingUrls);
-        const newUrls = [...existingUrls, uploadedUrl];
+        const newUrls = [...existing, uploadedUrl];
         mc.bonLivraisonUrls = newUrls;
         await mc.save();
-        console.log('💾 BDL - après :', mc.bonLivraisonUrls);
+
+        console.log('💾 BDL - URLs en base :', mc.bonLivraisonUrls);
 
         return res.redirect('/chantier');
-      } catch (error) {
-        console.error("Erreur lors de l'ajout du bon de livraison :", error);
-        return res
-          .status(500)
-          .send("Erreur lors de l'ajout du bon de livraison.");
+      } catch (saveErr) {
+        console.error("❌ Erreur lors de l'ajout du bon de livraison :", saveErr);
+        return res.status(500).send("Erreur lors de l'ajout du bon de livraison.");
       }
     });
   }
