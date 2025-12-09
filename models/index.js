@@ -14,6 +14,7 @@ const Historique       = require('./Historique');
 const Emplacement      = require('./Emplacement');
 const Categorie        = require('./Categorie');
 const Designation      = require('./Designation');
+const Marque           = require('./Marque');
 
 // 📦 Regroupement de tous les modèles
 const models = {
@@ -29,6 +30,7 @@ const models = {
   Emplacement,
   Categorie,
   Designation,
+  Marque,
 };
 
 // Associations manuelles
@@ -85,4 +87,5 @@ module.exports = {
   Emplacement,
   Categorie,
   Designation,
+  Marque,
 };
