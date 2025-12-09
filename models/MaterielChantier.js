@@ -103,6 +103,7 @@ const MaterielChantier = sequelize.define(
       type: DataTypes.JSONB,
       allowNull: false,
       defaultValue: [],
+      field: 'bon_livraison_urls',   // map Sequelize -> colonne PG
     },
 
     remarque: {
