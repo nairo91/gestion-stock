@@ -19,7 +19,6 @@ const MaterielChantier = require('../models/MaterielChantier');
 const { ensureAuthenticated, checkAdmin } = require('./materiel');
 const Categorie = require('../models/Categorie');
 const Designation = require('../models/Designation');
-const Marque = require('../models/Marque');
 const { sequelize } = require('../config/database');
 const { sendLowStockNotification, sendReceptionGapNotification } = require('../utils/mailer');
 
@@ -159,33 +158,6 @@ async function loadCategories() {
   return cats.map(c => c.nom);
 }
 
-async function loadMarques() {
-  const brands = await Marque.findAll({ order: [['nom', 'ASC']] });
-  return brands.map(brand => brand.nom);
-}
-
-async function getAllMarquesWithFallback() {
-  const storedMarques = await loadMarques();
-  const marquesRaw = await Materiel.findAll({
-    attributes: ['marque'],
-    where: {
-      marque: {
-        [Op.and]: [
-          { [Op.not]: null },
-          { [Op.ne]: '' }
-        ]
-      }
-    }
-  });
-
-  return Array.from(
-    new Set([
-      ...storedMarques,
-      ...marquesRaw.map(item => item.marque).filter(Boolean),
-    ])
-  ).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-}
-
 // Configuration Multer pour les uploads de photos sur Cloudinary
 const upload = multer({ storage });
 
@@ -283,12 +255,24 @@ router.get('/', ensureAuthenticated, async (req, res) => {
         }
       }
     });
+    const marquesRaw = await Materiel.findAll({
+      attributes: ['marque'],
+      where: {
+        marque: {
+          [Op.and]: [
+            { [Op.not]: null },
+            { [Op.ne]: '' }
+          ]
+        }
+      }
+    });
     const fournisseurs = Array.from(
       new Set(fournisseursRaw.map(item => item.fournisseur).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-    const marques = await getAllMarquesWithFallback();
+    const marques = Array.from(
+      new Set(marquesRaw.map(item => item.marque).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
     const categories = await loadCategories();
-    const marques = await getAllMarquesWithFallback();
     res.render('chantier/index', {
       materielChantiers,
       chantiers,
@@ -461,8 +445,7 @@ router.get('/ajouterMateriel', ensureAuthenticated, checkAdmin, async (req, res)
       chantiers,
       emplacements,
       categories,
-      selectedChantierId: selectedChantierId || '',
-      marques,
+      selectedChantierId: selectedChantierId || ''
     });
   } catch (err) {
     console.error(err);
@@ -507,51 +490,6 @@ router.post('/supprimer-categorie', ensureAuthenticated, checkAdmin, async (req,
     await transaction.rollback();
     console.error('Erreur lors de la suppression de la catégorie', error);
     res.status(500).json({ success: false, message: "Erreur lors de la suppression de la catégorie." });
-  }
-});
-
-router.post('/ajouter-marque', ensureAuthenticated, checkAdmin, async (req, res) => {
-  const { nom } = req.body;
-  if (!nom || !nom.trim()) {
-    return res.status(400).json({ success: false });
-  }
-  const trimmedName = nom.trim();
-  const [marque] = await Marque.findOrCreate({
-    where: { nom: trimmedName },
-    defaults: { nom: trimmedName },
-  });
-  res.json({ success: true, nom: marque.nom });
-});
-
-router.post('/supprimer-marque', ensureAuthenticated, checkAdmin, async (req, res) => {
-  const rawNom = req.body.nom || '';
-  const nom = rawNom.trim();
-  if (!nom) {
-    return res.status(400).json({ success: false, message: 'Nom de marque invalide.' });
-  }
-
-  const transaction = await sequelize.transaction();
-
-  try {
-    let marque = await Marque.findOne({ where: { nom: rawNom }, transaction });
-    if (!marque && nom !== rawNom) {
-      marque = await Marque.findOne({ where: { nom }, transaction });
-    }
-
-    if (!marque) {
-      await transaction.rollback();
-      return res.status(404).json({ success: false, message: 'Marque introuvable.' });
-    }
-
-    await Materiel.update({ marque: null }, { where: { marque: marque.nom }, transaction });
-    await marque.destroy({ transaction });
-
-    await transaction.commit();
-    res.json({ success: true, nom: marque.nom });
-  } catch (error) {
-    await transaction.rollback();
-    console.error('Erreur lors de la suppression de la marque', error);
-    res.status(500).json({ success: false, message: "Erreur lors de la suppression de la marque." });
   }
 });
 
