@@ -29,6 +29,7 @@ const CHANTIER_FILTER_KEYS = [
   'emplacement',
   'description',
   'fournisseur',
+  'marque',
   'triNom',
   'triAjout',
   'triModification',
@@ -67,6 +68,7 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
     emplacement,
     description,
     fournisseur,
+    marque,
     triNom,
     triAjout,
     triModification,
@@ -92,6 +94,9 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
   }
   if (fournisseur) {
     whereMateriel.fournisseur = { [Op.iLike]: `%${fournisseur}%` };
+  }
+  if (marque) {
+    whereMateriel.marque = { [Op.iLike]: `%${marque}%` };
   }
 
   const order = [];
@@ -250,8 +255,22 @@ router.get('/', ensureAuthenticated, async (req, res) => {
         }
       }
     });
+    const marquesRaw = await Materiel.findAll({
+      attributes: ['marque'],
+      where: {
+        marque: {
+          [Op.and]: [
+            { [Op.not]: null },
+            { [Op.ne]: '' }
+          ]
+        }
+      }
+    });
     const fournisseurs = Array.from(
       new Set(fournisseursRaw.map(item => item.fournisseur).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+    const marques = Array.from(
+      new Set(marquesRaw.map(item => item.marque).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
     const categories = await loadCategories();
     res.render('chantier/index', {
@@ -259,6 +278,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       chantiers,
       emplacements,
       fournisseurs,
+      marques,
       categories,
       ...activeFilters
     });
@@ -582,7 +602,7 @@ router.post('/supprimer-designation', ensureAuthenticated, checkAdmin, async (re
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, chantierId, emplacementId, rack, compartiment, niveau, remarque, quantitePrevue1, quantitePrevue2, quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3, dateLivraisonPrevue4 } = req.body;
+    const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, marque, chantierId, emplacementId, rack, compartiment, niveau, remarque, quantitePrevue1, quantitePrevue2, quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3, dateLivraisonPrevue4 } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
     const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
     const datePrevue = dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null;
@@ -598,20 +618,21 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     await Categorie.findOrCreate({ where: { nom: categorie } });
 
     // 1) Créer le matériel avec quantite=0 dans la table Materiel
-   const nouveauMateriel = await Materiel.create({
-  nom,
-  reference,
-  quantite: 0,
-  description,
-  prix: prixNumber,
-  categorie,
-  fournisseur,
-  vehiculeId: null,
-  emplacementId: emplacementId ? parseInt(emplacementId) : null,
-   rack,
-  compartiment,
-  niveau: niveau ? parseInt(niveau) : null
-});
+    const nouveauMateriel = await Materiel.create({
+      nom,
+      reference,
+      quantite: 0,
+      description,
+      prix: prixNumber,
+      categorie,
+      fournisseur,
+      marque: marque || null,
+      vehiculeId: null,
+      emplacementId: emplacementId ? parseInt(emplacementId) : null,
+      rack,
+      compartiment,
+      niveau: niveau ? parseInt(niveau) : null
+    });
 
 
     // 2) Gérer les photos, si fournies
@@ -864,7 +885,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
   try {
       const {
         quantite, quantitePrevue, dateLivraisonPrevue, nomMateriel, categorie, fournisseur, emplacementId,
-        rack, compartiment, niveau, reference, description, prix, remarque, quantitePrevue1, quantitePrevue2,
+        rack, compartiment, niveau, reference, description, prix, remarque, marque, quantitePrevue1, quantitePrevue2,
         quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3,
         dateLivraisonPrevue4
       } = req.body;
@@ -917,6 +938,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldRack = mc.materiel.rack;
     const oldCompartiment = mc.materiel.compartiment;
     const oldFournisseur = mc.materiel.fournisseur;
+    const oldMarque = mc.materiel.marque;
     const oldNiveau = mc.materiel.niveau;
     const oldReference = mc.materiel.reference;
     const oldDescription = mc.materiel.description;
@@ -934,11 +956,12 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newRack = rack;
     const newCompartiment = compartiment;
     const newFournisseur = fournisseur;
+    const newMarque = marque;
     const newNiveau = niveau ? parseInt(niveau) : null;
     const newReference = reference;
     const newDescription = description;
       const newPrix = prix ? parseFloat(prix) : null;
-      const newRemarque = remarque && remarque.trim() ? remarque.trim() : null;
+    const newRemarque = remarque && remarque.trim() ? remarque.trim() : null;
 
     if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
     if (oldNom !== newNom) changementsDetail.push(`Nom: ${oldNom} ➔ ${newNom}`);
@@ -946,6 +969,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldEmplacement !== newEmplacement) changementsDetail.push(`Emplacement: ${oldEmplacement || '-'} ➔ ${newEmplacement || '-'}`);
     if (oldRack !== newRack) changementsDetail.push(`Rack: ${oldRack || '-'} ➔ ${newRack || '-'}`);
     if (oldFournisseur !== newFournisseur) changementsDetail.push(`Fournisseur: ${oldFournisseur || '-'} ➔ ${newFournisseur || '-'}`);
+    if (oldMarque !== newMarque) changementsDetail.push(`Marque: ${oldMarque || '-'} ➔ ${newMarque || '-'}`);
     if (oldCompartiment !== newCompartiment) changementsDetail.push(`Compartiment: ${oldCompartiment || '-'} ➔ ${newCompartiment || '-'}`);
     if (oldNiveau !== newNiveau) changementsDetail.push(`Niveau: ${oldNiveau || '-'} ➔ ${newNiveau || '-'}`);
     if (oldReference !== newReference) changementsDetail.push(`Référence: ${oldReference || '-'} ➔ ${newReference || '-'}`);
@@ -979,6 +1003,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     mc.materiel.categorie = newCategorie;
     mc.materiel.emplacementId = newEmplacement;
     mc.materiel.fournisseur = newFournisseur;
+    mc.materiel.marque = newMarque;
     mc.materiel.rack = newRack;
     mc.materiel.compartiment = newCompartiment;
     mc.materiel.niveau = newNiveau;
@@ -1070,7 +1095,7 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
 
 router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
-      const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, chantierId, emplacementId, remarque } = req.body;
+      const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, marque, chantierId, emplacementId, remarque } = req.body;
     const prixNumber = prix ? parseFloat(prix) : null;
     const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
     const datePrevue = dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null;
@@ -1085,6 +1110,7 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
       prix: prixNumber,
       categorie,
       fournisseur,
+      marque: marque || null,
       quantite: 0,
       emplacementId: emplacementId ? parseInt(emplacementId) : null
     });

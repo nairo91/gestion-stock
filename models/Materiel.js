@@ -23,6 +23,7 @@ const Materiel = sequelize.define(
       }
     },
     description: { type: DataTypes.TEXT },
+    marque: { type: DataTypes.STRING, allowNull: true },
     prix: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     categorie: { type: DataTypes.STRING },
     fournisseur: { type: DataTypes.STRING },

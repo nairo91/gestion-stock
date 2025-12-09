@@ -811,6 +811,7 @@
     pushParam('emplacement', emplacement);
     pushParam('description', description);
     pushParam('fournisseur', fournisseur);
+    pushParam('marque', marque);
     pushParam('triNom', triNom);
     pushParam('triAjout', triAjout);
     pushParam('triModification', triModification);
@@ -921,6 +922,16 @@
   </select>
 </div>
 
+<div class="col-md-3">
+  <label for="marque" class="form-label">Marque</label>
+  <select class="form-select" name="marque" id="marque">
+    <option value="">-- Toutes les marques --</option>
+    <% (marques || []).forEach(function(marqueOption) { %>
+      <option value="<%= marqueOption %>" <%= marque === marqueOption ? 'selected' : '' %>><%= marqueOption %></option>
+    <% }); %>
+  </select>
+</div>
+
 
 
   <div class="col-md-3">
@@ -973,6 +984,10 @@
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-fournisseur" data-column-class="col-fournisseur" checked>
         <label class="form-check-label" for="toggle-col-fournisseur">Fournisseur</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-marque" data-column-class="col-marque" checked>
+        <label class="form-check-label" for="toggle-col-marque">Marque</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-emplacement" data-column-class="col-emplacement" checked>
@@ -1033,6 +1048,7 @@
           <th class="col-designation">Désignation</th>
           <th class="col-photo">Photo</th>
           <th class="col-reference">Référence</th>
+          <th class="col-marque">Marque</th>
           <th class="col-categorie">Categorie</th>
           <th class="col-description">Description</th>
           <th class="col-fournisseur">Fournisseur</th>
@@ -1109,6 +1125,10 @@
 
               <td class="col-reference" data-label="Référence">
                 <%= mc.materiel ? (mc.materiel.reference || '-') : '-' %>
+              </td>
+
+              <td class="col-marque" data-label="Marque">
+                <%= mc.materiel && mc.materiel.marque ? mc.materiel.marque : '-' %>
               </td>
 
               <td class="col-categorie" data-label="Catégorie">
