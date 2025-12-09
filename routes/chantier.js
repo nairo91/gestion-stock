@@ -279,54 +279,74 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   }
 });
 
-router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, uploadBDL.single('bdl'), async (req, res) => {
-  try {
-    const mc = await MaterielChantier.findByPk(req.params.id);
+router.post(
+  '/materielChantier/:id/ajouterBDL',
+  ensureAuthenticated,
+  uploadBDL.single('bdl'),
+  async (req, res) => {
+    try {
+      const mc = await MaterielChantier.findByPk(req.params.id);
 
-    if (!mc) {
-      return res.status(404).send('Matériel de chantier introuvable.');
-    }
-
-    // On vérifie seulement la présence du fichier (selon l'uploader, path peut ne pas être défini)
-    if (!req.file) {
-      return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
-    }
-
-    // Cloudinary RAW files n'ont pas secure_url → file.path = l'URL cloudinary
-    let uploadedUrl = null;
-    if (req.file.secure_url) uploadedUrl = req.file.secure_url;
-    else if (req.file.path) uploadedUrl = req.file.path;
-
-    console.log('BDL UPLOADED URL :', uploadedUrl);
-
-    if (!uploadedUrl) {
-      return res.status(500).send("URL d'upload manquante pour le bon de livraison.");
-    }
-
-    // On récupère proprement les URLs déjà présentes (JSONB ou string JSON)
-    let existingUrls = [];
-    if (Array.isArray(mc.bonLivraisonUrls)) {
-      existingUrls = mc.bonLivraisonUrls;
-    } else if (typeof mc.bonLivraisonUrls === 'string') {
-      try {
-        existingUrls = JSON.parse(mc.bonLivraisonUrls);
-      } catch (e) {
-        console.warn('Impossible de parser bonLivraisonUrls, utilisation de []', e);
+      if (!mc) {
+        return res.status(404).send('Matériel de chantier introuvable.');
       }
+
+      if (!req.file) {
+        return res
+          .status(400)
+          .send('Aucun fichier fourni pour le bon de livraison.');
+      }
+
+      // Cloudinary (raw) → on utilise .path si pas de secure_url
+      const uploadedUrl = req.file.secure_url || req.file.path || null;
+
+      console.log('BDL UPLOADED FILE :', req.file);
+      console.log('BDL UPLOADED URL  :', uploadedUrl);
+
+      if (!uploadedUrl) {
+        return res
+          .status(500)
+          .send("URL d'upload manquante pour le bon de livraison.");
+      }
+
+      // Récupérer proprement les URLs existantes (string JSON / array / null)
+      let existingUrls = [];
+
+      if (Array.isArray(mc.bonLivraisonUrls)) {
+        existingUrls = mc.bonLivraisonUrls;
+      } else if (typeof mc.bonLivraisonUrls === 'string') {
+        try {
+          existingUrls = JSON.parse(mc.bonLivraisonUrls);
+        } catch (e) {
+          console.warn(
+            'Impossible de parser bonLivraisonUrls, on repart à zéro',
+            e
+          );
+          existingUrls = [];
+        }
+      } else if (mc.bonLivraisonUrls && typeof mc.bonLivraisonUrls === 'object') {
+        // au cas où ce soit un objet JSONB
+        existingUrls = mc.bonLivraisonUrls;
+      }
+
+      console.log('💾 BDL - avant :', existingUrls);
+
+      const newUrls = [...existingUrls, uploadedUrl];
+
+      mc.bonLivraisonUrls = newUrls;
+      await mc.save();
+
+      console.log('💾 BDL - après :', mc.bonLivraisonUrls);
+
+      return res.redirect('/chantier');
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du bon de livraison :", error);
+      return res
+        .status(500)
+        .send("Erreur lors de l'ajout du bon de livraison.");
     }
-
-    console.log('💾 BDL - avant :', existingUrls);
-    const newUrls = [...existingUrls, uploadedUrl];
-    mc.set('bonLivraisonUrls', newUrls);
-    console.log('💾 BDL - après  :', mc.bonLivraisonUrls);
-    await mc.save();
-
-    res.redirect('/chantier');
-  } catch (error) {
-    console.error('Erreur lors de l\'ajout du bon de livraison :', error);
-    res.status(500).send('Erreur lors de l\'ajout du bon de livraison.');
   }
-});
+);
 
 
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
