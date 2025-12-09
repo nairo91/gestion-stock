@@ -1294,23 +1294,19 @@
                   >
                     Réceptionner
                   </button>
-                  <form
-                    action="/chantier/materielChantier/<%= mc.id %>/ajouterBDL"
-                    method="POST"
-                    enctype="multipart/form-data"
-                    class="d-inline"
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm mb-1 btn-add-bdl"
+                    data-mc-id="<%= mc.id %>"
                   >
-                    <label class="btn btn-outline-secondary btn-sm mb-1">
-                      Ajouter BDL
-                      <input
-                        type="file"
-                        name="bdl"
-                        accept="image/*,application/pdf"
-                        class="d-none"
-                        onchange="this.form.submit()"
-                      >
-                    </label>
-                  </form>
+                    Ajouter BDL
+                  </button>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    class="d-none bdl-file-input"
+                    data-mc-id="<%= mc.id %>"
+                  >
                     <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
                     <button
                       type="button"
@@ -2231,6 +2227,82 @@
         try {
           localStorage.setItem(KEY, document.body.classList.contains('compact-mobile') ? '1' : '0');
         } catch (_) {}
+      });
+    })();
+  </script>
+
+  <!-- Upload direct Cloudinary pour les BDL -->
+  <script nonce="<%= nonce %>">
+    (function () {
+      const CLOUD_NAME = '<%= cloudinaryCloudName || "" %>';
+      const UPLOAD_PRESET = '<%= cloudinaryUploadPresetBdl || "" %>';
+
+      if (!CLOUD_NAME || !UPLOAD_PRESET) {
+        console.warn('Cloudinary BDL non configuré (CLOUD_NAME ou PRESET manquant).');
+        return;
+      }
+
+      const spinner = document.getElementById('pageSpinner');
+      const showSpinner = () => spinner && spinner.classList.add('show');
+      const hideSpinner = () => spinner && spinner.classList.remove('show');
+
+      async function uploadToCloudinary(file) {
+        const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('upload_preset', UPLOAD_PRESET);
+        fd.append('folder', 'bdl');
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd
+        });
+
+        if (!resp.ok) {
+          throw new Error('Cloudinary HTTP ' + resp.status);
+        }
+
+        const data = await resp.json();
+        return data.secure_url || data.url;
+      }
+
+      async function enregistrerBdl(mcId, bdlUrl) {
+        const resp = await fetch(`/chantier/materielChantier/${mcId}/ajouterBDL`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+          },
+          body: new URLSearchParams({ url: bdlUrl })
+        });
+        if (!resp.ok) {
+          throw new Error('Erreur serveur lors de la sauvegarde du BDL');
+        }
+      }
+
+      document.querySelectorAll('.btn-add-bdl').forEach((btn) => {
+        const mcId = btn.dataset.mcId;
+        const input = document.querySelector(`.bdl-file-input[data-mc-id="${mcId}"]`);
+        if (!input) return;
+
+        btn.addEventListener('click', () => input.click());
+
+        input.addEventListener('change', async () => {
+          const file = input.files[0];
+          if (!file) return;
+
+          try {
+            showSpinner();
+            const cloudUrl = await uploadToCloudinary(file);
+            await enregistrerBdl(mcId, cloudUrl);
+            window.location.reload();
+          } catch (err) {
+            console.error('Erreur BDL Cloudinary :', err);
+            alert("Erreur lors de l'upload du bon de livraison.");
+          } finally {
+            hideSpinner();
+            input.value = '';
+          }
+        });
       });
     })();
   </script>
