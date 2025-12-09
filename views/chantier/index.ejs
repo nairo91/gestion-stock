@@ -207,14 +207,10 @@
     }
 
     /* Lisibilité des champs libres de filtrage */
-    #nomMateriel,
-    #description,
     #recherche {
       color: #fff;
     }
 
-    #nomMateriel::placeholder,
-    #description::placeholder,
     #recherche::placeholder {
       color: rgba(255, 255, 255, 0.65);
     }
@@ -806,10 +802,8 @@
       }
     };
     pushParam('chantierId', chantierId);
-    pushParam('nomMateriel', nomMateriel);
     pushParam('categorie', categorie);
     pushParam('emplacement', emplacement);
-    pushParam('description', description);
     pushParam('fournisseur', fournisseur);
     pushParam('marque', marque);
     pushParam('triNom', triNom);
@@ -858,11 +852,6 @@
         <% }); %>
       <% } %>
     </select>
-  </div>
-
-  <div class="col-md-3">
-    <label for="nomMateriel" class="form-label">Désignation</label>
-    <input type="text" class="form-control" name="nomMateriel" id="nomMateriel" value="<%= nomMateriel || '' %>">
   </div>
 
   <div class="col-md-3">
@@ -933,11 +922,6 @@
 </div>
 
 
-
-  <div class="col-md-3">
-  <label for="description" class="form-label">Description</label>
-  <input type="text" class="form-control" name="description" id="description" value="<%= description || '' %>">
-</div>
 
 
  <div class="col-md-3">
