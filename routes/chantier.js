@@ -288,6 +288,21 @@ router.post(
     uploadBDL.single('bdl')(req, res, async (err) => {
       if (err) {
         console.error('❌ Erreur upload BDL (Cloudinary / Multer) :', err);
+
+        // Si c'est un AggregateError (nouveau Node >=18), on affiche le détail des sous-erreurs
+        if (err.name === 'AggregateError' && Array.isArray(err.errors)) {
+          console.error('📡 Détail AggregateError (tentatives de connexion) :');
+          for (const sub of err.errors) {
+            console.error(
+              '  →',
+              sub.code || sub.errno,
+              sub.address || '',
+              sub.port ? `:${sub.port}` : '',
+              sub.syscall || ''
+            );
+          }
+        }
+
         // Si c'est un timeout réseau, ce sera plus visible ici
         return res
           .status(500)
