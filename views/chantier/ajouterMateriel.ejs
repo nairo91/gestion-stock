@@ -362,6 +362,10 @@ select#emplacementId.form-control {
         </select>
       </div>
       <div class="mb-3">
+        <label for="marque" class="form-label">Marque</label>
+        <input type="text" name="marque" id="marque" class="form-control" placeholder="Ex: Bosch">
+      </div>
+      <div class="mb-3">
         <label for="chantierId" class="form-label">Chantier</label>
         <select name="chantierId" id="chantierId" class="form-control" required>
           <option value="" disabled <%= selectedChantierId ? '' : 'selected' %>>-- Choisir un chantier --</option>
