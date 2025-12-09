@@ -96,6 +96,35 @@
     body.mode-sombre .badge-delivery {
       filter: brightness(0.9);
     }
+
+    .historique-table .col-action-texte {
+      max-width: 320px;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .historique-table .action-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-height: 4.5em;
+      transition: max-height 0.2s ease;
+    }
+
+    .historique-table .action-text.expanded {
+      -webkit-line-clamp: unset;
+      max-height: none;
+    }
+
+    .historique-table .toggle-action {
+      border: none;
+      background: none;
+      color: #0d6efd;
+      padding: 0;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 
@@ -137,8 +166,25 @@
 
       <div class="card-body">
         <% if (historiques && historiques.length > 0) { %>
+          <form id="historiqueSortForm" class="row g-2 mb-3">
+            <div class="col-md-3">
+              <label for="triCol" class="form-label">Trier par</label>
+              <select id="triCol" class="form-select">
+                <option value="date">Date</option>
+                <option value="chantier">Chantier</option>
+                <option value="action">Action</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="triOrder" class="form-label">Ordre</label>
+              <select id="triOrder" class="form-select">
+                <option value="desc">Décroissant</option>
+                <option value="asc">Croissant</option>
+              </select>
+            </div>
+          </form>
           <div class="table-responsive">
-            <table class="table table-historique align-middle table-borderless">
+            <table class="table table-historique historique-table align-middle table-borderless">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -152,34 +198,44 @@
               </thead>
               <tbody>
                 <% historiques.forEach(function(h){ %>
-                  <tr>
+                  <tr
+                    data-sort-date="<%= h.createdAt ? new Date(h.createdAt).toISOString() : '' %>"
+                    data-sort-chantier="<%= h.materielNom || '' %>"
+                    data-sort-action="<%= h.action || '' %>"
+                  >
                     <td><%= h.id %></td>
                     <td><%= h.materielNom || 'Inconnu' %></td>
                     <td><%= h.oldQuantite !== null ? h.oldQuantite : '-' %></td>
                     <td><%= h.newQuantite !== null ? h.newQuantite : '-' %></td>
-                    <td>
-                      <!-- Différenciation par type d'action -->
-                      <% if (h.action === 'DELETE') { %>
-                        <span class="badge badge-action badge-delete">
-                          <i class="bi bi-trash-fill"></i> Supprimé
-                        </span>
-                      <% } else if (h.action === 'UPDATE') { %>
-                        <span class="badge badge-action badge-update">
-                          <i class="bi bi-pencil-square"></i> Modifié
-                        </span>
-                      <% } else if (h.action === 'CREATE_IN_CHANTIER' || h.action === 'CRÉÉ SUR CHANTIER') { %>
-                        <span class="badge badge-action badge-create">
-                          <i class="bi bi-plus-circle"></i> Créé
-                        </span>
-                      <% } else if (h.action === 'DELIVERY_TO_CHANTIER') { %>
-                        <span class="badge badge-action badge-delivery">
-                          <i class="bi bi-truck"></i> Livré
-                        </span>
-                      <% } else { %>
-                        <span class="badge badge-action bg-info">
-                          <%= h.action %>
-                        </span>
-                      <% } %>
+                    <td class="col-action-texte">
+                      <div class="action-text">
+                        <!-- Différenciation par type d'action -->
+                        <% if (h.action === 'DELETE') { %>
+                          <span class="badge badge-action badge-delete">
+                            <i class="bi bi-trash-fill"></i> Supprimé
+                          </span>
+                        <% } else if (h.action === 'UPDATE') { %>
+                          <span class="badge badge-action badge-update">
+                            <i class="bi bi-pencil-square"></i> Modifié
+                          </span>
+                        <% } else if (h.action === 'CREATE_IN_CHANTIER' || h.action === 'CRÉÉ SUR CHANTIER') { %>
+                          <span class="badge badge-action badge-create">
+                            <i class="bi bi-plus-circle"></i> Créé
+                          </span>
+                        <% } else if (h.action === 'DELIVERY_TO_CHANTIER') { %>
+                          <span class="badge badge-action badge-delivery">
+                            <i class="bi bi-truck"></i> Livré
+                          </span>
+                        <% } else { %>
+                          <span class="badge badge-action bg-info">
+                            <%= h.action %>
+                          </span>
+                        <% } %>
+                        <% if (h.description) { %>
+                          <div class="small text-muted mt-1"><%= h.description %></div>
+                        <% } %>
+                      </div>
+                      <button type="button" class="toggle-action" aria-label="Basculer le détail de l'action">Voir plus</button>
                     </td>
                     <td><%= h.user ? h.user.nom : 'Inconnu' %></td>
                     <td><%= new Date(h.createdAt).toLocaleString('fr-FR') %></td>
@@ -210,6 +266,71 @@
     toggleBtn.addEventListener('click', () => {
       document.body.classList.toggle('mode-sombre');
     });
+
+    (function () {
+      const triCol = document.getElementById('triCol');
+      const triOrder = document.getElementById('triOrder');
+      const tbody = document.querySelector('.historique-table tbody');
+
+      if (!triCol || !triOrder || !tbody) return;
+
+      function sortHistorique() {
+        const col = triCol.value;
+        const order = triOrder.value;
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        rows.sort((a, b) => {
+          const key = 'sort' + col.charAt(0).toUpperCase() + col.slice(1);
+          const av = a.dataset[key] || '';
+          const bv = b.dataset[key] || '';
+
+          if (col === 'date') {
+            const ad = new Date(av).getTime() || 0;
+            const bd = new Date(bv).getTime() || 0;
+            return ad - bd;
+          }
+
+          return String(av).localeCompare(String(bv), 'fr', { sensitivity: 'base' });
+        });
+
+        if (order === 'desc') rows.reverse();
+        rows.forEach(r => tbody.appendChild(r));
+      }
+
+      triCol.addEventListener('change', sortHistorique);
+      triOrder.addEventListener('change', sortHistorique);
+
+      sortHistorique();
+    })();
+
+    (function () {
+      const table = document.querySelector('.historique-table');
+      if (!table) return;
+
+      function refreshToggleVisibility() {
+        const rows = table.querySelectorAll('.action-text');
+        rows.forEach(actionText => {
+          const button = actionText.nextElementSibling;
+          if (!button) return;
+
+          const isOverflowing = actionText.scrollHeight - 2 > actionText.clientHeight;
+          button.style.display = isOverflowing ? 'inline' : 'none';
+        });
+      }
+
+      table.addEventListener('click', (event) => {
+        const button = event.target.closest('.toggle-action');
+        if (!button) return;
+
+        const actionText = button.previousElementSibling;
+        if (!actionText) return;
+
+        const expanded = actionText.classList.toggle('expanded');
+        button.textContent = expanded ? 'Voir moins' : 'Voir plus';
+      });
+
+      refreshToggleVisibility();
+    })();
   </script>
 </body>
 </html>
