@@ -24,10 +24,8 @@ const { sendLowStockNotification, sendReceptionGapNotification } = require('../u
 
 const CHANTIER_FILTER_KEYS = [
   'chantierId',
-  'nomMateriel',
   'categorie',
   'emplacement',
-  'description',
   'fournisseur',
   'marque',
   'triNom',
@@ -63,10 +61,8 @@ function getCellString(cell) {
 async function fetchMaterielChantiersWithFilters(query, { includePhotos = true } = {}) {
   const {
     chantierId,
-    nomMateriel,
     categorie,
     emplacement,
-    description,
     fournisseur,
     marque,
     triNom,
@@ -83,14 +79,8 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
   const whereChantier = chantierIdInt ? { chantierId: chantierIdInt } : {};
   const whereMateriel = {};
 
-  if (nomMateriel) {
-    whereMateriel.nom = { [Op.iLike]: `%${nomMateriel}%` };
-  }
   if (categorie) {
     whereMateriel.categorie = { [Op.iLike]: `%${categorie}%` };
-  }
-  if (description) {
-    whereMateriel.description = { [Op.iLike]: `%${description}%` };
   }
   if (fournisseur) {
     whereMateriel.fournisseur = { [Op.iLike]: `%${fournisseur}%` };
