@@ -282,6 +282,9 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       fournisseurs,
       marques,
       categories,
+      // pour l'upload BDL direct depuis le navigateur vers Cloudinary
+      cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+      cloudinaryUploadPresetBdl: process.env.CLOUDINARY_UPLOAD_PRESET_BDL || '',
       ...activeFilters
     });
 
@@ -291,79 +294,40 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   }
 });
 
-// Nouvelle route BDL avec gestion d'erreurs Cloudinary/Multer
-router.post(
-  '/materielChantier/:id/ajouterBDL',
-  ensureAuthenticated,
-  (req, res) => {
-    // on appelle uploadBDL.single à la main pour avoir accès à "err"
-    uploadBDL.single('bdl')(req, res, async (err) => {
-      if (err) {
-        console.error('❌ Erreur upload BDL (Cloudinary / Multer) :', err);
-        if (err.name === 'AggregateError' && Array.isArray(err.errors)) {
-          console.error('📡 Détail AggregateError :');
-          for (const sub of err.errors) {
-            console.error(
-              '  →',
-              sub.code || sub.errno,
-              sub.address || '',
-              sub.port ? `:${sub.port}` : '',
-              sub.syscall || ''
-            );
-          }
-        }
-        return res
-          .status(500)
-          .send("Erreur lors de l'upload du bon de livraison (problème de connexion externe).");
-      }
+// Nouvelle route BDL : on reçoit UNIQUEMENT l'URL déjà envoyée sur Cloudinary
+router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, async (req, res) => {
+  try {
+    const mc = await MaterielChantier.findByPk(req.params.id);
+    if (!mc) {
+      return res.status(404).send('Matériel de chantier introuvable.');
+    }
 
-      try {
-        const mc = await MaterielChantier.findByPk(req.params.id);
+    const uploadedUrl = (req.body && req.body.url) ? String(req.body.url).trim() : '';
+    if (!uploadedUrl) {
+      return res.status(400).send("URL de bon de livraison manquante.");
+    }
 
-        if (!mc) {
-          return res.status(404).send('Matériel de chantier introuvable.');
-        }
+    // Normaliser bonLivraisonUrls (array / string JSON / objet)
+    let existing = [];
+    if (Array.isArray(mc.bonLivraisonUrls)) {
+      existing = mc.bonLivraisonUrls;
+    } else if (typeof mc.bonLivraisonUrls === 'string') {
+      try { existing = JSON.parse(mc.bonLivraisonUrls); } catch (_) { existing = []; }
+    } else if (mc.bonLivraisonUrls && typeof mc.bonLivraisonUrls === 'object') {
+      existing = mc.bonLivraisonUrls;
+    }
 
-        if (!req.file) {
-          return res.status(400).send('Aucun fichier fourni pour le bon de livraison.');
-        }
+    const newUrls = [...existing, uploadedUrl];
+    mc.bonLivraisonUrls = newUrls;
+    await mc.save();
 
-        // Cloudinary envoie généralement .path pour les RAW, sinon .secure_url
-        const uploadedUrl = req.file.secure_url || req.file.path || null;
-
-        console.log('📄 BDL - fichier reçu :', req.file);
-        console.log('📄 BDL - URL retenue  :', uploadedUrl);
-
-        if (!uploadedUrl) {
-          return res
-            .status(500)
-            .send("URL d'upload manquante pour le bon de livraison.");
-        }
-
-        // normalisation de bonLivraisonUrls
-        let existing = [];
-        if (Array.isArray(mc.bonLivraisonUrls)) {
-          existing = mc.bonLivraisonUrls;
-        } else if (typeof mc.bonLivraisonUrls === 'string') {
-          try { existing = JSON.parse(mc.bonLivraisonUrls); } catch (_) { existing = []; }
-        } else if (mc.bonLivraisonUrls && typeof mc.bonLivraisonUrls === 'object') {
-          existing = mc.bonLivraisonUrls;
-        }
-
-        const newUrls = [...existing, uploadedUrl];
-        mc.bonLivraisonUrls = newUrls;
-        await mc.save();
-
-        console.log('💾 BDL - URLs en base :', mc.bonLivraisonUrls);
-
-        return res.redirect('/chantier');
-      } catch (saveErr) {
-        console.error("❌ Erreur lors de l'ajout du bon de livraison :", saveErr);
-        return res.status(500).send("Erreur lors de l'ajout du bon de livraison.");
-      }
-    });
+    console.log('💾 BDL - URL ajoutée :', uploadedUrl);
+    return res.redirect('/chantier');
+  } catch (err) {
+    console.error("❌ Erreur lors de l'ajout du bon de livraison :", err);
+    return res.status(500).send("Erreur lors de l'ajout du bon de livraison.");
   }
-);
+});
 
 
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
