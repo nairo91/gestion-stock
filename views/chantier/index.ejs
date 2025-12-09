@@ -998,6 +998,10 @@
         <label class="form-check-label" for="toggle-col-quantite-prevue">Quantité prévue</label>
       </div>
       <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-bdl" data-column-class="col-bon-livraison" checked>
+        <label class="form-check-label" for="toggle-col-bdl">Bon de Livraison</label>
+      </div>
+      <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-date" data-column-class="col-date" checked>
         <label class="form-check-label" for="toggle-col-date">Date prévue</label>
       </div>
@@ -1194,7 +1198,7 @@
                 <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
               </td>
 
-              <td class="col-bon-livraison" data-label="Bon de Livraison">
+                <td class="col-bon-livraison" data-column="col-bon-livraison" data-label="Bon de Livraison">
                 <%
                   const bdlUrls = Array.isArray(mc.bonLivraisonUrls)
                     ? mc.bonLivraisonUrls
@@ -1387,7 +1391,7 @@
       };
 
       const applyState = (colClass, visible) => {
-        document.querySelectorAll(`.table-stock .${colClass}`).forEach((cell) => {
+        document.querySelectorAll(`.table-stock .${colClass}, [data-column="${colClass}"]`).forEach((cell) => {
           cell.classList.toggle('hidden-column', !visible);
         });
       };
