@@ -1140,7 +1140,25 @@
               </td>
 
               <td class="col-fournisseur" data-label="Fournisseur">
-                <%= mc.materiel && mc.materiel.fournisseur ? (mc.materiel.fournisseur.nom || mc.materiel.fournisseur) : '-' %>
+                <% 
+                  const fournisseurName = mc.materiel && mc.materiel.fournisseur 
+                    ? (mc.materiel.fournisseur.nom || mc.materiel.fournisseur) 
+                    : null; 
+                %>
+
+                <% if (fournisseurName) { %>
+                  <button
+                    type="button"
+                    class="btn btn-link p-0 fournisseur-link"
+                    data-bs-toggle="modal"
+                    data-bs-target="#fournisseurContactModal"
+                    data-fournisseur="<%= fournisseurName %>"
+                  >
+                    <%= fournisseurName %>
+                  </button>
+                <% } else { %>
+                  -
+                <% } %>
               </td>
 
               <td class="col-emplacement" data-label="Emplacement">
@@ -1557,6 +1575,25 @@
     </div>
   </div>
 
+  <div class="modal fade" id="fournisseurContactModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Fiche fournisseur : <span id="fournisseurContactName"></span>
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body" id="fournisseurContactBody">
+          <!-- contenu injecté en JavaScript -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 1) Bootstrap d'abord -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -1651,13 +1688,322 @@
   <!-- 2) Déplacer les modales SOUS <body> une fois le DOM prêt -->
   <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
-      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal']
+      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','fournisseurContactModal']
         .forEach(function (id) {
           var el = document.getElementById(id);
           if (el && el.parentNode !== document.body) {
             document.body.appendChild(el);
           }
         });
+    });
+  </script>
+
+  <script nonce="<%= nonce %>">
+    // ⚠️ Les données viennent d'un export Excel, à corriger au besoin
+    const FOURNISSEUR_CONTACTS = {
+      "SOTEXPRO": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Séverine Gicquel",
+            fonction: "Chargée de Projet - Paris/Ouest",
+            tel: "07 72 14 58 36",
+            email: "sgicquel@etoffes-inspire.fr"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Priscilla ZIMMERMANN",
+            fonction: "Assistante Grands Comptes",
+            tel: "+33 4 77 27 60 70",
+            email: "pzimmermann@sotexpro.fr"
+          }
+        ]
+      },
+
+      "BRICOMAN": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Guillaume GABETTE",
+            tel: "06 64 03 37 07",
+            email: "guillaume.gabette@bricoman.fr"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Christophe Viana Gomes",
+            tel: "01 49 36 26 00",
+            email: "Christophe.VianaGomes@cedeo.fr"
+          },
+          {
+            titre: "Contact 3",
+            nom: "Nadir",
+            tel: "06 98 35 91 08"
+          }
+        ]
+      },
+
+      "PIXELO": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Mihail TOMA",
+            fonction: "Dep. Export",
+            tel: "+40 742 666 999",
+            email: "mihai@primetrustventure.com"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Catalin VASILESCU",
+            fonction: "Dep. Export",
+            tel: "+40 743 98 77 99"
+          }
+        ]
+      },
+
+      "JM EXIM": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Katarzyna Badziag",
+            tel: "0048 661 291 480",
+            email: "kasia@jmeximfenetres.eu"
+          }
+        ]
+      },
+
+      "HUSSEIN": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Hussein",
+            tel: "06 59 31 59 01"
+          }
+        ]
+      },
+
+      "STMI": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "PATAMAVONG Christopher",
+            tel: "07 60 49 49 64",
+            email: "stmi.christopher@gmail.com"
+          }
+        ]
+      },
+
+      "FOUSSIER": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Thierry THOMAS",
+            fonction: "FOUSSIER",
+            tel: "02 50 821 821",
+            email: "comptoir.monthlery@foussier.fr"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Manuel Castandet",
+            tel: "01 78 19 20 00 / 07 60 62 99 29"
+          }
+        ]
+      },
+
+      "TEMPO": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "M. Coskun ATLI",
+            tel: "+33 (0)6 79 40 64 98",
+            email: "contact@tempo-materiaux.fr"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Akim",
+            tel: "03 88 26 15 71 / 07 89 64 36 84",
+            email: "akim@tempo-materiaux.fr"
+          }
+        ]
+      },
+
+      "FORBO": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Mathilde RÉGNIER",
+            fonction: "Assistante Commerciale Service clients France",
+            tel: "03 59 58 00 26",
+            email: "adv.france.sudouest@forbo.com"
+          },
+          {
+            titre: "Contact 2",
+            email: "flooring.france.grandscomptes@forbo.com"
+          }
+        ]
+      },
+
+      "France'AIR": {
+        contacts: []
+      },
+
+      "RICHARDSON": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Nicolas Beauflis",
+            fonction: "Responsable des Ventes Expo",
+            tel: "+33 6 83 43 93 05",
+            email: "nicolas.beauflis@geberit.com"
+          },
+          {
+            titre: "Contact 2",
+            email: "info@santintio.fr",
+            tel: "+33 1 78 90 06 65 (Lun–ven, 8–17h)"
+          }
+        ]
+      },
+
+      "ODF": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Carole QUILLIVIC",
+            fonction: "Service Commercial",
+            tel: "02 35 04 67 00",
+            email: "c.quillivic@odf.fr"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Kateryna MOLCHENKO",
+            fonction: "Service Commercial / Sales Department",
+            tel: "03 25 04 67 00",
+            email: "k.molchenko@odf.fr"
+          }
+        ]
+      },
+
+      "MPI": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Stephanie Grégoire",
+            fonction: "Chargée d'affaires",
+            tel: "+32 4 377 40 81",
+            email: "info@mpi.be"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Sarah Nizet",
+            fonction: "Assistante commerciale"
+          },
+          {
+            titre: "Contact 3",
+            nom: "Kelly Jaquet",
+            tel: "+32 4 377 91 25"
+          }
+        ]
+      },
+
+      "KINEDO": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Elodie BOUREAU",
+            fonction: "Assistante commerciale service chantier",
+            tel: "+33 (0)2 40 21 26 79"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Charlotte LEFORT",
+            fonction: "Assistante Commerciale service chantier",
+            tel: "+33 (0)2 40 21 26 79"
+          }
+        ]
+      },
+
+      "TARGETTI": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Veronique Carrey",
+            fonction: "Assistante de Direction Commerciale",
+            tel: "+33 1 44 29 08 86",
+            email: "veronique.carrey@targetti.com"
+          },
+          {
+            titre: "Contact 2",
+            nom: "Béatrice Gey",
+            fonction: "Assistante Commerciale",
+            tel: "+33 1 44 29 08 73",
+            email: "beatrice.gey@targetti.com"
+          }
+        ]
+      },
+
+      "LES RIPEURS": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Camille",
+            tel: "06 47 77 82 70",
+            email: "contact@lesripeurs.com"
+          }
+        ]
+      },
+
+      "PURE-COM": {
+        contacts: [
+          {
+            titre: "Contact 1",
+            nom: "Inès Barbé",
+            fonction: "Chargée de Marketing Digital & Business Developer",
+            tel: "01 64 13 49 80 / 07 67 37 45 56"
+          }
+        ]
+      }
+    };
+  </script>
+
+  <script nonce="<%= nonce %>">
+    document.addEventListener('DOMContentLoaded', function () {
+      const modalEl = document.getElementById('fournisseurContactModal');
+      if (!modalEl) return;
+
+      const nameEl  = document.getElementById('fournisseurContactName');
+      const bodyEl  = document.getElementById('fournisseurContactBody');
+
+      modalEl.addEventListener('show.bs.modal', function (event) {
+        const btn = event.relatedTarget;
+        if (!btn) return;
+
+        const fournisseur = btn.getAttribute('data-fournisseur') || '';
+        const data = FOURNISSEUR_CONTACTS[fournisseur];
+
+        if (nameEl) {
+          nameEl.textContent = fournisseur || 'Fournisseur';
+        }
+
+        if (!bodyEl) return;
+
+        if (!data || !Array.isArray(data.contacts) || data.contacts.length === 0) {
+          bodyEl.innerHTML = `
+            <p class="mb-0">Aucune fiche de contact n'est enregistrée pour ce fournisseur.</p>
+          `;
+          return;
+        }
+
+        const html = data.contacts.map(c => `
+          <div class="mb-3 pb-2 border-bottom border-secondary">
+            <h6 class="mb-1">${c.titre || ''}</h6>
+            <p class="mb-0"><strong>${c.nom || ''}</strong></p>
+            ${c.fonction ? `<p class="mb-0">${c.fonction}</p>` : ''}
+            ${c.tel ? `<p class="mb-0">📞 ${c.tel}</p>` : ''}
+            ${c.email ? `<p class="mb-0">✉️ <a href="mailto:${c.email}">${c.email}</a></p>` : ''}
+          </div>
+        `).join('');
+
+        bodyEl.innerHTML = html;
+      });
     });
   </script>
 
