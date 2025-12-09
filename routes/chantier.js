@@ -791,12 +791,28 @@ router.post('/scanner', ensureAuthenticated, (req, res) => {
 /* ===== HISTORIQUE CHANTIER ===== */
 router.get('/historique', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
+    const { chantierId } = req.query;
+
+    const where = { stockType: 'chantier' };
+    if (chantierId && chantierId !== 'all') {
+      where.chantierId = chantierId;
+    }
+
     const historiques = await Historique.findAll({
-      where: { stockType: 'chantier' },
+      where,
       include: [{ model: User, as: 'user' }],
       order: [['createdAt', 'DESC']]
     });
-    res.render('chantier/historique', { historiques });
+
+    const chantiers = await Chantier.findAll({
+      order: [['nom', 'ASC']]
+    });
+
+    res.render('chantier/historique', {
+      historiques,
+      chantiers,
+      selectedChantierId: chantierId && chantierId !== 'all' ? chantierId : 'all'
+    });
   } catch (err) {
     console.error(err);
     res.send("Erreur lors de la récupération de l'historique chantier.");
