@@ -363,18 +363,7 @@ select#emplacementId.form-control {
       </div>
       <div class="mb-3">
         <label for="marque" class="form-label">Marque</label>
-        <select name="marque" id="marqueSelect" class="form-control">
-          <option value="">-- Choisir une marque --</option>
-          <% (marques || []).forEach(function(brand){ %>
-            <option value="<%= brand %>"><%= brand %></option>
-          <% }) %>
-        </select>
-        <% if (user && user.role === 'admin') { %>
-          <div class="d-flex flex-wrap gap-2 mt-2">
-            <button type="button" id="addBrandBtn" class="btn btn-secondary btn-sm">Ajouter Marque</button>
-            <button type="button" id="deleteBrandBtn" class="btn btn-danger btn-sm">Supprimer Marque</button>
-          </div>
-        <% } %>
+        <input type="text" name="marque" id="marque" class="form-control" placeholder="Ex: Bosch">
       </div>
       <div class="mb-3">
         <label for="chantierId" class="form-label">Chantier</label>
@@ -442,23 +431,6 @@ select#emplacementId.form-control {
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
               <button type="button" class="btn btn-danger" id="confirmDeleteCategoryBtn">Supprimer</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal fade" id="confirmDeleteBrandModal" tabindex="-1" aria-labelledby="confirmDeleteBrandLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-              <h5 class="modal-title" id="confirmDeleteBrandLabel">Confirmer la suppression</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-            </div>
-            <div class="modal-body">
-              <p id="confirmDeleteBrandMessage" class="mb-0"></p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-              <button type="button" class="btn btn-danger" id="confirmDeleteBrandBtn">Supprimer</button>
             </div>
           </div>
         </div>
@@ -614,123 +586,6 @@ select#emplacementId.form-control {
       if (modalElement) {
         modalElement.addEventListener('hidden.bs.modal', () => {
           pendingCategoryValue = null;
-        });
-      }
-
-      const marqueSelect = document.getElementById('marqueSelect');
-      const addBrandBtn = document.getElementById('addBrandBtn');
-      const deleteBrandBtn = document.getElementById('deleteBrandBtn');
-      const brandModalElement = document.getElementById('confirmDeleteBrandModal');
-      const confirmDeleteBrandMessage = document.getElementById('confirmDeleteBrandMessage');
-      const confirmDeleteBrandBtn = document.getElementById('confirmDeleteBrandBtn');
-      const deleteBrandModal = brandModalElement && typeof bootstrap !== 'undefined'
-        ? new bootstrap.Modal(brandModalElement)
-        : null;
-      let pendingBrandValue = null;
-
-      if (addBrandBtn && marqueSelect) {
-        addBrandBtn.addEventListener('click', async () => {
-          const nom = prompt('Nouvelle marque :');
-          if (!nom) return;
-          const body = new URLSearchParams();
-          body.append('nom', nom);
-          try {
-            const resp = await fetch('/chantier/ajouter-marque', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: body.toString()
-            });
-            if (resp.ok) {
-              const data = await resp.json();
-              const brandName = data.nom || nom;
-              const exists = Array.from(marqueSelect.options)
-                .some(opt => opt.value.toLowerCase() === brandName.toLowerCase());
-              if (!exists) {
-                const option = document.createElement('option');
-                option.value = brandName;
-                option.textContent = brandName;
-                marqueSelect.appendChild(option);
-              }
-              marqueSelect.value = brandName;
-            } else {
-              alert("Erreur lors de l'ajout de la marque");
-            }
-          } catch (error) {
-            console.error(error);
-            alert("Erreur lors de l'ajout de la marque");
-          }
-        });
-      }
-
-      async function requestBrandDeletion(valeur) {
-        if (!marqueSelect) return false;
-        const body = new URLSearchParams();
-        body.append('nom', valeur);
-        try {
-          const resp = await fetch('/chantier/supprimer-marque', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString()
-          });
-          if (resp.ok) {
-            Array.from(marqueSelect.options).forEach(opt => {
-              if (opt.value === valeur) opt.remove();
-            });
-            marqueSelect.value = '';
-            if (marqueSelect.value) {
-              marqueSelect.selectedIndex = -1;
-            }
-            return true;
-          } else {
-            const data = await resp.json().catch(() => null);
-            alert(data?.message || "Erreur lors de la suppression de la marque");
-          }
-        } catch (error) {
-          console.error(error);
-          alert("Erreur lors de la suppression de la marque");
-        }
-        return false;
-      }
-
-      if (deleteBrandBtn && marqueSelect) {
-        deleteBrandBtn.addEventListener('click', async () => {
-          const valeur = marqueSelect.value;
-          if (!valeur) {
-            alert('Veuillez sélectionner une marque à supprimer.');
-            return;
-          }
-          if (deleteBrandModal && confirmDeleteBrandBtn && confirmDeleteBrandMessage) {
-            pendingBrandValue = valeur;
-            confirmDeleteBrandMessage.textContent = `Supprimer la marque "${valeur}" ? Elle sera retirée de tous les matériels.`;
-            deleteBrandModal.show();
-          } else {
-            if (!confirm(`Supprimer la marque "${valeur}" ? Elle sera retirée de tous les matériels.`)) {
-              return;
-            }
-            await requestBrandDeletion(valeur);
-          }
-        });
-      }
-
-      if (confirmDeleteBrandBtn && deleteBrandModal) {
-        confirmDeleteBrandBtn.addEventListener('click', async () => {
-          if (!pendingBrandValue) return;
-          const originalText = confirmDeleteBrandBtn.textContent;
-          confirmDeleteBrandBtn.disabled = true;
-          confirmDeleteBrandBtn.textContent = 'Suppression...';
-          const success = await requestBrandDeletion(pendingBrandValue);
-          confirmDeleteBrandBtn.disabled = false;
-          confirmDeleteBrandBtn.textContent = originalText;
-          if (success) {
-            pendingBrandValue = null;
-            deleteBrandModal.hide();
-          }
-        });
-      }
-
-      if (brandModalElement) {
-        brandModalElement.addEventListener('hidden.bs.modal', () => {
-          pendingBrandValue = null;
         });
       }
       initDesignationDropdown('categorieSelect', 'designationSelect', 'designationInput', {
