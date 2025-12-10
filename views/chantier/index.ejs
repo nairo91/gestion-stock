@@ -791,7 +791,7 @@
   </a>
   <!-- Supprime le bouton "Modifier" global ici -->
   <a href="/chantier/ajouter-chantier" class="btn btn-success">Créer un nouveau chantier</a>
-  <a href="/chantier/historique" class="btn btn-warning">Voir l'historique chantier</a>
+  <a href="#" id="btnHistoriqueChantier" class="btn btn-warning">Voir l'historique chantier</a>
   <a href="/emplacements" class="btn btn-info">Gérer les emplacements</a>
 
   <%
@@ -2388,6 +2388,30 @@
           li.appendChild(a);
           listEl.appendChild(li);
         });
+      });
+    })();
+  </script>
+
+  <!-- Historique chantier : reprendre automatiquement le filtre chantier courant -->
+  <script nonce="<%= nonce %>">
+    (function () {
+      const btnHistorique = document.getElementById('btnHistoriqueChantier');
+      if (!btnHistorique) return;
+
+      btnHistorique.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        // On suppose que le select de filtre chantier a name="chantierId"
+        const chantierSelect = document.querySelector('select[name="chantierId"]');
+
+        let url = '/chantier/historique';
+
+        if (chantierSelect && chantierSelect.value && chantierSelect.value !== 'all') {
+          const params = new URLSearchParams({ chantierId: chantierSelect.value });
+          url += '?' + params.toString();
+        }
+
+        window.location.href = url;
       });
     })();
   </script>
