@@ -179,7 +179,6 @@
                 id="chantierId"
                 name="chantierId"
                 class="form-select"
-                onchange="this.form.submit()"
               >
                 <option value="all" <%= selectedChantierId === 'all' ? 'selected' : '' %>>
                   Tous les chantiers
@@ -292,6 +291,28 @@
     toggleBtn.addEventListener('click', () => {
       document.body.classList.toggle('mode-sombre');
     });
+
+    // --- Filtre chantier : redirection propre avec ?chantierId= ---
+    (function () {
+      const select = document.getElementById('chantierId');
+      if (!select) return;
+
+      select.addEventListener('change', function () {
+        const value = select.value || 'all';
+
+        const baseUrl = window.location.pathname; // /chantier/historique
+        const params = new URLSearchParams(window.location.search);
+
+        if (value === 'all') {
+          params.delete('chantierId');
+        } else {
+          params.set('chantierId', value);
+        }
+
+        const query = params.toString();
+        window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+      });
+    })();
 
     (function () {
       const triCol = document.getElementById('triCol');
