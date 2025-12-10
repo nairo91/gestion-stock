@@ -166,31 +166,32 @@
 
       <div class="card-body">
         <% if (historiques && historiques.length > 0) { %>
-          <!-- Filtre par chantier (requête GET) -->
-          <form id="historiqueFilterForm" method="GET" class="row g-2 mb-3">
+          <!-- Filtre chantier (requête côté serveur) -->
+          <form
+            id="historiqueChantierFilter"
+            class="row g-2 mb-3"
+            method="GET"
+            action="/chantier/historique"
+          >
             <div class="col-md-4">
-              <label for="chantierFilter" class="form-label">Filtrer par chantier</label>
+              <label for="chantierId" class="form-label">Filtrer par chantier</label>
               <select
-                id="chantierFilter"
+                id="chantierId"
                 name="chantierId"
                 class="form-select"
                 onchange="this.form.submit()"
               >
-                <option value="all" <%= (!selectedChantierId || selectedChantierId === 'all') ? 'selected' : '' %>>
+                <option value="all" <%= selectedChantierId === 'all' ? 'selected' : '' %>>
                   Tous les chantiers
                 </option>
-                <% if (chantiers && chantiers.length) { %>
-                  <% chantiers.forEach(function(c){ %>
-                    <option
-                      value="<%= c.id %>"
-                      <%= String(selectedChantierId) === String(c.id) ? 'selected' : '' %>
-                    ><%= c.nom %></option>
-                  <% }); %>
-                <% } %>
+                <% chantiers.forEach(function(c) { %>
+                  <option value="<%= c.id %>" <%= String(selectedChantierId) === String(c.id) ? 'selected' : '' %>><%= c.nom %></option>
+                <% }) %>
               </select>
             </div>
           </form>
 
+          <!-- Tri local (JS) -->
           <form id="historiqueSortForm" class="row g-2 mb-3">
             <div class="col-md-3">
               <label for="triCol" class="form-label">Trier par</label>
