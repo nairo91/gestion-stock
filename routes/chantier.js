@@ -789,20 +789,34 @@ router.post('/scanner', ensureAuthenticated, (req, res) => {
 });
 
 /* ===== HISTORIQUE CHANTIER ===== */
-router.get('/historique', ensureAuthenticated, checkAdmin, async (req, res) => {
+router.get('/historique', ensureAuthenticated, async (req, res) => {
   try {
     const { chantierId } = req.query;
 
-    const where = { stockType: 'chantier' };
-    if (chantierId && chantierId !== 'all') {
-      where.chantierId = chantierId;
-    }
-
-    const historiques = await Historique.findAll({
-      where,
+    // 1) Charger tous les historiques de type "chantier" comme avant
+    let historiques = await Historique.findAll({
+      where: { stockType: 'chantier' },
       include: [{ model: User, as: 'user' }],
       order: [['createdAt', 'DESC']]
     });
+
+    let chantierNomFiltre = null;
+
+    // 2) Si un chantierId est fourni, on filtre en mémoire
+    if (chantierId && chantierId !== 'all') {
+      const chantier = await Chantier.findByPk(chantierId);
+
+      if (chantier) {
+        chantierNomFiltre = chantier.nom;
+        const nom = String(chantier.nom);
+
+        // On garde uniquement les lignes dont materielNom contient le nom du chantier
+        historiques = historiques.filter(h => {
+          if (!h.materielNom) return false;
+          return String(h.materielNom).includes(nom);
+        });
+      }
+    }
 
     const chantiers = await Chantier.findAll({
       order: [['nom', 'ASC']]
@@ -811,11 +825,15 @@ router.get('/historique', ensureAuthenticated, checkAdmin, async (req, res) => {
     res.render('chantier/historique', {
       historiques,
       chantiers,
+      chantierId: chantierId || '',
+      chantierNomFiltre,
       selectedChantierId: chantierId && chantierId !== 'all' ? chantierId : 'all'
     });
-  } catch (err) {
-    console.error(err);
-    res.send("Erreur lors de la récupération de l'historique chantier.");
+  } catch (error) {
+    console.error('Erreur /chantier/historique :', error);
+    res
+      .status(500)
+      .send("Erreur lors de la récupération de l'historique chantier.");
   }
 });
 
