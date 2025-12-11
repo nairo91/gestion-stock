@@ -1026,6 +1026,22 @@
       </div>
     <% } %>
 
+    <% const isAdminUser = user && user.role === 'admin'; %>
+    <% if (isAdminUser) { %>
+      <div class="d-flex justify-content-end align-items-center mb-2 gap-2">
+        <button
+          type="button"
+          class="btn btn-outline-light"
+          id="openMassUpdate"
+          data-bs-toggle="modal"
+          data-bs-target="#massUpdateModal"
+          disabled
+        >
+          Modifier en masse
+        </button>
+      </div>
+    <% } %>
+
     <div class="table-wrapper">
       <div class="stock-table-wrap">
         <table class="table table-bordered table-striped table-materiel align-middle table-stock">
@@ -1033,6 +1049,11 @@
         <tr>
           <th class="d-none">ID</th>
           <th class="d-none">Chantier</th>
+          <% if (isAdminUser) { %>
+            <th class="col-select text-center">
+              <input type="checkbox" id="selectAllMateriels" class="form-check-input">
+            </th>
+          <% } %>
           <th class="col-designation">Désignation</th>
           <th class="col-photo">Photo</th>
           <th class="col-reference">Référence</th>
@@ -1078,6 +1099,12 @@
               <td class="d-none" data-label="Chantier">
                 <%= mc.chantier ? `${mc.chantier.nom} - ${mc.chantier.localisation || ''}` : '' %>
               </td>
+
+              <% if (isAdminUser) { %>
+                <td class="col-select text-center" data-label="Sélection">
+                  <input type="checkbox" class="form-check-input materiel-select" value="<%= mc.id %>">
+                </td>
+              <% } %>
 
               <td class="col-designation" data-label="Désignation">
                 <%= mc.materiel ? mc.materiel.nom : '' %>
@@ -1607,6 +1634,45 @@
       </div>
     </div>
   </div>
+
+  <% if (isAdminUser) { %>
+    <div class="modal fade" id="massUpdateModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form id="massUpdateForm">
+            <div class="modal-header">
+              <h5 class="modal-title">Modifier en masse</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-info">
+                Les valeurs saisies seront appliquées à toutes les lignes sélectionnées.
+              </div>
+              <div class="mb-3">
+                <label for="massQuantiteRecue" class="form-label">Qte reçue</label>
+                <input type="number" class="form-control" id="massQuantiteRecue" name="quantiteRecue" min="0" step="1" placeholder="Laisser vide pour ne pas modifier">
+              </div>
+              <div class="mb-3">
+                <label for="massBdlFile" class="form-label">Ajouter BDL (fichier)</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="massBdlFile"
+                  name="bdlFile"
+                  accept="image/*,application/pdf"
+                >
+                <div class="form-text">Le fichier sera téléversé puis ajouté à chaque matériel sélectionné.</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+              <button type="submit" class="btn btn-primary" id="confirmMassUpdate" disabled>Appliquer</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  <% } %>
 
   <!-- 1) Bootstrap d'abord -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -2264,6 +2330,162 @@
       });
     })();
   </script>
+
+  <% if (isAdminUser) { %>
+    <script nonce="<%= nonce %>">
+      (function () {
+        const selectAll = document.getElementById('selectAllMateriels');
+        const rowCheckboxes = Array.from(document.querySelectorAll('.materiel-select'));
+        const openBtn = document.getElementById('openMassUpdate');
+        const submitBtn = document.getElementById('confirmMassUpdate');
+        const form = document.getElementById('massUpdateForm');
+        const qtyInput = document.getElementById('massQuantiteRecue');
+        const bdlFileInput = document.getElementById('massBdlFile');
+
+        const CLOUD_NAME = '<%= cloudinaryCloudName || "" %>';
+        const UPLOAD_PRESET = '<%= cloudinaryUploadPresetBdl || "" %>';
+        const spinner = document.getElementById('pageSpinner');
+        const showSpinner = () => spinner && spinner.classList.add('show');
+        const hideSpinner = () => spinner && spinner.classList.remove('show');
+        const canUploadBdl = CLOUD_NAME && UPLOAD_PRESET;
+
+        async function uploadBdlFile(file) {
+          const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('upload_preset', UPLOAD_PRESET);
+          fd.append('folder', 'bdl');
+
+          const resp = await fetch(url, {
+            method: 'POST',
+            body: fd
+          });
+
+          if (!resp.ok) {
+            throw new Error('Cloudinary HTTP ' + resp.status);
+          }
+
+          const data = await resp.json();
+          return data.secure_url || data.url;
+        }
+
+        const getSelectedIds = () => rowCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+
+        const syncButtons = () => {
+          const hasSelection = getSelectedIds().length > 0;
+          if (openBtn) openBtn.disabled = !hasSelection;
+          if (submitBtn) submitBtn.disabled = !hasSelection;
+          if (selectAll) {
+            selectAll.checked = hasSelection && rowCheckboxes.every(cb => cb.checked);
+            selectAll.indeterminate = !selectAll.checked && hasSelection;
+          }
+        };
+
+        rowCheckboxes.forEach(cb => {
+          cb.addEventListener('change', syncButtons);
+        });
+
+        if (selectAll) {
+          selectAll.addEventListener('change', () => {
+            const checked = selectAll.checked;
+            rowCheckboxes.forEach(cb => {
+              cb.checked = checked;
+            });
+            syncButtons();
+          });
+        }
+
+        const validateQuantite = (value) => {
+          if (value === '') return true;
+          const normalized = value.replace(/,/g, '.');
+          const num = Number(normalized);
+          return Number.isFinite(num) && num >= 0;
+        };
+
+        if (form) {
+          form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const ids = getSelectedIds();
+            const quantiteValue = qtyInput ? qtyInput.value.trim() : '';
+            const bdlFile = bdlFileInput && bdlFileInput.files ? bdlFileInput.files[0] : null;
+
+            if (!ids.length) {
+              return;
+            }
+
+            if (!quantiteValue && !bdlFile) {
+              alert('Renseignez au moins une valeur à appliquer.');
+              return;
+            }
+
+            if (!validateQuantite(quantiteValue)) {
+              alert('La quantité reçue doit être un nombre positif.');
+              return;
+            }
+
+            const payload = { ids };
+            if (quantiteValue !== '') {
+              payload.quantiteRecue = quantiteValue.replace(/,/g, '.');
+            }
+            if (bdlFile) {
+              if (!canUploadBdl) {
+                alert('Le téléversement de BDL n\'est pas configuré.');
+                return;
+              }
+              try {
+                showSpinner();
+                const uploadedUrl = await uploadBdlFile(bdlFile);
+                payload.bdlUrl = uploadedUrl;
+              } catch (uploadErr) {
+                console.error('Erreur upload BDL masse :', uploadErr);
+                alert("Impossible d'uploader le bon de livraison.");
+                return;
+              } finally {
+                hideSpinner();
+              }
+            }
+
+            try {
+              const resp = await fetch('/chantier/materielChantier/miseAJourMasse', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+              });
+
+              if (!resp.ok) {
+                const txt = await resp.text();
+                throw new Error(txt || 'Erreur serveur');
+              }
+
+              window.location.reload();
+            } catch (err) {
+              console.error('Erreur lors de la mise à jour en masse :', err);
+              alert('Impossible de modifier les lignes sélectionnées : ' + err.message);
+            }
+          });
+        }
+
+        const massModal = document.getElementById('massUpdateModal');
+        if (massModal) {
+          massModal.addEventListener('show.bs.modal', () => {
+            syncButtons();
+          });
+          massModal.addEventListener('hidden.bs.modal', () => {
+            if (form) {
+              form.reset();
+            }
+            if (bdlFileInput) {
+              bdlFileInput.value = '';
+            }
+          });
+        }
+
+        syncButtons();
+      })();
+    </script>
+  <% } %>
 
   <!-- Upload direct Cloudinary pour les BDL -->
   <script nonce="<%= nonce %>">
