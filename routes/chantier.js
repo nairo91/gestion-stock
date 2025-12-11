@@ -330,6 +330,80 @@ router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, async (req,
 });
 
 
+router.post('/materielChantier/miseAJourMasse', ensureAuthenticated, checkAdmin, async (req, res) => {
+  const { ids, quantiteRecue, bdlUrl } = req.body || {};
+
+  let idList = Array.isArray(ids)
+    ? ids
+    : (typeof ids === 'string' ? ids.split(',') : []);
+
+  idList = idList
+    .map(v => parseInt(String(v), 10))
+    .filter(v => Number.isInteger(v));
+
+  const hasQuantite = quantiteRecue !== undefined && quantiteRecue !== null && String(quantiteRecue).trim() !== '';
+  const hasBdl = typeof bdlUrl === 'string' && bdlUrl.trim() !== '';
+
+  if (!idList.length) {
+    return res.status(400).send('Aucune ligne sélectionnée.');
+  }
+
+  if (!hasQuantite && !hasBdl) {
+    return res.status(400).send('Aucune mise à jour demandée.');
+  }
+
+  let quantiteNumber = null;
+  if (hasQuantite) {
+    const normalized = String(quantiteRecue).replace(/,/g, '.');
+    quantiteNumber = Number(normalized);
+    if (!Number.isFinite(quantiteNumber) || quantiteNumber < 0) {
+      return res.status(400).send('Quantité reçue invalide.');
+    }
+  }
+
+  try {
+    const materiels = await MaterielChantier.findAll({
+      where: {
+        id: {
+          [Op.in]: idList
+        }
+      }
+    });
+
+    await sequelize.transaction(async transaction => {
+      for (const mc of materiels) {
+        if (hasQuantite) {
+          mc.quantite = quantiteNumber;
+        }
+
+        if (hasBdl) {
+          let existing = [];
+          if (Array.isArray(mc.bonLivraisonUrls)) {
+            existing = mc.bonLivraisonUrls;
+          } else if (typeof mc.bonLivraisonUrls === 'string') {
+            try { existing = JSON.parse(mc.bonLivraisonUrls); } catch (_) { existing = []; }
+          } else if (mc.bonLivraisonUrls && typeof mc.bonLivraisonUrls === 'object') {
+            existing = mc.bonLivraisonUrls;
+          }
+
+          mc.bonLivraisonUrls = [...existing, bdlUrl.trim()];
+        }
+
+        await mc.save({ transaction });
+      }
+    });
+
+    return res.json({
+      success: true,
+      updated: idList.length
+    });
+  } catch (err) {
+    console.error('Erreur lors de la mise à jour en masse :', err);
+    return res.status(500).send('Erreur lors de la mise à jour en masse.');
+  }
+});
+
+
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const { quantiteReceptionnee, livraisonIndex } = req.body;
