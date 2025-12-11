@@ -171,6 +171,44 @@ body.mode-sombre .table-hover tbody tr:hover {
   background-color: var(--table-hover-bg);
 }
 
+/* Bouton de modification en masse : contraste renforcé sur les fonds violets */
+.btn-mass-update {
+  background-color: #ffffff;
+  color: #3b0764;
+  border-color: #c084fc;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease,
+    color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-mass-update:hover,
+.btn-mass-update:focus {
+  background-color: #ede9fe;
+  color: #2e1065;
+  border-color: #a855f7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-mass-update:disabled {
+  opacity: 0.85;
+  box-shadow: none;
+}
+
+body.mode-sombre .btn-mass-update {
+  background-color: #e2e8f0;
+  color: #2e1065;
+  border-color: #c084fc;
+}
+
+body.mode-sombre .btn-mass-update:hover,
+body.mode-sombre .btn-mass-update:focus {
+  background-color: #cbd5e1;
+  color: #2e1065;
+  border-color: #a855f7;
+}
+
   /* Ajoute d'autres styles personnalisés ici si nécessaire */
 
 /* === Mobile readability tweaks (≤ 768px) === */
