@@ -994,16 +994,24 @@
         <label class="form-check-label" for="toggle-col-quantite">Quantité reçue</label>
       </div>
       <div class="form-check">
-        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue" data-column-class="col-quantite-prevue" checked>
-        <label class="form-check-label" for="toggle-col-quantite-prevue">Quantité prévue</label>
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue1" data-column-class="col-quantite-prevue1,col-date-prevue1" checked>
+        <label class="form-check-label" for="toggle-col-quantite-prevue1">Qté prévue 1 & Date 1</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue2" data-column-class="col-quantite-prevue2,col-date-prevue2" checked>
+        <label class="form-check-label" for="toggle-col-quantite-prevue2">Qté prévue 2 & Date 2</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue3" data-column-class="col-quantite-prevue3,col-date-prevue3" checked>
+        <label class="form-check-label" for="toggle-col-quantite-prevue3">Qté prévue 3 & Date 3</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue4" data-column-class="col-quantite-prevue4,col-date-prevue4" checked>
+        <label class="form-check-label" for="toggle-col-quantite-prevue4">Qté prévue 4 & Date 4</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-bdl" data-column-class="col-bon-livraison" checked>
         <label class="form-check-label" for="toggle-col-bdl">Bon de Livraison</label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-date" data-column-class="col-date" checked>
-        <label class="form-check-label" for="toggle-col-date">Date prévue</label>
       </div>
     </div>
   </div>
@@ -1066,14 +1074,14 @@
           <th class="col-compartiment">Compartiment</th>
           <th class="col-niveau">Niveau</th>
           <th class="col-quantite">Qte reçue</th>
-          <th class="col-quantite-prevue">Qte prévue 1</th>
-          <th class="col-date">Date 1</th>
-          <th class="col-quantite-prevue">Qte prévue 2</th>
-          <th class="col-date">Date 2</th>
-          <th class="col-quantite-prevue">Qte prévue 3</th>
-          <th class="col-date">Date 3</th>
-          <th class="col-quantite-prevue">Qte prévue 4</th>
-          <th class="col-date">Date 4</th>
+          <th class="col-quantite-prevue1">Qte prévue 1</th>
+          <th class="col-date-prevue1">Date 1</th>
+          <th class="col-quantite-prevue2">Qte prévue 2</th>
+          <th class="col-date-prevue2">Date 2</th>
+          <th class="col-quantite-prevue3">Qte prévue 3</th>
+          <th class="col-date-prevue3">Date 3</th>
+          <th class="col-quantite-prevue4">Qte prévue 4</th>
+          <th class="col-date-prevue4">Date 4</th>
           <th class="col-bon-livraison">Bon de Livraison</th>
           <th class="col-actions">Actions</th>
         </tr>
@@ -1208,20 +1216,20 @@
                   </span>
                 <% } %>
               </td>
-              <td class="col-quantite-prevue" data-label="Quantité prévue 1"><%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %></td>
-              <td class="col-date" data-label="Date prévue 1">
+              <td class="col-quantite-prevue1" data-label="Quantité prévue 1"><%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %></td>
+              <td class="col-date-prevue1" data-label="Date prévue 1">
                 <%= formatDateFr(mc.dateLivraisonPrevue1 || mc.dateLivraisonPrevue) || '-' %>
               </td>
-              <td class="col-quantite-prevue" data-label="Quantité prévue 2"><%= mc.quantitePrevue2 != null ? mc.quantitePrevue2 : '-' %></td>
-              <td class="col-date" data-label="Date prévue 2">
+              <td class="col-quantite-prevue2" data-label="Quantité prévue 2"><%= mc.quantitePrevue2 != null ? mc.quantitePrevue2 : '-' %></td>
+              <td class="col-date-prevue2" data-label="Date prévue 2">
                 <%= formatDateFr(mc.dateLivraisonPrevue2) || '-' %>
               </td>
-              <td class="col-quantite-prevue" data-label="Quantité prévue 3"><%= mc.quantitePrevue3 != null ? mc.quantitePrevue3 : '-' %></td>
-              <td class="col-date" data-label="Date prévue 3">
+              <td class="col-quantite-prevue3" data-label="Quantité prévue 3"><%= mc.quantitePrevue3 != null ? mc.quantitePrevue3 : '-' %></td>
+              <td class="col-date-prevue3" data-label="Date prévue 3">
                 <%= formatDateFr(mc.dateLivraisonPrevue3) || '-' %>
               </td>
-              <td class="col-quantite-prevue" data-label="Quantité prévue 4"><%= mc.quantitePrevue4 != null ? mc.quantitePrevue4 : '-' %></td>
-              <td class="col-date" data-label="Date prévue 4">
+              <td class="col-quantite-prevue4" data-label="Quantité prévue 4"><%= mc.quantitePrevue4 != null ? mc.quantitePrevue4 : '-' %></td>
+              <td class="col-date-prevue4" data-label="Date prévue 4">
                 <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
               </td>
 
@@ -1417,9 +1425,18 @@
         } catch (_) {}
       };
 
-      const applyState = (colClass, visible) => {
-        document.querySelectorAll(`.table-stock .${colClass}, [data-column="${colClass}"]`).forEach((cell) => {
-          cell.classList.toggle('hidden-column', !visible);
+      const applyState = (colClasses, visible) => {
+        const classes = Array.isArray(colClasses)
+          ? colClasses
+          : String(colClasses)
+              .split(',')
+              .map((cls) => cls.trim())
+              .filter(Boolean);
+
+        classes.forEach((colClass) => {
+          document.querySelectorAll(`.table-stock .${colClass}, [data-column="${colClass}"]`).forEach((cell) => {
+            cell.classList.toggle('hidden-column', !visible);
+          });
         });
       };
 
@@ -1431,15 +1448,24 @@
           return;
         }
 
+        const colClasses = colClass
+          .split(',')
+          .map((cls) => cls.trim())
+          .filter(Boolean);
+
+        if (!colClasses.length) {
+          return;
+        }
+
         if (Object.prototype.hasOwnProperty.call(state, colClass)) {
           toggle.checked = Boolean(state[colClass]);
         }
 
-        applyState(colClass, toggle.checked);
+        applyState(colClasses, toggle.checked);
 
         toggle.addEventListener('change', () => {
           state[colClass] = toggle.checked;
-          applyState(colClass, toggle.checked);
+          applyState(colClasses, toggle.checked);
           saveState(state);
         });
       });
