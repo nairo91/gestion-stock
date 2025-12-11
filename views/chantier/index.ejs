@@ -1806,268 +1806,614 @@
 
   <script nonce="<%= nonce %>">
     // ⚠️ Les données viennent d'un export Excel, à corriger au besoin
-    const FOURNISSEUR_CONTACTS = {
-      "SOTEXPRO": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Séverine Gicquel",
-            fonction: "Chargée de Projet - Paris/Ouest",
-            tel: "07 72 14 58 36",
-            email: "sgicquel@etoffes-inspire.fr"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Priscilla ZIMMERMANN",
-            fonction: "Assistante Grands Comptes",
-            tel: "+33 4 77 27 60 70",
-            email: "pzimmermann@sotexpro.fr"
-          }
-        ]
-      },
+// ⚠️ Données de fiches fournisseurs (mise à jour depuis ton tableau Excel)
+const FOURNISSEUR_CONTACTS = {
+  // ---------- TABLEAU ACTUEL (captures) ----------
 
-      "BRICOMAN": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Guillaume GABETTE",
-            tel: "06 64 03 37 07",
-            email: "guillaume.gabette@bricoman.fr"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Christophe Viana Gomes",
-            tel: "01 49 36 26 00",
-            email: "Christophe.VianaGomes@cedeo.fr"
-          },
-          {
-            titre: "Contact 3",
-            nom: "Nadir",
-            tel: "06 98 35 91 08"
-          }
-        ]
+  "THIRRIEZ": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Audrey Guéant",
+        fonction: "Assistante Commerciale IDF",
+        tel: "03 74 95 47 60",
+        email: "a.gueant@thiriez-literie.fr"
       },
-
-      "PIXELO": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Mihail TOMA",
-            fonction: "Dep. Export",
-            tel: "+40 742 666 999",
-            email: "mihai@primetrustventure.com"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Catalin VASILESCU",
-            fonction: "Dep. Export",
-            tel: "+40 743 98 77 99"
-          }
-        ]
-      },
-
-      "JM EXIM": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Katarzyna Badziag",
-            tel: "0048 661 291 480",
-            email: "kasia@jmeximfenetres.eu"
-          }
-        ]
-      },
-
-      "HUSSEIN": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Hussein",
-            tel: "06 59 31 59 01"
-          }
-        ]
-      },
-
-      "STMI": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "PATAMAVONG Christopher",
-            tel: "07 60 49 49 64",
-            email: "stmi.christopher@gmail.com"
-          }
-        ]
-      },
-
-      "FOUSSIER": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Thierry THOMAS",
-            fonction: "FOUSSIER",
-            tel: "02 50 821 821",
-            email: "comptoir.monthlery@foussier.fr"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Manuel Castandet",
-            tel: "01 78 19 20 00 / 07 60 62 99 29"
-          }
-        ]
-      },
-
-      "TEMPO": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "M. Coskun ATLI",
-            tel: "+33 (0)6 79 40 64 98",
-            email: "contact@tempo-materiaux.fr"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Akim",
-            tel: "03 88 26 15 71 / 07 89 64 36 84",
-            email: "akim@tempo-materiaux.fr"
-          }
-        ]
-      },
-
-      "FORBO": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Mathilde RÉGNIER",
-            fonction: "Assistante Commerciale Service clients France",
-            tel: "03 59 58 00 26",
-            email: "adv.france.sudouest@forbo.com"
-          },
-          {
-            titre: "Contact 2",
-            email: "flooring.france.grandscomptes@forbo.com"
-          }
-        ]
-      },
-
-      "France'AIR": {
-        contacts: []
-      },
-
-      "RICHARDSON": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Nicolas Beauflis",
-            fonction: "Responsable des Ventes Expo",
-            tel: "+33 6 83 43 93 05",
-            email: "nicolas.beauflis@geberit.com"
-          },
-          {
-            titre: "Contact 2",
-            email: "info@santintio.fr",
-            tel: "+33 1 78 90 06 65 (Lun–ven, 8–17h)"
-          }
-        ]
-      },
-
-      "ODF": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Carole QUILLIVIC",
-            fonction: "Service Commercial",
-            tel: "02 35 04 67 00",
-            email: "c.quillivic@odf.fr"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Kateryna MOLCHENKO",
-            fonction: "Service Commercial / Sales Department",
-            tel: "03 25 04 67 00",
-            email: "k.molchenko@odf.fr"
-          }
-        ]
-      },
-
-      "MPI": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Stephanie Grégoire",
-            fonction: "Chargée d'affaires",
-            tel: "+32 4 377 40 81",
-            email: "info@mpi.be"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Sarah Nizet",
-            fonction: "Assistante commerciale"
-          },
-          {
-            titre: "Contact 3",
-            nom: "Kelly Jaquet",
-            tel: "+32 4 377 91 25"
-          }
-        ]
-      },
-
-      "KINEDO": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Elodie BOUREAU",
-            fonction: "Assistante commerciale service chantier",
-            tel: "+33 (0)2 40 21 26 79"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Charlotte LEFORT",
-            fonction: "Assistante Commerciale service chantier",
-            tel: "+33 (0)2 40 21 26 79"
-          }
-        ]
-      },
-
-      "TARGETTI": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Veronique Carrey",
-            fonction: "Assistante de Direction Commerciale",
-            tel: "+33 1 44 29 08 86",
-            email: "veronique.carrey@targetti.com"
-          },
-          {
-            titre: "Contact 2",
-            nom: "Béatrice Gey",
-            fonction: "Assistante Commerciale",
-            tel: "+33 1 44 29 08 73",
-            email: "beatrice.gey@targetti.com"
-          }
-        ]
-      },
-
-      "LES RIPEURS": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Camille",
-            tel: "06 47 77 82 70",
-            email: "contact@lesripeurs.com"
-          }
-        ]
-      },
-
-      "PURE-COM": {
-        contacts: [
-          {
-            titre: "Contact 1",
-            nom: "Inès Barbé",
-            fonction: "Chargée de Marketing Digital & Business Developer",
-            tel: "01 64 13 49 80 / 07 67 37 45 56"
-          }
-        ]
+      {
+        titre: "Contact 2",
+        nom: "Transporteur Desauty",
+        tel: "03 21 50 64 65"
       }
-    };
+    ]
+  },
+
+  "BRICOMAN": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Guillaume",
+        tel: "06 64 03 37 07",
+        email: "guillaume.gabette@bricoman.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Yoann TANCHOUX",
+        fonction: "Manager des ventes",
+        tel: "06 10 88 68 43",
+        email: "Tyoann.tanchoux@bricoman.fr"
+      },
+      {
+        titre: "Contact 3",
+        nom: "Joanna PADRE",
+        fonction: "Manager Service Clients",
+        tel: "07 79 01 32 71"
+      }
+    ]
+  },
+
+  "SOTEXPRO": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Séverine Gicquel",
+        fonction: "Chargée de Projet - Paris/Ouest",
+        tel: "07 72 14 58 36",
+        email: "sgicquel@etoffes-inspire.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Priscilla ZIMMERMANN",
+        fonction: "Assistante Grands Comptes",
+        tel: "+33 4 77 27 60 70",
+        email: "pzimmermann@sotexpro.fr"
+      }
+    ]
+  },
+
+  "BARCELONALED": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Fanny Perrin",
+        fonction: "Commercial",
+        tel: "+34 932 41 80 81",
+        email: "commercial@barcelonaled.fr"
+      }
+    ]
+  },
+
+  "JM EXIM MENUISERIE PVC": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Katarzyna Badziag",
+        tel: "0048 661 291 480",
+        email: "kasia@jmeximfenetres.eu"
+      }
+    ]
+  },
+
+  "QUARANTE SIX": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Isabelle Griffaut",
+        fonction: "Chargée d’affaires",
+        tel: "01 34 52 18 70",
+        email: "commercial.trappes@quarantesix.fr"
+      }
+    ]
+  },
+
+  "RENOV&REFRESH": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Mélanie SORRIAUX",
+        fonction: "Responsable de projets",
+        tel: "04 77 74 01 01",
+        email: "melanie.sorriaux@renov-refresh.com"
+      }
+    ]
+  },
+
+  "SOUSTRAITANT ELECTRICITE": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "PATAMAVONG Christopher",
+        tel: "07 60 49 49 64",
+        email: "stmi.christopher@gmail.com"
+      }
+    ]
+  },
+
+  "FOUSSIER": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Thierry THOMAS",
+        fonction: "FOUSSIER",
+        tel: "02 50 82 18 21",
+        email: "comptoir.monthlery@foussier.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Manuel Castandet",
+        tel: "01 78 19 20 00 / 07 60 62 99 29"
+      }
+    ]
+  },
+
+  "HUMELAB": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Guillaume VAILLANT",
+        fonction: "Key Account Manager",
+        tel: "+33 (0)6 12 03 08 86",
+        email: "guillaume.vaillant@humelab.com"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Marie Arraiolos",
+        fonction: "Assistante Commerciale",
+        tel: "+33 (0)6 12 03 06 12",
+        email: "marie.arraiolos@humelab.com"
+      }
+    ]
+  },
+
+  "STRATOBOIS": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Jean Louis Demichel",
+        fonction: "Responsable Bureau d'Études",
+        tel: "06 75 78 78 99",
+        email: "jeanlouis.demichel@stratobois.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Marie Hello",
+        fonction: "Resp adjointe du Bureau d'Études",
+        tel: "06 38 30 39 38",
+        email: "marie.hello@stratobois.fr"
+      },
+      {
+        titre: "Contact 3",
+        nom: "Cyril Fructuoso",
+        tel: "06 19 54 47 55",
+        email: "cyril.fructuoso@stratobois.fr"
+      }
+    ]
+  },
+
+  "FORBO": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Mathilde RÉGNIER",
+        fonction: "Assistante Commerciale Service clients France",
+        tel: "03 59 58 00 26",
+        email: "adv.france.sudouest@forbo.com"
+      },
+      {
+        titre: "Contact 2",
+        fonction: "Service clients France / Grands comptes",
+        email: "flooring.france.grandscomptes@forbo.com"
+      },
+      {
+        titre: "Contact 3",
+        nom: "Joël Nunes",
+        fonction: "Key Account Manager – Directeur Grands Comptes Hôtellerie",
+        tel: "+33 6 30 52 22 78"
+      }
+    ]
+  },
+
+  "GROHE": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Arnaud MADELAINE",
+        fonction: "Responsable Grands Comptes IDF - KAM Installateurs et B.E",
+        tel: "06 07 43 93 19"
+      },
+      {
+        titre: "Contact 2",
+        nom: "ELBAZ Yaël",
+        fonction: "KAM A&D, Grands Comptes Architectes",
+        tel: "06 83 09 04 47"
+      }
+    ]
+  },
+
+  "EGE": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Grégoire HAILLOT",
+        fonction: "Responsable Commercial Régional",
+        tel: "+33 6 74 74 52 92",
+        email: "GRHA@EGECARPETS.COM"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Sophie ZANELLI",
+        fonction: "Assistante ADV",
+        tel: "+33 1 40 60 44 51",
+        email: "SOZA@EGECARPETS.COM"
+      }
+    ]
+  },
+
+  "TEMPO MATERIAUX": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "M. Coskun ATLI",
+        tel: "+33 (0)6 79 40 64 98 / +33 (0)3 88 26 15 71",
+        email: "contact@tempo-materiaux.fr"
+      }
+    ]
+  },
+
+  "France AIR": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "M. Louis BERMEJO",
+        fonction: "Technico-Commercial Sédentaire - Secteur 91 Ouest",
+        tel: "01 69 34 85 00",
+        email: "louis.bermejo@france-air.com"
+      },
+      {
+        titre: "Contact 2",
+        nom: "M. Nicolas JONCKHEERE",
+        fonction: "Attaché Technico-Commercial itinérant - Secteur 91 Ouest",
+        tel: "06 22 70 92 68",
+        email: "nicolas.jonckheere@france-air.com"
+      }
+    ]
+  },
+
+  "ODF": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Carole QUILLIVIC",
+        fonction: "Service Commercial",
+        tel: "02 35 04 67 00",
+        email: "c.quillivic@odf.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Kateryna MOLCHENKO",
+        fonction: "Service Commercial / Sales Department",
+        tel: "03 25 04 67 00",
+        email: "k.molchenko@odf.fr"
+      }
+    ]
+  },
+
+  "CEDEO": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Christophe Viana Gomes",
+        tel: "01 49 36 26 00",
+        email: "Christophe.VianaGomes@cedeo.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Nadir",
+        tel: "06 98 35 91 08"
+      }
+    ]
+  },
+
+  "GRADA": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Ismail HAJJI",
+        fonction: "Technico Commercial Sédentaire",
+        tel: "+33 (0)3 20 11 63 90"
+      },
+      {
+        titre: "Contact 2",
+        fonction: "Pour vos Commandes",
+        email: "isdfrance@gradafrance.com"
+      },
+      {
+        titre: "Contact 3",
+        fonction: "Pour vos Demandes de Prix",
+        email: "devis@gradafrance.com"
+      }
+    ]
+  },
+
+  "SONEPAR": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Nora SAGET",
+        fonction: "Technico-commerciale Sédentaire",
+        tel: "+33 (0)1 59 23 52 02",
+        email: "nora.saget@sonepar.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Sophie Schmitt",
+        email: "sophie.schmitt@sonepar.fr"
+      }
+    ]
+  },
+
+  "LES RIPEURS": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Camille",
+        tel: "06 47 77 82 70",
+        email: "contact@lesripeurs.com"
+      }
+    ]
+  },
+
+  "AUDIENCE & CREATION": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Laëtitia Meder",
+        fonction: "Responsable Service client",
+        tel: "+33 2 40 60 33 02",
+        email: "laetitia@audience-creation.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Ludivine Rigaux",
+        fonction: "Gestionnaire ADV",
+        tel: "+33 1 71 54 73 86",
+        email: "ludivine@audience-creation.fr"
+      }
+    ]
+  },
+
+  "9EME SENS": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Séverine Gervais",
+        tel: "06 47 18 37 13",
+        email: "gervaisseverine@gmail.com"
+      }
+    ]
+  },
+
+  "WELSPUN": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Karim Baraka",
+        fonction: "Account Manager - Welspun World",
+        tel: "+44 73 83 149 371",
+        email: "Karim.Baraka@Welspun.com"
+      }
+    ]
+  },
+
+  "NEOLOGY": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Pierre DELMAS",
+        fonction: "Canapés Design",
+        tel: "+33 (0)5 55 20 58 22 / +33 (0)6 48 20 12 31",
+        email: "p.delmas@neology.tm.fr"
+      }
+    ]
+  },
+
+  "VESCOM": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Pascoal VICENTE",
+        fonction: "Assistante commerciale",
+        tel: "+33 1 39 97 70 24",
+        email: "commandes@vescom.com"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Jean Daniel Gauthier",
+        fonction: "Chargé d’affaires",
+        tel: "+33 7 869 592 79"
+      }
+    ]
+  },
+
+  "EDIL": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Franck THOMAS",
+        email: "thomas@edil.biz"
+      }
+    ]
+  },
+
+  "SPM": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "PERRON Galane",
+        fonction: "Technico Commerciale Sédentaire",
+        tel: "+33 5 34 39 40 40",
+        email: "gperron@spm.fr"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Viviane LESCURE",
+        fonction: "Assistante Commerciale",
+        tel: "05 34 39 40 70",
+        email: "suivi.commandes@spm.fr"
+      }
+    ]
+  },
+
+  "POINT P": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Nabile TAHIRI",
+        fonction: "Attaché Technico Commercial",
+        tel: "06 32 40 73 60"
+      },
+      {
+        titre: "Contact 2",
+        fonction: "Agence d’Arpajon",
+        tel: "+33 (0)1 69 17 13 80",
+        email: null
+      }
+    ]
+  },
+
+  // ---------- FOURNISSEURS QUI EXISTAIENT DÉJÀ (inchangés) ----------
+
+  "PIXELO": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Mihail TOMA",
+        fonction: "Dep. Export",
+        tel: "+40 742 666 999",
+        email: "mihai@primetrustventure.com"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Catalin VASILESCU",
+        fonction: "Dep. Export",
+        tel: "+40 743 98 77 99"
+      }
+    ]
+  },
+
+  "JM EXIM": { // alias, sera synchronisé plus bas si besoin
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Katarzyna Badziag",
+        tel: "0048 661 291 480",
+        email: "kasia@jmeximfenetres.eu"
+      }
+    ]
+  },
+
+  "HUSSEIN": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Hussein",
+        tel: "06 59 31 59 01"
+      }
+    ]
+  },
+
+  "RICHARDSON": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Nicolas Beauflis",
+        fonction: "Responsable des Ventes Expo",
+        tel: "+33 6 83 43 93 05",
+        email: "nicolas.beauflis@geberit.com"
+      },
+      {
+        titre: "Contact 2",
+        email: "info@santintio.fr",
+        tel: "+33 1 78 90 06 65 (Lun–ven, 8–17h)"
+      }
+    ]
+  },
+
+  "MPI": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Stephanie Grégoire",
+        fonction: "Chargée d'affaires",
+        tel: "+32 4 377 40 81",
+        email: "info@mpi.be"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Sarah Nizet",
+        fonction: "Assistante commerciale"
+      },
+      {
+        titre: "Contact 3",
+        nom: "Kelly Jaquet",
+        tel: "+32 4 377 91 25"
+      }
+    ]
+  },
+
+  "KINEDO": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Elodie BOUREAU",
+        fonction: "Assistante commerciale service chantier",
+        tel: "+33 (0)2 40 21 26 79"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Charlotte LEFORT",
+        fonction: "Assistante Commerciale service chantier",
+        tel: "+33 (0)2 40 21 26 79"
+      }
+    ]
+  },
+
+  "TARGETTI": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Veronique Carrey",
+        fonction: "Assistante de Direction Commerciale",
+        tel: "+33 1 44 29 08 86",
+        email: "veronique.carrey@targetti.com"
+      },
+      {
+        titre: "Contact 2",
+        nom: "Béatrice Gey",
+        fonction: "Assistante Commerciale",
+        tel: "+33 1 44 29 08 73",
+        email: "beatrice.gey@targetti.com"
+      }
+    ]
+  },
+
+  "PURE-COM": {
+    contacts: [
+      {
+        titre: "Contact 1",
+        nom: "Inès Barbé",
+        fonction: "Chargée de Marketing Digital & Business Developer",
+        tel: "01 64 13 49 80 / 07 67 37 45 56"
+      }
+    ]
+  }
+};
+
+// Alias pour gérer différentes écritures dans la base
+FOURNISSEUR_CONTACTS["STMI"] = FOURNISSEUR_CONTACTS["SOUSTRAITANT ELECTRICITE"];
+FOURNISSEUR_CONTACTS["TEMPO"] = FOURNISSEUR_CONTACTS["TEMPO MATERIAUX"];
+FOURNISSEUR_CONTACTS["France'AIR"] = FOURNISSEUR_CONTACTS["France AIR"];
+FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"];
+
   </script>
 
   <script nonce="<%= nonce %>">
