@@ -252,6 +252,20 @@ body.mode-sombre .btn-mass-update:focus {
     overflow: visible !important;
   }
 
+  /* Quantités & Fournisseur : forcer le retour à la ligne pour éviter les ellipses sur iPad */
+  .table-stock .col-quantite,
+  .table-stock .col-quantite-prevue1,
+  .table-stock .col-quantite-prevue2,
+  .table-stock .col-quantite-prevue3,
+  .table-stock .col-quantite-prevue4,
+  .table-stock .col-fournisseur {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
   /* Désignation : montrer le nom en entier, avec retour à la ligne si besoin */
   .table-stock .col-designation {
     white-space: normal !important;
