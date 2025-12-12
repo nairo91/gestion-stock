@@ -31,7 +31,8 @@ const CHANTIER_FILTER_KEYS = [
   'triNom',
   'triAjout',
   'triModification',
-  'recherche'
+  'recherche',
+  'limit'
 ];
 
 // Expose un flag admin aux vues (pour afficher/masquer des actions sensibles)
@@ -68,8 +69,12 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
     triNom,
     triAjout,
     triModification,
-    recherche
+    recherche,
+    limit
   } = query;
+
+  const parsedLimit = Number.parseInt(limit, 10);
+  const safeLimit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : null;
 
   let chantierIdInt = null;
   if (chantierId !== undefined && chantierId !== null && chantierId !== '') {
@@ -150,6 +155,10 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
       const contenu = JSON.stringify(mc.get({ plain: true })).toLowerCase();
       return contenu.includes(terme);
     });
+  }
+
+  if (safeLimit) {
+    materielChantiers = materielChantiers.slice(0, safeLimit);
   }
 
   return materielChantiers;
