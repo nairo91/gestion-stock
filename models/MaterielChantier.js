@@ -76,6 +76,46 @@ const MaterielChantier = sequelize.define(
       allowNull: true,
     },
 
+    quantitePrevueInitiale: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
+    },
+
+    quantitePrevueInitiale1: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
+    },
+
+    quantitePrevueInitiale2: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
+    },
+
+    quantitePrevueInitiale3: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
+    },
+
+    quantitePrevueInitiale4: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
+    },
+
     quantitePrevue: {
       type: DataTypes.INTEGER,
       allowNull: true,
