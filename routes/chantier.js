@@ -204,6 +204,20 @@ const computeTotalPrevu = mc => {
   return plannedBySlot + legacy;
 };
 
+const computeTotalPrevuFromValues = ({
+  quantitePrevue,
+  quantitePrevue1,
+  quantitePrevue2,
+  quantitePrevue3,
+  quantitePrevue4
+}) => computeTotalPrevu({
+  quantitePrevue,
+  quantitePrevue1,
+  quantitePrevue2,
+  quantitePrevue3,
+  quantitePrevue4
+});
+
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
@@ -724,7 +738,17 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     const qtePrevueSlot2 = toIntOrNull(quantitePrevue2);
     const qtePrevueSlot3 = toIntOrNull(quantitePrevue3);
     const qtePrevueSlot4 = toIntOrNull(quantitePrevue4);
-    const qtePrevueInitiale = qtePrevue != null ? qtePrevue : qtePrevueSlot1;
+    const plannedInputs = [qtePrevue, qtePrevueSlot1, qtePrevueSlot2, qtePrevueSlot3, qtePrevueSlot4];
+    const hasPlannedValue = plannedInputs.some(v => v != null);
+    const qtePrevueInitiale = hasPlannedValue
+      ? computeTotalPrevuFromValues({
+          quantitePrevue: qtePrevue,
+          quantitePrevue1: qtePrevueSlot1,
+          quantitePrevue2: qtePrevueSlot2,
+          quantitePrevue3: qtePrevueSlot3,
+          quantitePrevue4: qtePrevueSlot4
+        })
+      : null;
     const datePrevueSlot1 = toDateOrNull(dateLivraisonPrevue1);
     const datePrevueSlot2 = toDateOrNull(dateLivraisonPrevue2);
     const datePrevueSlot3 = toDateOrNull(dateLivraisonPrevue3);
@@ -1099,6 +1123,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldDatePrevue = mc.dateLivraisonPrevue;
     const oldQuantitesPrevues = [mc.quantitePrevue1, mc.quantitePrevue2, mc.quantitePrevue3, mc.quantitePrevue4];
     const oldDatesPrevues = [mc.dateLivraisonPrevue1, mc.dateLivraisonPrevue2, mc.dateLivraisonPrevue3, mc.dateLivraisonPrevue4];
+    const hasOldPlannedValues = [mc.quantitePrevue, ...oldQuantitesPrevues].some(v => v != null);
+    const oldTotalPrevu = hasOldPlannedValues ? computeTotalPrevu(mc) : null;
 
     const newNom = nomMateriel.trim();
     const newCategorie = categorie;
@@ -1114,13 +1140,21 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       const newPrix = prix ? parseFloat(prix) : null;
     const newRemarque = remarque && remarque.trim() ? remarque.trim() : null;
 
-    const oldReferencePlanned = mc.quantitePrevue1 != null ? mc.quantitePrevue1 : mc.quantitePrevue;
-    const newReferencePlanned = newQuantitesPrevues[0] != null ? newQuantitesPrevues[0] : newQtePrevue;
+    const hasNewPlannedValues = [newQtePrevue, ...newQuantitesPrevues].some(v => v != null);
+    const newTotalPrevu = hasNewPlannedValues
+      ? computeTotalPrevuFromValues({
+          quantitePrevue: newQtePrevue,
+          quantitePrevue1: newQuantitesPrevues[0],
+          quantitePrevue2: newQuantitesPrevues[1],
+          quantitePrevue3: newQuantitesPrevues[2],
+          quantitePrevue4: newQuantitesPrevues[3]
+        })
+      : null;
     let newQtePrevueInitiale = oldQtePrevueInitiale;
-    if (newQtePrevueInitiale == null && newReferencePlanned != null) {
-      newQtePrevueInitiale = newReferencePlanned;
-    } else if (oldReferencePlanned !== newReferencePlanned && newReferencePlanned != null) {
-      newQtePrevueInitiale = newReferencePlanned;
+    if (newQtePrevueInitiale == null && newTotalPrevu != null) {
+      newQtePrevueInitiale = newTotalPrevu;
+    } else if (newTotalPrevu != null && oldTotalPrevu !== newTotalPrevu) {
+      newQtePrevueInitiale = newTotalPrevu;
     }
 
     if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
@@ -1289,12 +1323,16 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
     }
 
     // Ajouter dans le chantier
+      const initialDuplicationPlan = qtePrevue != null
+        ? computeTotalPrevuFromValues({ quantitePrevue: qtePrevue })
+        : null;
+
       await MaterielChantier.create({
         chantierId: parseInt(chantierId),
         materielId: nouveauMateriel.id,
         quantite: parseInt(quantite),
         quantitePrevue: qtePrevue,
-        quantitePrevueInitiale: qtePrevue,
+        quantitePrevueInitiale: initialDuplicationPlan,
         dateLivraisonPrevue: datePrevue,
         remarque: remarque || null
       });
@@ -1507,12 +1545,24 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         }
       });
 
+      const importPlanValues = [r.qtePrevue, r.qtePrevue1, r.qtePrevue2, r.qtePrevue3, r.qtePrevue4];
+      const hasImportPlan = importPlanValues.some(v => v != null);
+      const initialImportPlan = hasImportPlan
+        ? computeTotalPrevuFromValues({
+            quantitePrevue: r.qtePrevue,
+            quantitePrevue1: r.qtePrevue1,
+            quantitePrevue2: r.qtePrevue2,
+            quantitePrevue3: r.qtePrevue3,
+            quantitePrevue4: r.qtePrevue4
+          })
+        : null;
+
       await MaterielChantier.upsert({
         chantierId: preview.chantierId,
         materielId: materiel.id,
         quantite: 0,
         quantitePrevue: r.qtePrevue,
-        quantitePrevueInitiale: r.qtePrevue,
+        quantitePrevueInitiale: initialImportPlan,
         dateLivraisonPrevue: null,
         remarque: null
       });

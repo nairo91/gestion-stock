@@ -40,7 +40,7 @@
         <p>
           <strong>🔮 Quantité prévue :</strong> <%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %>
           <% if (mc.quantitePrevueInitiale != null) { %>
-            <br><span class="text-muted">Qte init prév : <%= mc.quantitePrevueInitiale %></span>
+            <br><span class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale %></span>
           <% } %>
         </p>
         <p><strong>📅 Date de livraison prévue :</strong> <%= formatDateFr(mc.dateLivraisonPrevue) || '-' %></p>
