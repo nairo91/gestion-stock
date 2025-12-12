@@ -883,12 +883,25 @@
 </div>
 
  <div class="col-md-3">
-   <label for="triAjout" class="form-label">Ordre d'ajout</label>
-   <select class="form-select" name="triAjout" id="triAjout">
-     <option value="">-- Aucun tri --</option>
-     <option value="desc" <%= triAjout === 'desc' ? 'selected' : '' %>>Plus récent d'abord</option>
-     <option value="asc" <%= triAjout === 'asc' ? 'selected' : '' %>>Plus ancien d'abord</option>
-   </select>
+  <label for="triAjout" class="form-label">Ordre d'ajout</label>
+  <select class="form-select" name="triAjout" id="triAjout">
+    <option value="">-- Aucun tri --</option>
+    <option value="desc" <%= triAjout === 'desc' ? 'selected' : '' %>>Plus récent d'abord</option>
+    <option value="asc" <%= triAjout === 'asc' ? 'selected' : '' %>>Plus ancien d'abord</option>
+  </select>
+</div>
+
+ <div class="col-md-3">
+   <label for="limit" class="form-label">Nombre de lignes à afficher</label>
+   <input
+     type="number"
+     min="1"
+     class="form-control"
+     name="limit"
+     id="limit"
+     value="<%= limit || '' %>"
+     placeholder="Ex : 50"
+   >
  </div>
 
  <input type="hidden" name="triModification" id="triModification" value="<%= triModification || '' %>">
@@ -1077,10 +1090,13 @@
           <th class="d-none">ID</th>
           <th class="d-none">Chantier</th>
           <% if (isAdminUser) { %>
-            <th class="col-select text-center">
-              <input type="checkbox" id="selectAllMateriels" class="form-check-input">
-            </th>
-          <% } %>
+          <th class="col-select text-center">
+              <div class="d-flex align-items-center justify-content-center gap-2">
+                <span class="text-muted">#</span>
+                <input type="checkbox" id="selectAllMateriels" class="form-check-input">
+              </div>
+          </th>
+        <% } %>
           <th class="col-designation">Désignation</th>
           <th class="col-photo">Photo</th>
           <th class="col-reference">Référence</th>
@@ -1107,7 +1123,7 @@
       </thead>
       <tbody>
       <% if (materielChantiers && materielChantiers.length > 0) { %>
-        <% materielChantiers.forEach(function (mc) { 
+        <% materielChantiers.forEach(function (mc, index) {
              const qRecue = Number(mc.quantite) || 0;
              const qp1 = Number(
                mc.quantitePrevue1 != null
@@ -1127,9 +1143,12 @@
                 <%= mc.chantier ? `${mc.chantier.nom} - ${mc.chantier.localisation || ''}` : '' %>
               </td>
 
-              <% if (isAdminUser) { %>
+             <% if (isAdminUser) { %>
                 <td class="col-select text-center" data-label="Sélection">
-                  <input type="checkbox" class="form-check-input materiel-select" value="<%= mc.id %>">
+                  <div class="d-flex align-items-center justify-content-center gap-2">
+                    <span class="badge bg-secondary rounded-pill"><%= index + 1 %></span>
+                    <input type="checkbox" class="form-check-input materiel-select" value="<%= mc.id %>">
+                  </div>
                 </td>
               <% } %>
 
