@@ -823,10 +823,29 @@
   >📥 Importer via Excel</a>
 
   <% if (typeof isAdmin !== 'undefined' && isAdmin && chantierCourant) { %>
-    <form action="/chantier/<%= chantierCourant.id %>/vider" method="POST" class="d-inline"
-          onsubmit="return confirm('Confirmer le vidage complet du stock pour ce chantier ?');">
-      <button type="submit" class="btn btn-outline-danger mb-3">🗑️ Vider le chantier</button>
+    <form action="/chantier/<%= chantierCourant.id %>/vider" method="POST" class="d-inline" id="viderChantierForm">
+      <button type="button" class="btn btn-outline-danger mb-3" data-bs-toggle="modal" data-bs-target="#confirmViderChantierModal">
+        🗑️ Vider le chantier
+      </button>
     </form>
+    <div class="modal fade" id="confirmViderChantierModal" tabindex="-1" aria-labelledby="confirmViderChantierModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmViderChantierModalLabel">Confirmer le vidage</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+          <div class="modal-body">
+            Êtes-vous sûr de vouloir vider complètement le stock du chantier « <%= chantierCourant ? chantierCourant.nom : 'ce chantier' %> » ?
+            Cette action est irréversible.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-danger" id="confirmViderChantierButton">Oui, vider le chantier</button>
+          </div>
+        </div>
+      </div>
+    </div>
   <% } %>
 
   <% } %> <!-- fin du bloc admin -->
@@ -1703,6 +1722,23 @@
 
   <!-- 1) Bootstrap d'abord -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script nonce="<%= nonce %>">
+    (function () {
+      const viderForm = document.getElementById('viderChantierForm');
+      const confirmBtn = document.getElementById('confirmViderChantierButton');
+      if (!viderForm || !confirmBtn) return;
+
+      confirmBtn.addEventListener('click', function () {
+        const modalEl = document.getElementById('confirmViderChantierModal');
+        if (modalEl) {
+          const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+          modalInstance.hide();
+        }
+        viderForm.submit();
+      });
+    })();
+  </script>
 
   <!-- Auto-rechargement des filtres (Stock Chantier) -->
   <script nonce="<%= nonce %>">
