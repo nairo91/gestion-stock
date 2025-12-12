@@ -139,7 +139,8 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
         'quantitePrevue1',
         'quantitePrevue2',
         'quantitePrevue3',
-        'quantitePrevue4'
+        'quantitePrevue4',
+        'quantitePrevueInitiale'
       ]
     },
     include: [
@@ -723,6 +724,7 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     const qtePrevueSlot2 = toIntOrNull(quantitePrevue2);
     const qtePrevueSlot3 = toIntOrNull(quantitePrevue3);
     const qtePrevueSlot4 = toIntOrNull(quantitePrevue4);
+    const qtePrevueInitiale = qtePrevue != null ? qtePrevue : qtePrevueSlot1;
     const datePrevueSlot1 = toDateOrNull(dateLivraisonPrevue1);
     const datePrevueSlot2 = toDateOrNull(dateLivraisonPrevue2);
     const datePrevueSlot3 = toDateOrNull(dateLivraisonPrevue3);
@@ -766,6 +768,7 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
       materielId: nouveauMateriel.id,
       quantite: qte,
       quantitePrevue: qtePrevue,
+      quantitePrevueInitiale: qtePrevueInitiale,
       dateLivraisonPrevue: datePrevue,
       quantitePrevue1: qtePrevueSlot1,
       quantitePrevue2: qtePrevueSlot2,
@@ -1092,6 +1095,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       const oldPrix = mc.materiel.prix;
       const oldRemarque = mc.remarque;
     const oldQtePrevue = mc.quantitePrevue;
+    const oldQtePrevueInitiale = mc.quantitePrevueInitiale;
     const oldDatePrevue = mc.dateLivraisonPrevue;
     const oldQuantitesPrevues = [mc.quantitePrevue1, mc.quantitePrevue2, mc.quantitePrevue3, mc.quantitePrevue4];
     const oldDatesPrevues = [mc.dateLivraisonPrevue1, mc.dateLivraisonPrevue2, mc.dateLivraisonPrevue3, mc.dateLivraisonPrevue4];
@@ -1109,6 +1113,15 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newDescription = description;
       const newPrix = prix ? parseFloat(prix) : null;
     const newRemarque = remarque && remarque.trim() ? remarque.trim() : null;
+
+    const oldReferencePlanned = mc.quantitePrevue1 != null ? mc.quantitePrevue1 : mc.quantitePrevue;
+    const newReferencePlanned = newQuantitesPrevues[0] != null ? newQuantitesPrevues[0] : newQtePrevue;
+    let newQtePrevueInitiale = oldQtePrevueInitiale;
+    if (newQtePrevueInitiale == null && newReferencePlanned != null) {
+      newQtePrevueInitiale = newReferencePlanned;
+    } else if (oldReferencePlanned !== newReferencePlanned && newReferencePlanned != null) {
+      newQtePrevueInitiale = newReferencePlanned;
+    }
 
     if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
     if (oldNom !== newNom) changementsDetail.push(`Nom: ${oldNom} ➔ ${newNom}`);
@@ -1137,6 +1150,9 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
         changementsDetail.push(`Date prévue ${idx + 1}: ${oldVal ? oldVal.toISOString().split('T')[0] : '-'} ➔ ${val ? val.toISOString().split('T')[0] : '-'}`);
       }
     });
+    if (oldQtePrevueInitiale !== newQtePrevueInitiale) {
+      changementsDetail.push(`Qté init prévue: ${oldQtePrevueInitiale || '-'} ➔ ${newQtePrevueInitiale || '-'}`);
+    }
 
     // Mise à jour
     mc.quantite = newQte;
@@ -1146,6 +1162,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       mc[`quantitePrevue${idx}`] = newQuantitesPrevues[i];
       mc[`dateLivraisonPrevue${idx}`] = newDatesPrevues[i];
     });
+    mc.quantitePrevueInitiale = newQtePrevueInitiale;
     mc.materiel.nom = newNom;
     mc.materiel.categorie = newCategorie;
     mc.materiel.emplacementId = newEmplacement;
@@ -1277,6 +1294,7 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
         materielId: nouveauMateriel.id,
         quantite: parseInt(quantite),
         quantitePrevue: qtePrevue,
+        quantitePrevueInitiale: qtePrevue,
         dateLivraisonPrevue: datePrevue,
         remarque: remarque || null
       });
@@ -1494,6 +1512,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         materielId: materiel.id,
         quantite: 0,
         quantitePrevue: r.qtePrevue,
+        quantitePrevueInitiale: r.qtePrevue,
         dateLivraisonPrevue: null,
         remarque: null
       });
@@ -1673,6 +1692,7 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         materielId: nouveauMateriel.id,
         quantite: 0,
         quantitePrevue: qteNumber,
+        quantitePrevueInitiale: qteNumber,
         dateLivraisonPrevue: null,
         remarque: null
       });
@@ -1758,6 +1778,7 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
       { header: 'Niveau', key: 'niveau', width: 10 },
       { header: 'Quantité', key: 'quantite', width: 12 },
       { header: 'Quantité prévue', key: 'quantitePrevue', width: 18 },
+      { header: 'Qté init prévue', key: 'quantitePrevueInitiale', width: 18 },
       { header: 'Date prévue', key: 'datePrevue', width: 16 }
     ];
 
@@ -1806,13 +1827,14 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
         niveau: mat.niveau != null ? mat.niveau : '-',
         quantite: mc.quantite != null ? Number(mc.quantite) : null,
         quantitePrevue: mc.quantitePrevue != null ? Number(mc.quantitePrevue) : null,
+        quantitePrevueInitiale: mc.quantitePrevueInitiale != null ? Number(mc.quantitePrevueInitiale) : null,
         datePrevue: mc.dateLivraisonPrevue ? new Date(mc.dateLivraisonPrevue) : null
       });
     });
 
     worksheet.autoFilter = {
       from: 'A1',
-      to: 'L1'
+      to: 'M1'
     };
 
     worksheet.columns.forEach(column => {

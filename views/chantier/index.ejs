@@ -1285,7 +1285,12 @@
                   </span>
                 <% } %>
               </td>
-              <td class="col-quantite-prevue1" data-label="Quantité prévue 1"><%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %></td>
+              <td class="col-quantite-prevue1" data-label="Quantité prévue 1">
+                <div><%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %></div>
+                <% if (mc.quantitePrevueInitiale != null) { %>
+                  <div class="text-muted" style="font-size: 0.85rem;">Qte init prév : <%= mc.quantitePrevueInitiale %></div>
+                <% } %>
+              </td>
               <td class="col-date-prevue1" data-label="Date prévue 1">
                 <%= formatDateFr(mc.dateLivraisonPrevue1 || mc.dateLivraisonPrevue) || '-' %>
               </td>
