@@ -281,11 +281,16 @@
                   <tr>
                     <td><%= mc.materiel ? mc.materiel.nom : '–' %></td>
                     <td><%= mc.quantite %></td>
-                    <td><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
+                  <td>
+                    <div><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></div>
+                    <% if (mc.quantitePrevueInitiale != null) { %>
+                      <div class="muted" style="font-size:0.85rem;">Qte init prév : <%= mc.quantitePrevueInitiale %></div>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
           <% } %>
         </article>
 
@@ -322,7 +327,12 @@
                   <tr>
                     <td><%= mc.materiel ? mc.materiel.nom : '–' %></td>
                     <td><%= mc.quantite %></td>
-                    <td><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></td>
+                    <td>
+                      <div><%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %></div>
+                      <% if (mc.quantitePrevueInitiale != null) { %>
+                        <div class="muted" style="font-size:0.85rem;">Qte init prév : <%= mc.quantitePrevueInitiale %></div>
+                      <% } %>
+                    </td>
                     <td>
                       <% if (qp > 0) { %>
                         <div class="progress-wrapper">
