@@ -281,3 +281,22 @@ body.compact-mobile .table-stock .col-rack { min-width: 80px; }
 body.compact-mobile .table-stock .col-actions {
   overflow: visible !important;
 }
+
+.qte-init-prevue {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+.table-stock .col-quantite-prevue1,
+.table-stock .col-quantite-prevue2,
+.table-stock .col-quantite-prevue3,
+.table-stock .col-quantite-prevue4 {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
