@@ -346,6 +346,24 @@
       line-height: 1.25;
     }
 
+    /* Autoriser les retours à la ligne sur les colonnes textuelles pour éviter l'ellipsis */
+    .table-stock .col-designation,
+    .table-stock .col-reference,
+    .table-stock .col-marque,
+    .table-stock .col-categorie,
+    .table-stock .col-description,
+    .table-stock .col-fournisseur,
+    .table-stock .col-emplacement,
+    .table-stock .col-rack,
+    .table-stock .col-bon-livraison {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      word-break: break-word;
+      hyphens: auto;
+      line-height: 1.35;
+    }
+
     /* Alternance légère sur les lignes pour plus de contraste */
     .table-stock tbody tr:nth-child(even) {
       background-color: rgba(255, 255, 255, 0.04);
@@ -365,8 +383,8 @@
     .table-stock th:nth-child(3),
     .table-stock td:nth-child(3) {
       max-width: 280px;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
+      text-overflow: clip;
     }
 
     body:not(.compact-mobile) .table-stock th:nth-child(4),
