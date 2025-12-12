@@ -1287,22 +1287,38 @@
               </td>
               <td class="col-quantite-prevue1" data-label="Quantité prévue 1">
                 <div><%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %></div>
-                <% if (mc.quantitePrevueInitiale != null) { %>
-                  <div class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale %></div>
+                <% const qteInit1 = mc.quantitePrevueInitiale1 != null ? mc.quantitePrevueInitiale1 : mc.quantitePrevueInitiale; %>
+                <% if (qteInit1 != null) { %>
+                  <div class="text-muted qte-init-prevue">Qte init prév : <%= qteInit1 %></div>
                 <% } %>
               </td>
               <td class="col-date-prevue1" data-label="Date prévue 1">
                 <%= formatDateFr(mc.dateLivraisonPrevue1 || mc.dateLivraisonPrevue) || '-' %>
               </td>
-              <td class="col-quantite-prevue2" data-label="Quantité prévue 2"><%= mc.quantitePrevue2 != null ? mc.quantitePrevue2 : '-' %></td>
+              <td class="col-quantite-prevue2" data-label="Quantité prévue 2">
+                <div><%= mc.quantitePrevue2 != null ? mc.quantitePrevue2 : '-' %></div>
+                <% if (mc.quantitePrevueInitiale2 != null) { %>
+                  <div class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale2 %></div>
+                <% } %>
+              </td>
               <td class="col-date-prevue2" data-label="Date prévue 2">
                 <%= formatDateFr(mc.dateLivraisonPrevue2) || '-' %>
               </td>
-              <td class="col-quantite-prevue3" data-label="Quantité prévue 3"><%= mc.quantitePrevue3 != null ? mc.quantitePrevue3 : '-' %></td>
+              <td class="col-quantite-prevue3" data-label="Quantité prévue 3">
+                <div><%= mc.quantitePrevue3 != null ? mc.quantitePrevue3 : '-' %></div>
+                <% if (mc.quantitePrevueInitiale3 != null) { %>
+                  <div class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale3 %></div>
+                <% } %>
+              </td>
               <td class="col-date-prevue3" data-label="Date prévue 3">
                 <%= formatDateFr(mc.dateLivraisonPrevue3) || '-' %>
               </td>
-              <td class="col-quantite-prevue4" data-label="Quantité prévue 4"><%= mc.quantitePrevue4 != null ? mc.quantitePrevue4 : '-' %></td>
+              <td class="col-quantite-prevue4" data-label="Quantité prévue 4">
+                <div><%= mc.quantitePrevue4 != null ? mc.quantitePrevue4 : '-' %></div>
+                <% if (mc.quantitePrevueInitiale4 != null) { %>
+                  <div class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale4 %></div>
+                <% } %>
+              </td>
               <td class="col-date-prevue4" data-label="Date prévue 4">
                 <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
               </td>

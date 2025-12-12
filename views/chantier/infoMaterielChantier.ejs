@@ -40,7 +40,32 @@
         <p>
           <strong>🔮 Quantité prévue :</strong> <%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %>
           <% if (mc.quantitePrevueInitiale != null) { %>
-            <br><span class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale %></span>
+            <br><span class="text-muted qte-init-prevue">Qte init prév (total) : <%= mc.quantitePrevueInitiale %></span>
+          <% } %>
+        </p>
+        <p>
+          <strong>🔮 Qté prévue 1 :</strong> <%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %>
+          <% const init1 = mc.quantitePrevueInitiale1 != null ? mc.quantitePrevueInitiale1 : mc.quantitePrevueInitiale; %>
+          <% if (init1 != null) { %>
+            <br><span class="text-muted qte-init-prevue">Qte init prév 1 : <%= init1 %></span>
+          <% } %>
+        </p>
+        <p>
+          <strong>🔮 Qté prévue 2 :</strong> <%= mc.quantitePrevue2 != null ? mc.quantitePrevue2 : '-' %>
+          <% if (mc.quantitePrevueInitiale2 != null) { %>
+            <br><span class="text-muted qte-init-prevue">Qte init prév 2 : <%= mc.quantitePrevueInitiale2 %></span>
+          <% } %>
+        </p>
+        <p>
+          <strong>🔮 Qté prévue 3 :</strong> <%= mc.quantitePrevue3 != null ? mc.quantitePrevue3 : '-' %>
+          <% if (mc.quantitePrevueInitiale3 != null) { %>
+            <br><span class="text-muted qte-init-prevue">Qte init prév 3 : <%= mc.quantitePrevueInitiale3 %></span>
+          <% } %>
+        </p>
+        <p>
+          <strong>🔮 Qté prévue 4 :</strong> <%= mc.quantitePrevue4 != null ? mc.quantitePrevue4 : '-' %>
+          <% if (mc.quantitePrevueInitiale4 != null) { %>
+            <br><span class="text-muted qte-init-prevue">Qte init prév 4 : <%= mc.quantitePrevueInitiale4 %></span>
           <% } %>
         </p>
         <p><strong>📅 Date de livraison prévue :</strong> <%= formatDateFr(mc.dateLivraisonPrevue) || '-' %></p>
