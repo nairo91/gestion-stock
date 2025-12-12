@@ -330,6 +330,45 @@ router.post('/materielChantier/:id/ajouterBDL', ensureAuthenticated, async (req,
 });
 
 
+router.post('/materielChantier/:id/supprimerBDL', ensureAuthenticated, async (req, res) => {
+  try {
+    const mc = await MaterielChantier.findByPk(req.params.id);
+    if (!mc) {
+      return res.status(404).send('Matériel de chantier introuvable.');
+    }
+
+    const urlToDelete = (req.body && req.body.url) ? String(req.body.url).trim() : '';
+    if (!urlToDelete) {
+      return res.status(400).send('URL de bon de livraison manquante.');
+    }
+
+    let existing = [];
+    if (Array.isArray(mc.bonLivraisonUrls)) {
+      existing = mc.bonLivraisonUrls;
+    } else if (typeof mc.bonLivraisonUrls === 'string') {
+      try { existing = JSON.parse(mc.bonLivraisonUrls); } catch (_) { existing = []; }
+    } else if (mc.bonLivraisonUrls && typeof mc.bonLivraisonUrls === 'object') {
+      existing = mc.bonLivraisonUrls;
+    }
+
+    const indexToRemove = existing.findIndex(u => u === urlToDelete);
+    if (indexToRemove === -1) {
+      return res.status(404).send('Bon de livraison introuvable.');
+    }
+
+    existing.splice(indexToRemove, 1);
+    mc.bonLivraisonUrls = existing;
+    await mc.save();
+
+    console.log('🗑️  BDL - URL supprimée :', urlToDelete);
+    return res.json({ success: true, remaining: existing.length });
+  } catch (err) {
+    console.error('❌ Erreur lors de la suppression du bon de livraison :', err);
+    return res.status(500).send("Erreur lors de la suppression du bon de livraison.");
+  }
+});
+
+
 router.post('/materielChantier/miseAJourMasse', ensureAuthenticated, checkAdmin, async (req, res) => {
   const { ids, quantiteRecue, bdlUrl } = req.body || {};
 

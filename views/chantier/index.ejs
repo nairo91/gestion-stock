@@ -1245,6 +1245,7 @@
                     class="btn btn-sm btn-info btn-show-bdl"
                     data-bs-toggle="modal"
                     data-bs-target="#globalBdlModal"
+                    data-mc-id="<%= mc.id %>"
                     data-bdl-urls="<%= encodeURIComponent(JSON.stringify(bdlUrls)) %>"
                   >
                     Voir (<%= bdlUrls.length %>)
@@ -2945,11 +2946,17 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       var listEl = document.getElementById('globalBdlList');
       if (!listEl) return;
 
+      var currentBtn = null;
+      var currentUrls = [];
+      var currentMcId = '';
+
       bdlModal.addEventListener('show.bs.modal', function (event) {
         var btn = event.relatedTarget;
         if (!btn) return;
 
         var raw = btn.getAttribute('data-bdl-urls') || '[]';
+        currentMcId = btn.getAttribute('data-mc-id') || '';
+        currentBtn = btn;
         var urls = [];
         try {
           urls = JSON.parse(decodeURIComponent(raw));
@@ -2957,6 +2964,8 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           console.warn('Impossible de parser la liste des BDL :', e);
           urls = [];
         }
+
+        currentUrls = urls.slice();
 
         // nettoyage
         listEl.innerHTML = '';
@@ -2980,6 +2989,61 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           a.textContent = 'Bon de livraison ' + (idx + 1);
 
           li.appendChild(a);
+
+          var deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'btn btn-sm btn-outline-danger ms-2';
+          deleteBtn.textContent = 'Supprimer BDL';
+
+          deleteBtn.addEventListener('click', async function () {
+            if (!currentMcId) return;
+            var confirmation = confirm('Supprimer ce bon de livraison ?');
+            if (!confirmation) return;
+
+            try {
+              var resp = await fetch(`/chantier/materielChantier/${currentMcId}/supprimerBDL`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                },
+                body: new URLSearchParams({ url: u })
+              });
+
+              if (!resp.ok) {
+                throw new Error('HTTP ' + resp.status);
+              }
+
+              var removeIdx = currentUrls.indexOf(u);
+              if (removeIdx !== -1) {
+                currentUrls.splice(removeIdx, 1);
+              }
+
+              li.remove();
+
+              if (currentBtn) {
+                if (currentUrls.length > 0) {
+                  currentBtn.textContent = 'Voir (' + currentUrls.length + ')';
+                  currentBtn.setAttribute('data-bdl-urls', encodeURIComponent(JSON.stringify(currentUrls)));
+                } else {
+                  var parentTd = currentBtn.closest('td');
+                  if (parentTd) {
+                    parentTd.textContent = '-';
+                  }
+                }
+              }
+
+              if (!listEl.children.length) {
+                var liEmpty = document.createElement('li');
+                liEmpty.textContent = 'Aucun bon de livraison enregistré.';
+                listEl.appendChild(liEmpty);
+              }
+            } catch (err) {
+              console.error('Erreur suppression BDL :', err);
+              alert('Impossible de supprimer ce bon de livraison.');
+            }
+          });
+
+          li.appendChild(deleteBtn);
           listEl.appendChild(li);
         });
       });
