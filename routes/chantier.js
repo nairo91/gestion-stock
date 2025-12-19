@@ -495,6 +495,55 @@ router.post('/materielChantier/miseAJourMasse', ensureAuthenticated, checkAdmin,
 });
 
 
+router.post('/materielChantier/alerteStatut', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
+    const statut = (req.body.statut || '').trim();
+    const allowedStatus = ['critique', 'surveillance', 'regle'];
+
+    if (!ids.length) {
+      return res.status(400).send('Aucune ligne sélectionnée.');
+    }
+
+    if (!allowedStatus.includes(statut)) {
+      return res.status(400).send('Statut non reconnu.');
+    }
+
+    const numericIds = ids
+      .map(value => {
+        const parsed = parseInt(value, 10);
+        return Number.isNaN(parsed) ? null : parsed;
+      })
+      .filter(id => id !== null);
+
+    if (!numericIds.length) {
+      return res.status(400).send('Sélection invalide.');
+    }
+
+    const materiels = await MaterielChantier.findAll({ where: { id: numericIds } });
+    const alertIds = materiels
+      .filter(mc => {
+        const totalPrevu = computeTotalPrevu(mc);
+        const quantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : mc.quantite || 0;
+        if (!totalPrevu || totalPrevu <= 0) return false;
+        return Number(quantiteActuelle) <= Number(totalPrevu * 0.30);
+      })
+      .map(mc => mc.id);
+
+    if (!alertIds.length) {
+      return res.status(400).send('Sélectionnez des lignes actuellement en alerte (≤ 30%).');
+    }
+
+    await MaterielChantier.update({ alertStatus: statut }, { where: { id: alertIds } });
+
+    res.json({ updated: alertIds.length, statut });
+  } catch (err) {
+    console.error('Erreur mise à jour statut alerte chantier :', err);
+    res.status(500).send('Impossible de mettre à jour le statut des alertes.');
+  }
+});
+
+
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const { quantiteReceptionnee, livraisonIndex } = req.body;

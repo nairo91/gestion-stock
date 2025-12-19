@@ -169,6 +169,12 @@ const MaterielChantier = sequelize.define(
       allowNull: true,
       unique: true,
     },
+
+    alertStatus: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'critique',
+    },
   },
   {
     tableName: 'materiel_chantiers',

@@ -817,6 +817,46 @@
     .table-stock tr.table-danger:hover {
       background-color: rgba(255, 99, 132, 0.4) !important;
     }
+
+    .table-stock tr.alert-low-monitoring {
+      background-color: rgba(255, 193, 7, 0.25) !important;
+      box-shadow: inset 4px 0 0 #ff9800;
+    }
+
+    .table-stock tr.alert-low-monitoring:hover {
+      background-color: rgba(255, 193, 7, 0.35) !important;
+    }
+
+    .table-stock tr.alert-low-resolved {
+      background-color: rgba(46, 204, 113, 0.22) !important;
+      box-shadow: inset 4px 0 0 #2ecc71;
+    }
+
+    .table-stock tr.alert-low-resolved:hover {
+      background-color: rgba(46, 204, 113, 0.32) !important;
+    }
+
+    .badge-alert-status {
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .badge-alert-critique {
+      background-color: #ff4d4d;
+      color: #fff;
+    }
+
+    .badge-alert-surveillance {
+      background-color: #ffb347;
+      color: #3b1c00;
+    }
+
+    .badge-alert-regle {
+      background-color: #2ecc71;
+      color: #02230f;
+    }
   </style>
 </head>
 <body>
@@ -1158,6 +1198,16 @@
         >
           Modifier en masse
         </button>
+        <button
+          type="button"
+          class="btn btn-warning btn-alert-update"
+          id="openAlertStatus"
+          data-bs-toggle="modal"
+          data-bs-target="#alertStatusModal"
+          disabled
+        >
+          Mettre à jour l'alerte
+        </button>
       </div>
     <% } %>
 
@@ -1197,6 +1247,7 @@
           <th class="col-date-prevue3">Date 3</th>
           <th class="col-quantite-prevue4">Qte prévue 4</th>
           <th class="col-date-prevue4">Date 4</th>
+          <th class="col-alert-status">Statut alerte</th>
           <th class="col-bon-livraison">Bon de Livraison</th>
           <th class="col-actions">Actions</th>
         </tr>
@@ -1217,8 +1268,16 @@
              const totalPrev = qp1 + qp2 + qp3 + qp4;
              const seuil30 = totalPrev > 0 ? totalPrev * 0.3 : null;
              const isLowClient = seuil30 !== null && qActuelle <= seuil30;
+             const alertStatus = mc.alertStatus || 'critique';
+             const alertRowClass = isLowClient
+               ? (alertStatus === 'regle'
+                   ? 'alert-low-resolved'
+                   : (alertStatus === 'surveillance'
+                     ? 'alert-low-monitoring'
+                     : 'table-danger stock-low-alert'))
+               : '';
         %>
-          <tr class="<%= isLowClient ? 'table-danger stock-low-alert' : '' %>">
+          <tr class="<%= alertRowClass %>">
               <td class="d-none" data-label="ID"><%= mc.id %></td>
               <td class="d-none" data-label="Chantier">
                 <%= mc.chantier ? `${mc.chantier.nom} - ${mc.chantier.localisation || ''}` : '' %>
@@ -1228,7 +1287,7 @@
                 <td class="col-select text-center" data-label="Sélection">
                   <div class="d-flex align-items-center justify-content-center gap-2">
                     <span class="badge bg-secondary rounded-pill"><%= index + 1 %></span>
-                    <input type="checkbox" class="form-check-input materiel-select" value="<%= mc.id %>">
+                    <input type="checkbox" class="form-check-input materiel-select" value="<%= mc.id %>" data-low-stock="<%= isLowClient ? '1' : '0' %>">
                   </div>
                 </td>
               <% } %>
@@ -1374,6 +1433,20 @@
               </td>
               <td class="col-date-prevue4" data-label="Date prévue 4">
                 <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
+              </td>
+
+              <td class="col-alert-status" data-label="Statut alerte">
+                <% if (isLowClient) { %>
+                  <% const badgeClass = alertStatus === 'regle'
+                    ? 'badge-alert-regle'
+                    : (alertStatus === 'surveillance' ? 'badge-alert-surveillance' : 'badge-alert-critique'); %>
+                  <% const badgeLabel = alertStatus === 'regle'
+                    ? 'Alerte réglée'
+                    : (alertStatus === 'surveillance' ? 'Alerte à surveiller' : 'Alerte critique'); %>
+                  <span class="badge-alert-status <%= badgeClass %>"><%= badgeLabel %></span>
+                <% } else { %>
+                  <span class="text-muted">—</span>
+                <% } %>
               </td>
 
                 <td class="col-bon-livraison" data-column="col-bon-livraison" data-label="Bon de Livraison">
@@ -1837,6 +1910,52 @@
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
               <button type="submit" class="btn btn-primary" id="confirmMassUpdate" disabled>Appliquer</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="alertStatusModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form id="alertStatusForm">
+            <div class="modal-header">
+              <h5 class="modal-title">Mettre à jour le statut des alertes</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+              <p class="mb-3">Appliquer un nouveau statut aux lignes sélectionnées (en alerte ≤ 30%).</p>
+              <div class="list-group">
+                <label class="list-group-item d-flex align-items-center gap-2">
+                  <input class="form-check-input" type="radio" name="alertStatusChoice" value="surveillance" required>
+                  <span>
+                    <strong>Alerte à surveiller</strong><br>
+                    <small class="text-muted">Passe l'alerte en orange pour suivi.</small>
+                  </span>
+                </label>
+                <label class="list-group-item d-flex align-items-center gap-2">
+                  <input class="form-check-input" type="radio" name="alertStatusChoice" value="regle">
+                  <span>
+                    <strong>Alerte réglée</strong><br>
+                    <small class="text-muted">Marque l'alerte comme résolue (vert).</small>
+                  </span>
+                </label>
+                <label class="list-group-item d-flex align-items-center gap-2">
+                  <input class="form-check-input" type="radio" name="alertStatusChoice" value="critique">
+                  <span>
+                    <strong>Alerte critique</strong><br>
+                    <small class="text-muted">Revenir au statut critique (rouge).</small>
+                  </span>
+                </label>
+              </div>
+              <div class="alert alert-warning mt-3 mb-0" id="alertSelectionInfo">
+                Sélectionnez au moins une ligne en alerte pour activer ce bouton.
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+              <button type="submit" class="btn btn-primary" id="confirmAlertStatus" disabled>Appliquer</button>
             </div>
           </form>
         </div>
@@ -2874,6 +2993,11 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         const form = document.getElementById('massUpdateForm');
         const qtyInput = document.getElementById('massQuantiteRecue');
         const bdlFileInput = document.getElementById('massBdlFile');
+        const alertBtn = document.getElementById('openAlertStatus');
+        const alertModal = document.getElementById('alertStatusModal');
+        const alertForm = document.getElementById('alertStatusForm');
+        const alertSubmit = document.getElementById('confirmAlertStatus');
+        const alertSelectionInfo = document.getElementById('alertSelectionInfo');
 
         const CLOUD_NAME = '<%= cloudinaryCloudName || "" %>';
         const UPLOAD_PRESET = '<%= cloudinaryUploadPresetBdl || "" %>';
@@ -2903,14 +3027,25 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         }
 
         const getSelectedIds = () => rowCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+        const getSelectedAlertIds = () => rowCheckboxes
+          .filter(cb => cb.checked && cb.dataset.lowStock === '1')
+          .map(cb => cb.value);
 
         const syncButtons = () => {
           const hasSelection = getSelectedIds().length > 0;
+          const hasLowSelection = getSelectedAlertIds().length > 0;
           if (openBtn) openBtn.disabled = !hasSelection;
           if (submitBtn) submitBtn.disabled = !hasSelection;
+          if (alertBtn) alertBtn.disabled = !hasLowSelection;
+          if (alertSubmit) alertSubmit.disabled = !hasLowSelection;
           if (selectAll) {
             selectAll.checked = hasSelection && rowCheckboxes.every(cb => cb.checked);
             selectAll.indeterminate = !selectAll.checked && hasSelection;
+          }
+          if (alertSelectionInfo) {
+            alertSelectionInfo.textContent = hasLowSelection
+              ? `${getSelectedAlertIds().length} ligne(s) en alerte sélectionnée(s).`
+              : 'Sélectionnez au moins une ligne en alerte pour activer ce bouton.';
           }
         };
 
@@ -3012,6 +3147,54 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
             if (bdlFileInput) {
               bdlFileInput.value = '';
             }
+          });
+        }
+
+        if (alertForm) {
+          alertForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const alertIds = getSelectedAlertIds();
+            const choice = document.querySelector('input[name="alertStatusChoice"]:checked');
+
+            if (!alertIds.length) {
+              alert('Sélectionnez au moins une ligne en alerte.');
+              return;
+            }
+
+            if (!choice) {
+              alert('Choisissez un statut à appliquer.');
+              return;
+            }
+
+            try {
+              const resp = await fetch('/chantier/materielChantier/alerteStatut', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: alertIds, statut: choice.value })
+              });
+
+              if (!resp.ok) {
+                const txt = await resp.text();
+                throw new Error(txt || 'Erreur serveur');
+              }
+
+              window.location.reload();
+            } catch (err) {
+              console.error('Erreur lors de la mise à jour du statut alerte :', err);
+              alert('Impossible de mettre à jour les alertes : ' + err.message);
+            }
+          });
+        }
+
+        if (alertModal) {
+          alertModal.addEventListener('show.bs.modal', () => {
+            syncButtons();
+          });
+          alertModal.addEventListener('hidden.bs.modal', () => {
+            const selected = alertForm ? alertForm.querySelectorAll('input[name="alertStatusChoice"]') : [];
+            selected.forEach(input => { input.checked = false; });
           });
         }
 
