@@ -799,6 +799,22 @@
       background-color: rgba(255, 99, 132, 0.40) !important;
     }
 
+    .col-quantite-actuelle {
+      white-space: normal;
+    }
+
+    .qte-actuelle-value {
+      font-weight: 700;
+    }
+
+    .qte-alert-details {
+      margin-top: 0.35rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
+    }
+
     .badge-stock-low {
       background-color: #ff4d4d;
       color: #fff;
@@ -806,6 +822,7 @@
       font-size: 0.7rem;
       padding: 0.15rem 0.5rem;
       vertical-align: middle;
+      display: inline-block;
     }
 
     /* Renforcement visuel pour les lignes en stock faible (stock chantier) */
@@ -1247,7 +1264,6 @@
           <th class="col-date-prevue3">Date 3</th>
           <th class="col-quantite-prevue4">Qte prévue 4</th>
           <th class="col-date-prevue4">Date 4</th>
-          <th class="col-alert-status">Statut alerte</th>
           <th class="col-bon-livraison">Bon de Livraison</th>
           <th class="col-actions">Actions</th>
         </tr>
@@ -1389,12 +1405,21 @@
                 <%= mc.quantite != null ? mc.quantite : '-' %>
               </td>
               <td class="col-quantite-actuelle" data-label="Quantité actuelle">
-                <%= qActuelle %>
+                <div class="qte-actuelle-value"><%= qActuelle %></div>
 
                 <% if (isLowClient) { %>
-                  <span class="badge-stock-low ms-2">
-                    ⚠ Stock &lt; 30% du prévu
-                  </span>
+                  <% const badgeClass = alertStatus === 'regle'
+                    ? 'badge-alert-regle'
+                    : (alertStatus === 'surveillance' ? 'badge-alert-surveillance' : 'badge-alert-critique'); %>
+                  <% const badgeLabel = alertStatus === 'regle'
+                    ? 'Alerte réglée'
+                    : (alertStatus === 'surveillance' ? 'Alerte à surveiller' : 'Alerte critique'); %>
+                  <div class="qte-alert-details">
+                    <span class="badge-stock-low">
+                      ⚠ Stock &lt; 30% du prévu
+                    </span>
+                    <span class="badge-alert-status <%= badgeClass %>"><%= badgeLabel %></span>
+                  </div>
                 <% } %>
               </td>
               <td class="col-quantite-prevue1" data-label="Quantité prévue 1">
@@ -1433,20 +1458,6 @@
               </td>
               <td class="col-date-prevue4" data-label="Date prévue 4">
                 <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
-              </td>
-
-              <td class="col-alert-status" data-label="Statut alerte">
-                <% if (isLowClient) { %>
-                  <% const badgeClass = alertStatus === 'regle'
-                    ? 'badge-alert-regle'
-                    : (alertStatus === 'surveillance' ? 'badge-alert-surveillance' : 'badge-alert-critique'); %>
-                  <% const badgeLabel = alertStatus === 'regle'
-                    ? 'Alerte réglée'
-                    : (alertStatus === 'surveillance' ? 'Alerte à surveiller' : 'Alerte critique'); %>
-                  <span class="badge-alert-status <%= badgeClass %>"><%= badgeLabel %></span>
-                <% } else { %>
-                  <span class="text-muted">—</span>
-                <% } %>
               </td>
 
                 <td class="col-bon-livraison" data-column="col-bon-livraison" data-label="Bon de Livraison">
