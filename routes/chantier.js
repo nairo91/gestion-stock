@@ -1104,9 +1104,11 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
     if (!mc) return res.send("Enregistrement non trouvé.");
 
-    const newQte = (quantite === undefined || quantite === '')
-      ? mc.quantite
+    const deltaQuantite = (quantite === undefined || quantite === '')
+      ? 0
       : parseInt(quantite, 10);
+    const variationValide = Number.isNaN(deltaQuantite) ? 0 : deltaQuantite;
+    const newQte = mc.quantite + variationValide;
     const newQtePrevue = (quantitePrevue === undefined || quantitePrevue === '')
       ? mc.quantitePrevue
       : parseInt(quantitePrevue, 10);
@@ -1189,7 +1191,10 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
     const newQtePrevueInitiale = oldQtePrevueInitiale ?? newTotalPrevu;
 
-    if (oldQte !== newQte) changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}`);
+    if (oldQte !== newQte) {
+      const variationTexte = variationValide ? ` (${variationValide > 0 ? '+' : ''}${variationValide})` : '';
+      changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}${variationTexte}`);
+    }
     if (oldNom !== newNom) changementsDetail.push(`Nom: ${oldNom} ➔ ${newNom}`);
     if (oldCategorie !== newCategorie) changementsDetail.push(`Catégorie: ${oldCategorie || '-'} ➔ ${newCategorie}`);
     if (oldEmplacement !== newEmplacement) changementsDetail.push(`Emplacement: ${oldEmplacement || '-'} ➔ ${newEmplacement || '-'}`);
