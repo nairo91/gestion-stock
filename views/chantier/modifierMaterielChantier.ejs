@@ -254,15 +254,18 @@
 </div>
 
       <div class="mb-3">
-        <label for="quantite" class="form-label">Quantité actuelle : <strong><%= mc.quantite %></strong></label>
+        <label for="quantite" class="form-label">Qté reçue actuelle : <strong><%= mc.quantite %></strong></label>
       </div>
 
       <div class="mb-3">
-        <label for="quantite" class="form-label">Nouvelle quantité</label>
+        <label for="quantite" class="form-label">Ajuster la quantité (ajout/soustraction)</label>
         <div class="d-flex align-items-center gap-2">
           <button type="button" class="btn btn-outline-secondary" onclick="changerQuantite(-1)">-</button>
-          <input type="number" name="quantite" id="quantite" class="form-control" value="<%= mc.quantite %>" min="0">
+          <input type="number" name="quantite" id="quantite" class="form-control" value="0" step="1" placeholder="Ex: 5 ou -3">
           <button type="button" class="btn btn-outline-secondary" onclick="changerQuantite(1)">+</button>
+        </div>
+        <div class="form-text mt-1">
+          Nouvelle quantité calculée : <strong id="quantiteResultat"><%= mc.quantite %></strong>
         </div>
       </div>
       <div class="mb-3">
@@ -432,11 +435,35 @@
   <% } %>
 
  <script>
+  const quantiteActuelle = <%= mc.quantite %>;
+
+  function mettreAJourResultat() {
+    const input = document.getElementById('quantite');
+    const affichageResultat = document.getElementById('quantiteResultat');
+    if (!input || !affichageResultat) return;
+
+    const delta = parseInt(input.value, 10);
+    const variation = Number.isNaN(delta) ? 0 : delta;
+    const nouvelleValeur = Math.max(0, quantiteActuelle + variation);
+
+    affichageResultat.textContent = nouvelleValeur;
+  }
+
+  function changerQuantite(delta) {
+    const input = document.getElementById('quantite');
+    let value = parseInt(input.value || "0", 10);
+    if (Number.isNaN(value)) value = 0;
+    value += delta;
+    input.value = value;
+    mettreAJourResultat();
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     const inputPhoto = document.getElementById('photo');
     const previewImage = document.getElementById('preview-image');
     const dateInput = document.getElementById('dateLivraisonPrevue');
     const datePickerButton = document.getElementById('datePickerButton');
+    const quantiteInput = document.getElementById('quantite');
 
     if (inputPhoto) {
       inputPhoto.addEventListener('change', function () {
@@ -471,15 +498,13 @@
         }
       });
     }
-  });
 
-  function changerQuantite(delta) {
-    const input = document.getElementById('quantite');
-    let value = parseInt(input.value || "0");
-    value = Math.max(0, value + delta);
-    input.value = value;
-  }
-</script>
+    if (quantiteInput) {
+      quantiteInput.addEventListener('input', mettreAJourResultat);
+      mettreAJourResultat();
+    }
+  });
+ </script>
   <script src="/js/bootstrap.bundle.min.js"></script>
   <script nonce="<%= nonce %>">
     document.addEventListener("DOMContentLoaded", function () {
