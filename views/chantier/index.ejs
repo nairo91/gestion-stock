@@ -1101,6 +1101,10 @@
         <label class="form-check-label" for="toggle-col-quantite">Quantité reçue</label>
       </div>
       <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-actuelle" data-column-class="col-quantite-actuelle" checked>
+        <label class="form-check-label" for="toggle-col-quantite-actuelle">Quantité actuelle</label>
+      </div>
+      <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue1" data-column-class="col-quantite-prevue1,col-date-prevue1" checked>
         <label class="form-check-label" for="toggle-col-quantite-prevue1">Qté prévue 1 & Date 1</label>
       </div>
@@ -1184,6 +1188,7 @@
           <th class="col-compartiment">Compartiment</th>
           <th class="col-niveau">Niveau</th>
           <th class="col-quantite">Qte reçue</th>
+          <th class="col-quantite-actuelle">Qte actuelle</th>
           <th class="col-quantite-prevue1">Qte prévue 1</th>
           <th class="col-date-prevue1">Date 1</th>
           <th class="col-quantite-prevue2">Qte prévue 2</th>
@@ -1200,6 +1205,7 @@
       <% if (materielChantiers && materielChantiers.length > 0) { %>
         <% materielChantiers.forEach(function (mc, index) {
              const qRecue = Number(mc.quantite) || 0;
+             const qActuelle = mc.quantiteActuelle != null ? Number(mc.quantiteActuelle) : qRecue;
              const qp1 = Number(
                mc.quantitePrevue1 != null
                  ? mc.quantitePrevue1
@@ -1210,7 +1216,7 @@
              const qp4 = Number(mc.quantitePrevue4) || 0;
              const totalPrev = qp1 + qp2 + qp3 + qp4;
              const seuil30 = totalPrev > 0 ? totalPrev * 0.3 : null;
-             const isLowClient = seuil30 !== null && qRecue <= seuil30;
+             const isLowClient = seuil30 !== null && qActuelle <= seuil30;
         %>
           <tr class="<%= isLowClient ? 'table-danger stock-low-alert' : '' %>">
               <td class="d-none" data-label="ID"><%= mc.id %></td>
@@ -1322,8 +1328,11 @@
 
               <td class="col-quantite" data-label="Quantité reçue">
                 <%= mc.quantite != null ? mc.quantite : '-' %>
+              </td>
+              <td class="col-quantite-actuelle" data-label="Quantité actuelle">
+                <%= qActuelle %>
 
-                <% if (isLowClient && mc.quantite != null) { %>
+                <% if (isLowClient) { %>
                   <span class="badge-stock-low ms-2">
                     ⚠ Stock &lt; 30% du prévu
                   </span>

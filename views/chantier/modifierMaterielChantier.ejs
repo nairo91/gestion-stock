@@ -253,19 +253,21 @@
   <% } %>
 </div>
 
+      <% const qteActuelleBase = mc.quantiteActuelle != null ? mc.quantiteActuelle : mc.quantite; %>
       <div class="mb-3">
-        <label for="quantite" class="form-label">Qté reçue actuelle : <strong><%= mc.quantite %></strong></label>
+        <label for="quantite" class="form-label">Qté reçue totale : <strong><%= mc.quantite %></strong></label>
+        <div class="form-text">Qté actuelle utilisée pour les ajustements : <strong><%= qteActuelleBase %></strong></div>
       </div>
 
       <div class="mb-3">
-        <label for="quantite" class="form-label">Ajuster la quantité (ajout/soustraction)</label>
+        <label for="quantite" class="form-label">Ajuster la quantité actuelle (ajout/soustraction)</label>
         <div class="d-flex align-items-center gap-2">
           <button type="button" class="btn btn-outline-secondary" onclick="changerQuantite(-1)">-</button>
           <input type="number" name="quantite" id="quantite" class="form-control" value="0" step="1" placeholder="Ex: 5 ou -3">
           <button type="button" class="btn btn-outline-secondary" onclick="changerQuantite(1)">+</button>
         </div>
         <div class="form-text mt-1">
-          Nouvelle quantité calculée : <strong id="quantiteResultat"><%= mc.quantite %></strong>
+          Nouvelle quantité actuelle calculée : <strong id="quantiteResultat"><%= qteActuelleBase %></strong>
         </div>
       </div>
       <div class="mb-3">
@@ -435,7 +437,7 @@
   <% } %>
 
  <script>
-  const quantiteActuelle = <%= mc.quantite %>;
+  const quantiteActuelle = <%= qteActuelleBase %>;
 
   function mettreAJourResultat() {
     const input = document.getElementById('quantite');

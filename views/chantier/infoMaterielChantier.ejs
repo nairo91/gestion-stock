@@ -36,7 +36,9 @@
         <p><strong>📝 Description :</strong> <%= mc.materiel.description || '-' %></p>
         <p><strong>🗒️ Remarque :</strong> <%= mc.remarque || '-' %></p>
         <p><strong>🏷️ Catégorie :</strong> <%= mc.materiel.categorie || '-' %></p>
-        <p><strong>🔢 Quantité sur le chantier :</strong> <%= mc.quantite %></p>
+        <% const qteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : mc.quantite; %>
+        <p><strong>🔢 Qté actuelle sur le chantier :</strong> <%= qteActuelle %></p>
+        <p><strong>📦 Qté reçue :</strong> <%= mc.quantite %></p>
         <p>
           <strong>🔮 Quantité prévue :</strong> <%= mc.quantitePrevue != null ? mc.quantitePrevue : '-' %>
           <% if (mc.quantitePrevueInitiale != null) { %>

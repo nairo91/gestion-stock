@@ -24,6 +24,14 @@ const MaterielChantier = sequelize.define(
       },
     },
 
+    quantiteActuelle: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 0,
+      },
+    },
+
     quantitePrevue1: {
       type: DataTypes.INTEGER,
       allowNull: true,

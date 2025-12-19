@@ -135,6 +135,7 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
       include: [
         'bonLivraisonUrls',
         'quantite',
+        'quantiteActuelle',
         'quantitePrevue',
         'quantitePrevue1',
         'quantitePrevue2',
@@ -286,9 +287,11 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     materielChantiers = materielChantiers.map(mc => {
       const totalPrevu = computeTotalPrevu(mc);
       const seuil = totalPrevu * 0.30;
-      const isLowStock = mc.quantite <= seuil;
+      const qteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : (mc.quantite || 0);
+      const isLowStock = qteActuelle <= seuil;
       mc.setDataValue('totalPrevu', totalPrevu);
       mc.setDataValue('isLowStock', isLowStock);
+      mc.setDataValue('quantiteActuelle', qteActuelle);
       return mc;
     });
 
@@ -461,6 +464,7 @@ router.post('/materielChantier/miseAJourMasse', ensureAuthenticated, checkAdmin,
       for (const mc of materiels) {
         if (hasQuantite) {
           mc.quantite = quantiteNumber;
+          mc.quantiteActuelle = quantiteNumber;
         }
 
         if (hasBdl) {
@@ -512,8 +516,10 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       return res.status(404).send('Matériel de chantier introuvable.');
     }
 
-    const oldQuantite = mc.quantite || 0;
-    const newQuantite = oldQuantite + receptionQty;
+    const oldQuantiteRecue = mc.quantite || 0;
+    const newQuantiteRecue = oldQuantiteRecue + receptionQty;
+    const oldQuantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : oldQuantiteRecue;
+    const newQuantiteActuelle = oldQuantiteActuelle + receptionQty;
     const totalPrevuAvantReception = computeTotalPrevu(mc);
     const seuil = totalPrevuAvantReception * 0.30;
 
@@ -526,13 +532,14 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       mc.quantitePrevue = Math.max(prevueActuelle - receptionQty, 0);
     }
 
-    mc.quantite = newQuantite;
+    mc.quantite = newQuantiteRecue;
+    mc.quantiteActuelle = newQuantiteActuelle;
     await mc.save();
 
     await Historique.create({
       materielId: mc.materiel ? mc.materiel.id : null,
-      oldQuantite,
-      newQuantite,
+      oldQuantite: oldQuantiteActuelle,
+      newQuantite: newQuantiteActuelle,
       userId: req.user ? req.user.id : null,
       action: `Réception chantier de ${receptionQty}`,
       materielNom: mc.materiel
@@ -541,22 +548,22 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       stockType: 'chantier'
     });
 
-    if (oldQuantite > seuil && newQuantite <= seuil && mc.materiel) {
+    if (oldQuantiteActuelle > seuil && newQuantiteActuelle <= seuil && mc.materiel) {
       await sendLowStockNotification({
         nom: mc.materiel.nom,
-        quantite: newQuantite
+        quantite: newQuantiteActuelle
       });
     }
 
-    const difference = newQuantite - (oldQuantite + totalPrevuAvantReception);
+    const difference = newQuantiteActuelle - (oldQuantiteRecue + totalPrevuAvantReception);
 
     if (difference !== 0 && mc.materiel && mc.chantier) {
       await sendReceptionGapNotification({
         difference,
         materielNom: mc.materiel.nom,
         chantierNom: mc.chantier.nom,
-        quantitePrevue: oldQuantite + totalPrevuAvantReception,
-        quantiteReelle: newQuantite
+        quantitePrevue: oldQuantiteRecue + totalPrevuAvantReception,
+        quantiteReelle: newQuantiteActuelle
       });
     }
 
@@ -819,6 +826,7 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
       chantierId: parseInt(chantierId, 10),
       materielId: nouveauMateriel.id,
       quantite: qte,
+      quantiteActuelle: qte,
       quantitePrevue: qtePrevue,
       quantitePrevueInitiale: qtePrevueInitiale,
       quantitePrevueInitiale1: qtePrevueInitiale1,
@@ -921,12 +929,15 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
           });
           if (mc) {
             mc.quantite += deliveredQuantity;
+            const baseActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : mc.quantite;
+            mc.quantiteActuelle = baseActuelle + deliveredQuantity;
             await mc.save();
           } else {
               await MaterielChantier.create({
                 chantierId: parseInt(chantierId, 10),
                 materielId: item.materielId,
                 quantite: deliveredQuantity,
+                quantiteActuelle: deliveredQuantity,
                 remarque: item.remarque || null
               });
           }
@@ -1108,7 +1119,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       ? 0
       : parseInt(quantite, 10);
     const variationValide = Number.isNaN(deltaQuantite) ? 0 : deltaQuantite;
-    const newQte = mc.quantite + variationValide;
+    const baseQuantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : (mc.quantite || 0);
+    const newQteActuelle = Math.max(0, baseQuantiteActuelle + variationValide);
     const newQtePrevue = (quantitePrevue === undefined || quantitePrevue === '')
       ? mc.quantitePrevue
       : parseInt(quantitePrevue, 10);
@@ -1131,7 +1143,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
 
     if (
-      isNaN(newQte) || newQte < 0 ||
+      Number.isNaN(newQteActuelle) || newQteActuelle < 0 ||
       !nomMateriel || !nomMateriel.trim() || !categorie
     ) {
       return res.status(400).send("Les champs désignation et catégorie sont obligatoires.");
@@ -1139,7 +1151,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
 
     const changementsDetail = [];
 
-    const oldQte = mc.quantite;
+    const oldQteActuelle = baseQuantiteActuelle;
     const oldNom = mc.materiel.nom;
     const oldCategorie = mc.materiel.categorie;
     const oldEmplacement = mc.materiel.emplacementId;
@@ -1191,9 +1203,9 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
     const newQtePrevueInitiale = oldQtePrevueInitiale ?? newTotalPrevu;
 
-    if (oldQte !== newQte) {
+    if (oldQteActuelle !== newQteActuelle) {
       const variationTexte = variationValide ? ` (${variationValide > 0 ? '+' : ''}${variationValide})` : '';
-      changementsDetail.push(`Quantité: ${oldQte} ➔ ${newQte}${variationTexte}`);
+      changementsDetail.push(`Quantité actuelle: ${oldQteActuelle} ➔ ${newQteActuelle}${variationTexte}`);
     }
     if (oldNom !== newNom) changementsDetail.push(`Nom: ${oldNom} ➔ ${newNom}`);
     if (oldCategorie !== newCategorie) changementsDetail.push(`Catégorie: ${oldCategorie || '-'} ➔ ${newCategorie}`);
@@ -1226,7 +1238,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     }
 
     // Mise à jour
-    mc.quantite = newQte;
+    mc.quantiteActuelle = newQteActuelle;
     mc.quantitePrevue = newQtePrevue;
     mc.dateLivraisonPrevue = newDatePrevue;
     [1, 2, 3, 4].forEach((idx, i) => {
@@ -1256,8 +1268,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
 
     await Historique.create({
       materielId: mc.materiel.id,
-      oldQuantite: oldQte,
-      newQuantite: newQte,
+      oldQuantite: oldQteActuelle,
+      newQuantite: newQteActuelle,
       userId: req.user ? req.user.id : null,
       action: changementsDetail.length > 0 ? changementsDetail.join(' | ') : 'Modifications sans changement',
       materielNom: `${mc.materiel.nom} (Chantier : ${mc.chantier ? mc.chantier.nom : 'N/A'})`,
@@ -1373,6 +1385,7 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
         chantierId: parseInt(chantierId),
         materielId: nouveauMateriel.id,
         quantite: parseInt(quantite),
+        quantiteActuelle: parseInt(quantite),
         quantitePrevue: qtePrevue,
         quantitePrevueInitiale: initialDuplicationPlan,
         quantitePrevueInitiale1: initialSlot1,
@@ -1792,6 +1805,7 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         chantierId: chantierId,
         materielId: nouveauMateriel.id,
         quantite: 0,
+        quantiteActuelle: 0,
         quantitePrevue: qteNumber,
         quantitePrevueInitiale: qteNumber,
         quantitePrevueInitiale1: qteNumber,
@@ -1879,6 +1893,7 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
       { header: 'Compartiment', key: 'compartiment', width: 18 },
       { header: 'Niveau', key: 'niveau', width: 10 },
       { header: 'Quantité', key: 'quantite', width: 12 },
+      { header: 'Quantité actuelle', key: 'quantiteActuelle', width: 18 },
       { header: 'Quantité prévue', key: 'quantitePrevue', width: 18 },
       { header: 'Qté init prévue (total)', key: 'quantitePrevueInitiale', width: 20 },
       { header: 'Quantité prévue 1', key: 'quantitePrevue1', width: 18 },
@@ -1936,6 +1951,9 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
         compartiment: mat.compartiment || '-',
         niveau: mat.niveau != null ? mat.niveau : '-',
         quantite: mc.quantite != null ? Number(mc.quantite) : null,
+        quantiteActuelle: mc.quantiteActuelle != null
+          ? Number(mc.quantiteActuelle)
+          : (mc.quantite != null ? Number(mc.quantite) : null),
         quantitePrevue: mc.quantitePrevue != null ? Number(mc.quantitePrevue) : null,
         quantitePrevueInitiale: mc.quantitePrevueInitiale != null ? Number(mc.quantitePrevueInitiale) : null,
         quantitePrevue1: mc.quantitePrevue1 != null ? Number(mc.quantitePrevue1) : null,
