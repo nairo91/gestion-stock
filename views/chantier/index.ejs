@@ -318,6 +318,25 @@
       overflow: hidden;
     }
 
+    /* Étendre la zone tableau sur mobile/tablette pour profiter de toute la largeur utile */
+    @media (max-width: 1200px) {
+      .content-wrapper.container {
+        max-width: 100%;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+
+      .table-wrapper {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+      }
+
+      .stock-table-wrap {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+
     .table-responsive {
       border-radius: 20px;
     }
