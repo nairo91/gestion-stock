@@ -785,18 +785,24 @@
       }
     }
 
+    :root {
+      --alert-critical: #ff4d4d;
+      --alert-monitoring: #ffb347;
+      --alert-resolved: #2ecc71;
+    }
+
     .table-danger {
       background-color: #fdecea;
     }
 
     /* Alerte stock < 30% sur le tableau chantier */
     .table-stock tr.stock-low-alert {
-      background-color: rgba(255, 99, 132, 0.25) !important;
-      box-shadow: inset 4px 0 0 #ff4d4d; /* barre rouge à gauche */
+      background-color: rgba(255, 77, 77, 0.18) !important;
+      box-shadow: inset 4px 0 0 var(--alert-critical);
     }
 
     .table-stock tr.stock-low-alert:hover {
-      background-color: rgba(255, 99, 132, 0.40) !important;
+      background-color: rgba(255, 77, 77, 0.28) !important;
     }
 
     .col-quantite-actuelle {
@@ -816,7 +822,7 @@
     }
 
     .badge-stock-low {
-      background-color: #ff4d4d;
+      background-color: var(--alert-critical);
       color: #fff;
       border-radius: 999px;
       font-size: 0.7rem;
@@ -825,32 +831,47 @@
       display: inline-block;
     }
 
+    .badge-stock-low-critique {
+      background-color: var(--alert-critical);
+      color: #fff;
+    }
+
+    .badge-stock-low-surveillance {
+      background-color: var(--alert-monitoring);
+      color: #3b1c00;
+    }
+
+    .badge-stock-low-regle {
+      background-color: var(--alert-resolved);
+      color: #02230f;
+    }
+
     /* Renforcement visuel pour les lignes en stock faible (stock chantier) */
     .table-stock tr.table-danger {
-      background-color: rgba(255, 99, 132, 0.28) !important;
-      box-shadow: inset 4px 0 0 #ff4d4d; /* petite barre rouge à gauche */
+      background-color: rgba(255, 77, 77, 0.2) !important;
+      box-shadow: inset 4px 0 0 var(--alert-critical);
     }
 
     .table-stock tr.table-danger:hover {
-      background-color: rgba(255, 99, 132, 0.4) !important;
+      background-color: rgba(255, 77, 77, 0.3) !important;
     }
 
     .table-stock tr.alert-low-monitoring {
-      background-color: rgba(255, 193, 7, 0.25) !important;
-      box-shadow: inset 4px 0 0 #ff9800;
+      background-color: rgba(255, 179, 71, 0.18) !important;
+      box-shadow: inset 4px 0 0 var(--alert-monitoring);
     }
 
     .table-stock tr.alert-low-monitoring:hover {
-      background-color: rgba(255, 193, 7, 0.35) !important;
+      background-color: rgba(255, 179, 71, 0.28) !important;
     }
 
     .table-stock tr.alert-low-resolved {
-      background-color: rgba(46, 204, 113, 0.22) !important;
-      box-shadow: inset 4px 0 0 #2ecc71;
+      background-color: rgba(46, 204, 113, 0.16) !important;
+      box-shadow: inset 4px 0 0 var(--alert-resolved);
     }
 
     .table-stock tr.alert-low-resolved:hover {
-      background-color: rgba(46, 204, 113, 0.32) !important;
+      background-color: rgba(46, 204, 113, 0.26) !important;
     }
 
     .badge-alert-status {
@@ -861,17 +882,17 @@
     }
 
     .badge-alert-critique {
-      background-color: #ff4d4d;
+      background-color: var(--alert-critical);
       color: #fff;
     }
 
     .badge-alert-surveillance {
-      background-color: #ffb347;
+      background-color: var(--alert-monitoring);
       color: #3b1c00;
     }
 
     .badge-alert-regle {
-      background-color: #2ecc71;
+      background-color: var(--alert-resolved);
       color: #02230f;
     }
   </style>
@@ -1414,8 +1435,13 @@
                   <% const badgeLabel = alertStatus === 'regle'
                     ? 'Alerte réglée'
                     : (alertStatus === 'surveillance' ? 'Alerte à surveiller' : 'Alerte critique'); %>
+                  <% const stockBadgeClass = alertStatus === 'regle'
+                    ? 'badge-stock-low badge-stock-low-regle'
+                    : (alertStatus === 'surveillance'
+                      ? 'badge-stock-low badge-stock-low-surveillance'
+                      : 'badge-stock-low badge-stock-low-critique'); %>
                   <div class="qte-alert-details">
-                    <span class="badge-stock-low">
+                    <span class="<%= stockBadgeClass %>">
                       ⚠ Stock &lt; 30% du prévu
                     </span>
                     <span class="badge-alert-status <%= badgeClass %>"><%= badgeLabel %></span>
