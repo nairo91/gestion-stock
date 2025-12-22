@@ -787,8 +787,8 @@
 
     :root {
       --alert-critical: #ff4d4d;
-      --alert-monitoring: #ffd48a;
-      --alert-resolved: #63e2a6;
+      --alert-monitoring: #ffe5b4;
+      --alert-resolved: #baf4d6;
     }
 
     .table-danger {
@@ -862,31 +862,31 @@
     }
 
     .table-stock tr.alert-low-monitoring {
-      background-color: rgba(255, 212, 138, 0.16) !important;
+      background-color: rgba(255, 229, 180, 0.14) !important;
       box-shadow: inset 4px 0 0 var(--alert-monitoring);
     }
 
     .table-stock tr.alert-low-monitoring > * {
-      background-color: rgba(255, 212, 138, 0.16) !important;
+      background-color: rgba(255, 229, 180, 0.14) !important;
     }
 
     .table-stock tr.alert-low-monitoring:hover,
     .table-stock tr.alert-low-monitoring:hover > * {
-      background-color: rgba(255, 212, 138, 0.24) !important;
+      background-color: rgba(255, 229, 180, 0.22) !important;
     }
 
     .table-stock tr.alert-low-resolved {
-      background-color: rgba(99, 226, 166, 0.14) !important;
+      background-color: rgba(186, 244, 214, 0.12) !important;
       box-shadow: inset 4px 0 0 var(--alert-resolved);
     }
 
     .table-stock tr.alert-low-resolved > * {
-      background-color: rgba(99, 226, 166, 0.14) !important;
+      background-color: rgba(186, 244, 214, 0.12) !important;
     }
 
     .table-stock tr.alert-low-resolved:hover,
     .table-stock tr.alert-low-resolved:hover > * {
-      background-color: rgba(99, 226, 166, 0.22) !important;
+      background-color: rgba(186, 244, 214, 0.2) !important;
     }
 
     .badge-alert-status {
@@ -902,13 +902,13 @@
     }
 
     .badge-alert-surveillance {
-      background-color: var(--alert-monitoring);
+      background-color: rgba(255, 229, 180, 0.9);
       color: #3b1c00;
     }
 
     .badge-alert-regle {
-      background-color: var(--alert-resolved);
-      color: #04311a;
+      background-color: rgba(186, 244, 214, 0.9);
+      color: #064023;
     }
   </style>
 </head>
