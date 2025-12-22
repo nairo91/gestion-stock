@@ -57,6 +57,15 @@
       background-color: #b2bec3;
       color: #2d3436;
     }
+
+    /* Évite que les noms de fournisseurs débordent sur mobile/tablette */
+    @media (max-width: 992px) {
+      .table-custom .col-fournisseur {
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.3;
+      }
+    }
   </style>
 </head>
 <body>
@@ -88,7 +97,7 @@
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Fournisseur</th>
+                  <th class="col-fournisseur">Fournisseur</th>
                   <th>Date de livraison</th>
                   <th>Référence</th>
                   <th>Réceptionné par</th>
@@ -100,7 +109,7 @@
                 <% bons.forEach(bon => { %>
                   <tr>
                     <td><%= bon.id %></td>
-                    <td><%= bon.fournisseur %></td>
+                    <td class="col-fournisseur"><%= bon.fournisseur %></td>
                     <td><%= new Date(bon.dateLivraison).toLocaleDateString('fr-FR') %></td>
                     <td><%= bon.reference %></td>
                     <td><%= bon.receptionneur %></td>
