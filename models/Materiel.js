@@ -5,7 +5,7 @@ const Materiel = sequelize.define(
   'Materiel',
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    nom: { type: DataTypes.STRING, allowNull: false },
+    nom: { type: DataTypes.TEXT, allowNull: false },
     reference: { type: DataTypes.STRING },
     barcode: { type: DataTypes.STRING, allowNull: true },
     qr_code_value: { type: DataTypes.STRING, allowNull: true, unique: true },

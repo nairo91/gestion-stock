@@ -10,7 +10,7 @@ const Designation = sequelize.define(
       autoIncrement: true,
     },
     nom: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     categorieId: {
