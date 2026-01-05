@@ -2,10 +2,13 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale', {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-    });
+    const tableDefinition = await queryInterface.describeTable('materiel_chantiers');
+    if (!tableDefinition.quantitePrevueInitiale) {
+      await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale', {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      });
+    }
 
     await queryInterface.sequelize.query(`
       UPDATE materiel_chantiers
@@ -16,6 +19,9 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale');
+    const tableDefinition = await queryInterface.describeTable('materiel_chantiers');
+    if (tableDefinition.quantitePrevueInitiale) {
+      await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale');
+    }
   }
 };
