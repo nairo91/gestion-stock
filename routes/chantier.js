@@ -1718,6 +1718,10 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
       const datePrevue2 = toDateOrNull(r.datePrevue2);
       const datePrevue3 = toDateOrNull(r.datePrevue3);
       const datePrevue4 = toDateOrNull(r.datePrevue4);
+      const initial1 = r.qtePrevue1 ?? null;
+      const initial2 = r.qtePrevue2 ?? null;
+      const initial3 = r.qtePrevue3 ?? null;
+      const initial4 = r.qtePrevue4 ?? null;
 
       await MaterielChantier.upsert({
         chantierId: preview.chantierId,
@@ -1729,6 +1733,10 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         quantitePrevue2: r.qtePrevue2,
         quantitePrevue3: r.qtePrevue3,
         quantitePrevue4: r.qtePrevue4,
+        quantitePrevueInitiale1: initial1,
+        quantitePrevueInitiale2: initial2,
+        quantitePrevueInitiale3: initial3,
+        quantitePrevueInitiale4: initial4,
         dateLivraisonPrevue: null,
         dateLivraisonPrevue1: datePrevue1,
         dateLivraisonPrevue2: datePrevue2,
@@ -1760,6 +1768,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
     return res.redirect(`/chantier?chantierId=${encodeURIComponent(chantier.id)}&import=ok&created=${created}&updated=${updated}&skipped=${skipped}`);
   } catch (err) {
     console.error('Confirm import error', err);
+    console.error('Confirm import error stack', err.stack);
     return res.status(500).send("Erreur lors de la confirmation d'import.");
   }
 });
@@ -1918,6 +1927,10 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         quantitePrevue2: qteSlots[1],
         quantitePrevue3: qteSlots[2],
         quantitePrevue4: qteSlots[3],
+        quantitePrevueInitiale1: qteSlots[0],
+        quantitePrevueInitiale2: qteSlots[1],
+        quantitePrevueInitiale3: qteSlots[2],
+        quantitePrevueInitiale4: qteSlots[3],
         dateLivraisonPrevue: null,
         dateLivraisonPrevue1: dateSlots[0],
         dateLivraisonPrevue2: dateSlots[1],
