@@ -7,25 +7,35 @@
  */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale1', {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-    });
+    const tableDefinition = await queryInterface.describeTable('materiel_chantiers');
 
-    await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale2', {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-    });
+    if (!tableDefinition.quantitePrevueInitiale1) {
+      await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale1', {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      });
+    }
 
-    await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale3', {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-    });
+    if (!tableDefinition.quantitePrevueInitiale2) {
+      await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale2', {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      });
+    }
 
-    await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale4', {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-    });
+    if (!tableDefinition.quantitePrevueInitiale3) {
+      await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale3', {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      });
+    }
+
+    if (!tableDefinition.quantitePrevueInitiale4) {
+      await queryInterface.addColumn('materiel_chantiers', 'quantitePrevueInitiale4', {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      });
+    }
 
     // Pré-remplir les nouvelles colonnes avec les valeurs actuelles
     await queryInterface.sequelize.query(`
@@ -46,9 +56,19 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale1');
-    await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale2');
-    await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale3');
-    await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale4');
+    const tableDefinition = await queryInterface.describeTable('materiel_chantiers');
+
+    if (tableDefinition.quantitePrevueInitiale1) {
+      await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale1');
+    }
+    if (tableDefinition.quantitePrevueInitiale2) {
+      await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale2');
+    }
+    if (tableDefinition.quantitePrevueInitiale3) {
+      await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale3');
+    }
+    if (tableDefinition.quantitePrevueInitiale4) {
+      await queryInterface.removeColumn('materiel_chantiers', 'quantitePrevueInitiale4');
+    }
   }
 };
