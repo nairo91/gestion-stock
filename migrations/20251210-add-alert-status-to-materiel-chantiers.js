@@ -2,14 +2,22 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('materiel_chantiers', 'alertStatus', {
-      type: Sequelize.STRING,
-      allowNull: false,
-      defaultValue: 'critique'
-    });
+    const tableDefinition = await queryInterface.describeTable('materiel_chantiers');
+
+    if (!tableDefinition.alertStatus) {
+      await queryInterface.addColumn('materiel_chantiers', 'alertStatus', {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: 'critique'
+      });
+    }
   },
 
   async down(queryInterface) {
-    await queryInterface.removeColumn('materiel_chantiers', 'alertStatus');
+    const tableDefinition = await queryInterface.describeTable('materiel_chantiers');
+
+    if (tableDefinition.alertStatus) {
+      await queryInterface.removeColumn('materiel_chantiers', 'alertStatus');
+    }
   }
 };
