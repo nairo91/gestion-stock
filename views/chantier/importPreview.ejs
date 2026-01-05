@@ -157,7 +157,7 @@
   <div class="toolbar d-flex flex-wrap align-items-end">
     <div class="me-3 flex-grow-1" style="min-width:260px">
       <label for="global-search" class="form-label">Recherche</label>
-      <input id="global-search" type="search" class="form-control" placeholder="Rechercher dans le tableau (lot, désignation, fournisseur, ...)">
+      <input id="global-search" type="search" class="form-control" placeholder="Rechercher dans le tableau (catégorie, désignation, fournisseur, ...)">
     </div>
     <div class="me-3" style="min-width:180px">
       <label for="filtre-etat" class="form-label">Filtrer par État</label>
@@ -184,10 +184,17 @@
         <tr>
           <th style="width:100px">État</th>
           <th style="width:100px">Opération</th>
-          <th>LOT</th>
+          <th>Catégorie</th>
           <th>Désignation</th>
           <th>Fournisseur</th>
-          <th>Qte prévue</th>
+          <th>Qte 1</th>
+          <th>Date 1</th>
+          <th>Qte 2</th>
+          <th>Date 2</th>
+          <th>Qte 3</th>
+          <th>Date 3</th>
+          <th>Qte 4</th>
+          <th>Date 4</th>
           <th>Raison</th>
         </tr>
       </thead>
@@ -213,10 +220,17 @@
                 <span class="badge badge-create">Create</span>
               <% } %>
             </td>
-            <td><%= r.lot %></td>
+            <td><%= r.categorie %></td>
             <td><%= r.designation %></td>
             <td><%= r.fournisseur || '' %></td>
-            <td><%= (r.qtePrevue != null) ? r.qtePrevue : '' %></td>
+            <td><%= (r.qtePrevue1 != null) ? r.qtePrevue1 : '' %></td>
+            <td><%= r.datePrevue1 ? new Date(r.datePrevue1).toLocaleDateString('fr-FR') : '' %></td>
+            <td><%= (r.qtePrevue2 != null) ? r.qtePrevue2 : '' %></td>
+            <td><%= r.datePrevue2 ? new Date(r.datePrevue2).toLocaleDateString('fr-FR') : '' %></td>
+            <td><%= (r.qtePrevue3 != null) ? r.qtePrevue3 : '' %></td>
+            <td><%= r.datePrevue3 ? new Date(r.datePrevue3).toLocaleDateString('fr-FR') : '' %></td>
+            <td><%= (r.qtePrevue4 != null) ? r.qtePrevue4 : '' %></td>
+            <td><%= r.datePrevue4 ? new Date(r.datePrevue4).toLocaleDateString('fr-FR') : '' %></td>
             <td><%= r.reason || '' %></td>
           </tr>
         <% }); %>

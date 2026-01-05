@@ -59,6 +59,47 @@ function getCellString(cell) {
   return v != null ? String(v) : '';
 }
 
+function normalizeHeaderLabel(label) {
+  return (label || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+
+function parsePlannedQuantity(cell) {
+  const raw = getCellString(cell).trim();
+  if (!raw) {
+    return { value: null, invalid: false };
+  }
+  const cleaned = raw.replace(/[^\d.,-]/g, '');
+  if (!cleaned) {
+    return { value: null, invalid: true };
+  }
+  const parsed = Math.round(parseFloat(cleaned.replace(',', '.')));
+  return Number.isNaN(parsed) ? { value: null, invalid: true } : { value: parsed, invalid: false };
+}
+
+function parsePlannedDate(cell) {
+  if (!cell) {
+    return { value: null, invalid: false };
+  }
+  const raw = cell.value;
+  if (raw === null || raw === undefined || raw === '') {
+    return { value: null, invalid: false };
+  }
+  if (raw instanceof Date) {
+    return { value: raw, invalid: false };
+  }
+  const text = getCellString(cell).trim();
+  if (!text) {
+    return { value: null, invalid: false };
+  }
+  const parsed = toDateOrNull(text);
+  return { value: parsed, invalid: parsed === null };
+}
+
 async function fetchMaterielChantiersWithFilters(query, { includePhotos = true } = {}) {
   const {
     chantierId,
@@ -1507,24 +1548,32 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
     let headerRowIdx = null;
     const headerMap = {};
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-      const labels = row.values.map(v => (v != null ? String(v).trim() : ''));
-      const upper = labels.map(l => l.toUpperCase());
-      if (upper.includes('LOT') && (upper.includes('DÉSIGNATION') || upper.includes('DESIGNATION'))) {
+      const labels = row.values.map((v, idx) => (idx === 0 ? '' : getCellString(row.getCell(idx)).trim()));
+      const upper = labels.map(l => normalizeHeaderLabel(l));
+      if (
+        (upper.includes('CATEGORIE') || upper.includes('LOT')) &&
+        upper.includes('DESIGNATION')
+      ) {
         headerRowIdx = rowNumber;
         upper.forEach((val, idx) => {
-          if (val === 'LOT') headerMap.lot = idx;
-          if (val === 'DÉSIGNATION' || val === 'DESIGNATION') headerMap.designation = idx;
+          if (val === 'CATEGORIE' || val === 'LOT') headerMap.categorie = idx;
+          if (val === 'DESIGNATION') headerMap.designation = idx;
           if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
-          if ((val === 'QTE' || val === 'QTÉ' || val === 'QUANTITÉ') && typeof headerMap.qte === 'undefined') {
-            headerMap.qte = idx;
+          const qteMatch = val.match(/^QTE\s*(\d)(?:ER|ERE|E|EME)?\s*LIVRAISON$/);
+          if (qteMatch) {
+            headerMap[`qte${qteMatch[1]}`] = idx;
+          }
+          const dateMatch = val.match(/^DATE\s*(\d)(?:ER|ERE|E|EME)?\s*LIVRAISON$/);
+          if (dateMatch) {
+            headerMap[`date${dateMatch[1]}`] = idx;
           }
         });
         return false;
       }
     });
 
-    if (!headerRowIdx || !headerMap.lot || !headerMap.designation || !headerMap.qte) {
-      return res.status(400).send('Colonnes obligatoires introuvables (LOT, Désignation, Qte).');
+    if (!headerRowIdx || !headerMap.categorie || !headerMap.designation) {
+      return res.status(400).send('Colonnes obligatoires introuvables (Catégorie, Désignation).');
     }
 
     const startRow = headerRowIdx + 1;
@@ -1532,36 +1581,43 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
 
     for (let r = startRow; r <= worksheet.rowCount; r++) {
       const row = worksheet.getRow(r);
-      const lotStr = getCellString(row.getCell(headerMap.lot)).trim();
+      const categorieStr = getCellString(row.getCell(headerMap.categorie)).trim();
       const designationStr = getCellString(row.getCell(headerMap.designation)).trim();
       const fournisseurStr = headerMap.fournisseur ? getCellString(row.getCell(headerMap.fournisseur)).trim() : '';
-      const qteStr = getCellString(row.getCell(headerMap.qte)).trim();
-      const qteClean = qteStr.replace(/[^\d.,-]/g, '');
-      let qteNumber = qteClean ? Math.round(parseFloat(qteClean.replace(',', '.'))) : null;
-      if (Number.isNaN(qteNumber)) {
-        qteNumber = null;
-      }
+      const qteSlots = [1, 2, 3, 4].map(idx => {
+        const cell = headerMap[`qte${idx}`] ? row.getCell(headerMap[`qte${idx}`]) : null;
+        return parsePlannedQuantity(cell);
+      });
+      const dateSlots = [1, 2, 3, 4].map(idx => {
+        const cell = headerMap[`date${idx}`] ? row.getCell(headerMap[`date${idx}`]) : null;
+        return parsePlannedDate(cell);
+      });
 
-      if (!lotStr && !designationStr && !fournisseurStr && !qteStr) {
+      const hasAnyQte = qteSlots.some(slot => slot.value != null || slot.invalid);
+      const hasAnyDate = dateSlots.some(slot => slot.value != null || slot.invalid);
+      if (!categorieStr && !designationStr && !fournisseurStr && !hasAnyQte && !hasAnyDate) {
         continue;
       }
 
       let status = 'ok';
-      let reason = '';
-      if (!lotStr || !designationStr) {
+      const reasons = [];
+      if (!categorieStr || !designationStr) {
         status = 'error';
-        reason = 'LOT ou Désignation manquant';
-      } else if (qteStr && qteNumber === null) {
-        status = 'warn';
-        reason = 'Quantité non numérique';
-      } else if (!qteStr) {
-        status = 'warn';
-        reason = 'Quantité vide';
+        reasons.push('Catégorie ou Désignation manquante');
+      } else {
+        if (qteSlots.some(slot => slot.invalid)) {
+          status = 'warn';
+          reasons.push('Quantité non numérique');
+        }
+        if (dateSlots.some(slot => slot.invalid)) {
+          status = 'warn';
+          reasons.push('Date invalide');
+        }
       }
 
       let operation = 'create';
       if (status !== 'error') {
-        const existingMat = await Materiel.findOne({ where: { nom: designationStr, categorie: lotStr } });
+        const existingMat = await Materiel.findOne({ where: { nom: designationStr, categorie: categorieStr } });
         if (existingMat) {
           const existingLink = await MaterielChantier.findOne({
             where: { chantierId, materielId: existingMat.id }
@@ -1573,12 +1629,20 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       }
 
       previewRows.push({
-        lot: lotStr,
+        categorie: categorieStr,
         designation: designationStr,
         fournisseur: fournisseurStr || null,
-        qtePrevue: qteNumber,
+        qtePrevue: null,
+        qtePrevue1: qteSlots[0].value,
+        qtePrevue2: qteSlots[1].value,
+        qtePrevue3: qteSlots[2].value,
+        qtePrevue4: qteSlots[3].value,
+        datePrevue1: dateSlots[0].value,
+        datePrevue2: dateSlots[1].value,
+        datePrevue3: dateSlots[2].value,
+        datePrevue4: dateSlots[3].value,
         status,
-        reason,
+        reason: reasons.join(' / '),
         operation
       });
     }
@@ -1632,7 +1696,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         continue;
       }
 
-      const [categorie] = await Categorie.findOrCreate({ where: { nom: r.lot } });
+      const [categorie] = await Categorie.findOrCreate({ where: { nom: r.categorie } });
       if (categorie && categorie.id) {
         await Designation.findOrCreate({
           where: { nom: r.designation, categorieId: categorie.id },
@@ -1641,42 +1705,35 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
       }
 
       const [materiel] = await Materiel.findOrCreate({
-        where: { nom: r.designation, categorie: r.lot },
+        where: { nom: r.designation, categorie: r.categorie },
         defaults: {
           nom: r.designation,
-          categorie: r.lot,
+          categorie: r.categorie,
           quantite: 0,
           fournisseur: r.fournisseur || null
         }
       });
 
-      const importPlanValues = [r.qtePrevue, r.qtePrevue1, r.qtePrevue2, r.qtePrevue3, r.qtePrevue4];
-      const hasImportPlan = importPlanValues.some(v => v != null);
-      const initialImportPlan = hasImportPlan
-        ? computeTotalPrevuFromValues({
-            quantitePrevue: r.qtePrevue,
-            quantitePrevue1: r.qtePrevue1,
-            quantitePrevue2: r.qtePrevue2,
-            quantitePrevue3: r.qtePrevue3,
-            quantitePrevue4: r.qtePrevue4
-          })
-        : null;
-      const initialImportSlot1 = r.qtePrevue1 != null ? r.qtePrevue1 : r.qtePrevue;
-      const initialImportSlot2 = r.qtePrevue2 != null ? r.qtePrevue2 : null;
-      const initialImportSlot3 = r.qtePrevue3 != null ? r.qtePrevue3 : null;
-      const initialImportSlot4 = r.qtePrevue4 != null ? r.qtePrevue4 : null;
+      const datePrevue1 = toDateOrNull(r.datePrevue1);
+      const datePrevue2 = toDateOrNull(r.datePrevue2);
+      const datePrevue3 = toDateOrNull(r.datePrevue3);
+      const datePrevue4 = toDateOrNull(r.datePrevue4);
 
       await MaterielChantier.upsert({
         chantierId: preview.chantierId,
         materielId: materiel.id,
         quantite: 0,
-        quantitePrevue: r.qtePrevue,
-        quantitePrevueInitiale: initialImportPlan,
-        quantitePrevueInitiale1: initialImportSlot1,
-        quantitePrevueInitiale2: initialImportSlot2,
-        quantitePrevueInitiale3: initialImportSlot3,
-        quantitePrevueInitiale4: initialImportSlot4,
+        quantitePrevue: null,
+        quantitePrevueInitiale: null,
+        quantitePrevue1: r.qtePrevue1,
+        quantitePrevue2: r.qtePrevue2,
+        quantitePrevue3: r.qtePrevue3,
+        quantitePrevue4: r.qtePrevue4,
         dateLivraisonPrevue: null,
+        dateLivraisonPrevue1: datePrevue1,
+        dateLivraisonPrevue2: datePrevue2,
+        dateLivraisonPrevue3: datePrevue3,
+        dateLivraisonPrevue4: datePrevue4,
         remarque: null
       });
 
@@ -1713,10 +1770,10 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
  * Cette fonctionnalité permet de préremplir le stock d'un chantier en
  * important un fichier Excel. L'utilisateur sélectionne un chantier et
  * téléverse un fichier comprenant les colonnes suivantes :
- *   - LOT : servira de nom de catégorie
+ *   - Catégorie : servira de nom de catégorie (anciennement LOT)
  *   - Désignation : nom du matériel
  *   - Fournisseur : nom du fournisseur
- *   - Qte : quantité prévue (stock théorique ou attendue)
+ *   - Qte 1er Livraison à Qte 4e livraison + dates associées
  *
  * Les autres colonnes du fichier sont ignorées. Pour chaque ligne non
  * vide, une entrée Materiel est créée (quantité = 0) avec sa catégorie,
@@ -1769,23 +1826,22 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
     let headerMap = {};
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       // On convertit les cellules en chaînes pour comparaison
-      const labels = row.values.map(v => {
-        const str = v && typeof v === 'string' ? v : (v != null ? v.toString() : '');
-        return str ? str.trim() : '';
-      });
-      const upper = labels.map(l => l.toUpperCase());
-      // Si la ligne contient LOT et Désignation
-      if (upper.includes('LOT') && (upper.includes('DÉSIGNATION') || upper.includes('DESIGNATION'))) {
+      const labels = row.values.map((v, idx) => (idx === 0 ? '' : getCellString(row.getCell(idx)).trim()));
+      const upper = labels.map(l => normalizeHeaderLabel(l));
+      // Si la ligne contient Catégorie (ou LOT) et Désignation
+      if ((upper.includes('CATEGORIE') || upper.includes('LOT')) && upper.includes('DESIGNATION')) {
         headerRowIdx = rowNumber;
         upper.forEach((val, idx) => {
-          if (val === 'LOT') headerMap.lot = idx;
-          if (val === 'DÉSIGNATION' || val === 'DESIGNATION') headerMap.designation = idx;
+          if (val === 'CATEGORIE' || val === 'LOT') headerMap.categorie = idx;
+          if (val === 'DESIGNATION') headerMap.designation = idx;
           if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
-          // QTE peut être écrit différemment ; on capture plusieurs variantes
-          if (val === 'QTE' || val === 'QTÉ' || val === 'QUANTITÉ') {
-            if (typeof headerMap.qte === 'undefined') {
-              headerMap.qte = idx;
-            }
+          const qteMatch = val.match(/^QTE\s*(\d)(?:ER|ERE|E|EME)?\s*LIVRAISON$/);
+          if (qteMatch) {
+            headerMap[`qte${qteMatch[1]}`] = idx;
+          }
+          const dateMatch = val.match(/^DATE\s*(\d)(?:ER|ERE|E|EME)?\s*LIVRAISON$/);
+          if (dateMatch) {
+            headerMap[`date${dateMatch[1]}`] = idx;
           }
         });
         return false; // sortir de la boucle eachRow
@@ -1793,10 +1849,10 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
     });
 
     if (!headerRowIdx) {
-      return res.status(400).send("Impossible de localiser les en-têtes LOT et Désignation dans le fichier.");
+      return res.status(400).send("Impossible de localiser les en-têtes Catégorie et Désignation dans le fichier.");
     }
-    if (!headerMap.lot || !headerMap.designation || !headerMap.qte) {
-      return res.status(400).send('Les colonnes LOT, Désignation ou Qte sont manquantes dans le fichier.');
+    if (!headerMap.categorie || !headerMap.designation) {
+      return res.status(400).send('Les colonnes Catégorie ou Désignation sont manquantes dans le fichier.');
     }
 
     const startRow = headerRowIdx + 1;
@@ -1805,25 +1861,26 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
     // Parcourir chaque ligne après l'en-tête
     for (let r = startRow; r <= worksheet.rowCount; r++) {
       const row = worksheet.getRow(r);
-      const lotStr = getCellString(row.getCell(headerMap.lot)).trim();
+      const categorieStr = getCellString(row.getCell(headerMap.categorie)).trim();
       const designationStr = getCellString(row.getCell(headerMap.designation)).trim();
       const fournisseurStr = headerMap.fournisseur
         ? getCellString(row.getCell(headerMap.fournisseur)).trim()
         : '';
-      const qteStr = getCellString(row.getCell(headerMap.qte)).trim();
-      const qteClean = qteStr.replace(/[^\d.,-]/g, '');
       // On ne retient que les lignes avec une catégorie et une désignation
-      if (!lotStr || !designationStr) {
+      if (!categorieStr || !designationStr) {
         continue;
       }
-      // Parsing de la quantité prévue : peut être un nombre, du texte ou vide
-      let qteNumber = qteClean ? Math.round(parseFloat(qteClean.replace(',', '.'))) : null;
-      if (qteClean && Number.isNaN(qteNumber)) {
-        qteNumber = null;
-      }
+      const qteSlots = [1, 2, 3, 4].map(idx => {
+        const cell = headerMap[`qte${idx}`] ? row.getCell(headerMap[`qte${idx}`]) : null;
+        return parsePlannedQuantity(cell).value;
+      });
+      const dateSlots = [1, 2, 3, 4].map(idx => {
+        const cell = headerMap[`date${idx}`] ? row.getCell(headerMap[`date${idx}`]) : null;
+        return parsePlannedDate(cell).value;
+      });
 
       // Création ou récupération de la catégorie
-      const [categorie] = await Categorie.findOrCreate({ where: { nom: lotStr } });
+      const [categorie] = await Categorie.findOrCreate({ where: { nom: categorieStr } });
       // Création ou récupération de la désignation
       if (categorie && categorie.id) {
         await Designation.findOrCreate({
@@ -1839,7 +1896,7 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         quantite: 0,
         description: null,
         prix: null,
-        categorie: lotStr,
+        categorie: categorieStr,
         fournisseur: fournisseurStr || null,
         vehiculeId: null,
         chantierId: null,
@@ -1855,10 +1912,17 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         materielId: nouveauMateriel.id,
         quantite: 0,
         quantiteActuelle: 0,
-        quantitePrevue: qteNumber,
-        quantitePrevueInitiale: qteNumber,
-        quantitePrevueInitiale1: qteNumber,
+        quantitePrevue: null,
+        quantitePrevueInitiale: null,
+        quantitePrevue1: qteSlots[0],
+        quantitePrevue2: qteSlots[1],
+        quantitePrevue3: qteSlots[2],
+        quantitePrevue4: qteSlots[3],
         dateLivraisonPrevue: null,
+        dateLivraisonPrevue1: dateSlots[0],
+        dateLivraisonPrevue2: dateSlots[1],
+        dateLivraisonPrevue3: dateSlots[2],
+        dateLivraisonPrevue4: dateSlots[3],
         remarque: null
       });
 
