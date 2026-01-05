@@ -1689,6 +1689,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
     let created = 0;
     let updated = 0;
     let skipped = 0;
+    const failedRows = [];
 
     for (const r of preview.rows) {
       if (r.status === 'error') {
@@ -1696,76 +1697,88 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         continue;
       }
 
-      const [categorie] = await Categorie.findOrCreate({ where: { nom: r.categorie } });
-      if (categorie && categorie.id) {
-        await Designation.findOrCreate({
-          where: { nom: r.designation, categorieId: categorie.id },
-          defaults: { nom: r.designation, categorieId: categorie.id }
-        });
-      }
-
-      const [materiel] = await Materiel.findOrCreate({
-        where: { nom: r.designation, categorie: r.categorie },
-        defaults: {
-          nom: r.designation,
-          categorie: r.categorie,
-          quantite: 0,
-          fournisseur: r.fournisseur || null
+      try {
+        const [categorie] = await Categorie.findOrCreate({ where: { nom: r.categorie } });
+        if (categorie && categorie.id) {
+          await Designation.findOrCreate({
+            where: { nom: r.designation, categorieId: categorie.id },
+            defaults: { nom: r.designation, categorieId: categorie.id }
+          });
         }
-      });
 
-      const datePrevue1 = toDateOrNull(r.datePrevue1);
-      const datePrevue2 = toDateOrNull(r.datePrevue2);
-      const datePrevue3 = toDateOrNull(r.datePrevue3);
-      const datePrevue4 = toDateOrNull(r.datePrevue4);
-      const initial1 = r.qtePrevue1 ?? null;
-      const initial2 = r.qtePrevue2 ?? null;
-      const initial3 = r.qtePrevue3 ?? null;
-      const initial4 = r.qtePrevue4 ?? null;
+        const [materiel] = await Materiel.findOrCreate({
+          where: { nom: r.designation, categorie: r.categorie },
+          defaults: {
+            nom: r.designation,
+            categorie: r.categorie,
+            quantite: 0,
+            fournisseur: r.fournisseur || null
+          }
+        });
 
-      await MaterielChantier.upsert({
-        chantierId: preview.chantierId,
-        materielId: materiel.id,
-        quantite: 0,
-        quantitePrevue: null,
-        quantitePrevueInitiale: null,
-        quantitePrevue1: r.qtePrevue1,
-        quantitePrevue2: r.qtePrevue2,
-        quantitePrevue3: r.qtePrevue3,
-        quantitePrevue4: r.qtePrevue4,
-        quantitePrevueInitiale1: initial1,
-        quantitePrevueInitiale2: initial2,
-        quantitePrevueInitiale3: initial3,
-        quantitePrevueInitiale4: initial4,
-        dateLivraisonPrevue: null,
-        dateLivraisonPrevue1: datePrevue1,
-        dateLivraisonPrevue2: datePrevue2,
-        dateLivraisonPrevue3: datePrevue3,
-        dateLivraisonPrevue4: datePrevue4,
-        remarque: null
-      });
+        const datePrevue1 = toDateOrNull(r.datePrevue1);
+        const datePrevue2 = toDateOrNull(r.datePrevue2);
+        const datePrevue3 = toDateOrNull(r.datePrevue3);
+        const datePrevue4 = toDateOrNull(r.datePrevue4);
+        const initial1 = r.qtePrevue1 ?? null;
+        const initial2 = r.qtePrevue2 ?? null;
+        const initial3 = r.qtePrevue3 ?? null;
+        const initial4 = r.qtePrevue4 ?? null;
 
-      if (r.operation === 'update') {
-        updated += 1;
-      } else {
-        created += 1;
+        await MaterielChantier.upsert({
+          chantierId: preview.chantierId,
+          materielId: materiel.id,
+          quantite: 0,
+          quantitePrevue: null,
+          quantitePrevueInitiale: null,
+          quantitePrevue1: r.qtePrevue1,
+          quantitePrevue2: r.qtePrevue2,
+          quantitePrevue3: r.qtePrevue3,
+          quantitePrevue4: r.qtePrevue4,
+          quantitePrevueInitiale1: initial1,
+          quantitePrevueInitiale2: initial2,
+          quantitePrevueInitiale3: initial3,
+          quantitePrevueInitiale4: initial4,
+          dateLivraisonPrevue: null,
+          dateLivraisonPrevue1: datePrevue1,
+          dateLivraisonPrevue2: datePrevue2,
+          dateLivraisonPrevue3: datePrevue3,
+          dateLivraisonPrevue4: datePrevue4,
+          remarque: null
+        });
+
+        if (r.operation === 'update') {
+          updated += 1;
+        } else {
+          created += 1;
+        }
+
+        await Historique.create({
+          materielId: materiel.id,
+          oldQuantite: null,
+          newQuantite: 0,
+          userId: req.user ? req.user.id : null,
+          action: 'IMPORT EXCEL (confirmé)',
+          materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
+          stockType: 'chantier'
+        });
+      } catch (e) {
+        console.error('Erreur import ligne', {
+          categorie: r.categorie,
+          designation: r.designation,
+          error: e.message
+        });
+        skipped += 1;
+        failedRows.push({ categorie: r.categorie, designation: r.designation });
+        continue;
       }
-
-      await Historique.create({
-        materielId: materiel.id,
-        oldQuantite: null,
-        newQuantite: 0,
-        userId: req.user ? req.user.id : null,
-        action: 'IMPORT EXCEL (confirmé)',
-        materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
-        stockType: 'chantier'
-      });
     }
 
     delete req.session.importPreview;
 
     console.log(`Import confirmé: +${created} créés, ${updated} mis à jour, ${skipped} ignorés`);
-    return res.redirect(`/chantier?chantierId=${encodeURIComponent(chantier.id)}&import=ok&created=${created}&updated=${updated}&skipped=${skipped}`);
+    const failedRowsParam = failedRows.length > 0 ? `&failedRows=${encodeURIComponent(JSON.stringify(failedRows))}` : '';
+    return res.redirect(`/chantier?chantierId=${encodeURIComponent(chantier.id)}&import=ok&created=${created}&updated=${updated}&skipped=${skipped}${failedRowsParam}`);
   } catch (err) {
     console.error('Confirm import error', err);
     console.error('Confirm import error stack', err.stack);
