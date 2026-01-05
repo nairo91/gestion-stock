@@ -114,9 +114,13 @@ app.use(async (req, res, next) => {
 
 
 
-sequelize.sync({ alter: true })
-  .then(() => console.log('✅ Base de données synchronisée'))
-  .catch(err => console.error('❌ Erreur de synchronisation', err));
+if (process.env.NODE_ENV !== 'production') {
+  sequelize.sync({ alter: true })
+    .then(() => console.log('✅ Base de données synchronisée'))
+    .catch(err => console.error('❌ Erreur de synchronisation', err));
+} else {
+  console.log('ℹ️ Synchronisation Sequelize désactivée en production (migrations uniquement).');
+}
 
 // Proxy pour récupérer les images Cloudinary avec les bons headers
 
