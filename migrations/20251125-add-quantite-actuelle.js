@@ -8,11 +8,15 @@
  */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('materiel_chantiers', 'quantiteActuelle', {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-    });
-
+    // Vérifier si la colonne existe déjà pour rendre la migration idempotente
+    const tableDefinition = await queryInterface.describeTable('materiel_chantiers');
+    if (!tableDefinition.quantiteActuelle) {
+      await queryInterface.addColumn('materiel_chantiers', 'quantiteActuelle', {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      });
+    }
+    // Pré-remplir la colonne avec la valeur de quantite si elle était jusqu'ici nulle
     await queryInterface.sequelize.query(`
       UPDATE "materiel_chantiers"
       SET "quantiteActuelle" = "quantite"
@@ -21,6 +25,10 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.removeColumn('materiel_chantiers', 'quantiteActuelle');
+    // Ne supprimer la colonne que si elle existe
+    const tableDefinition = await queryInterface.describeTable('materiel_chantiers');
+    if (tableDefinition.quantiteActuelle) {
+      await queryInterface.removeColumn('materiel_chantiers', 'quantiteActuelle');
+    }
   }
 };
