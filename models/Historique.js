@@ -51,7 +51,7 @@ const Historique = sequelize.define(
 
     // Libellé lisible (nom du matériel ou autre)
     materielNom: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
 
