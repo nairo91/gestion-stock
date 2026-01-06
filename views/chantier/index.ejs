@@ -1199,19 +1199,19 @@
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue1" data-column-class="col-quantite-prevue1,col-date-prevue1" checked>
-        <label class="form-check-label" for="toggle-col-quantite-prevue1">Qté prévue 1 & Date 1</label>
+        <label class="form-check-label" for="toggle-col-quantite-prevue1">Date 1er livraison & Qte 1er livraison</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue2" data-column-class="col-quantite-prevue2,col-date-prevue2" checked>
-        <label class="form-check-label" for="toggle-col-quantite-prevue2">Qté prévue 2 & Date 2</label>
+        <label class="form-check-label" for="toggle-col-quantite-prevue2">Date 2e livraison & Qte 2e livraison</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue3" data-column-class="col-quantite-prevue3,col-date-prevue3" checked>
-        <label class="form-check-label" for="toggle-col-quantite-prevue3">Qté prévue 3 & Date 3</label>
+        <label class="form-check-label" for="toggle-col-quantite-prevue3">Date 3e livraison & Qte 3e livraison</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-quantite-prevue4" data-column-class="col-quantite-prevue4,col-date-prevue4" checked>
-        <label class="form-check-label" for="toggle-col-quantite-prevue4">Qté prévue 4 & Date 4</label>
+        <label class="form-check-label" for="toggle-col-quantite-prevue4">Date 4e livraison & Qte 4e livraison</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-bdl" data-column-class="col-bon-livraison" checked>
@@ -1292,14 +1292,14 @@
           <th class="col-niveau">Niveau</th>
           <th class="col-quantite">Qte reçue</th>
           <th class="col-quantite-actuelle">Qte actuelle</th>
-          <th class="col-quantite-prevue1">Qte prévue 1</th>
-          <th class="col-date-prevue1">Date 1</th>
-          <th class="col-quantite-prevue2">Qte prévue 2</th>
-          <th class="col-date-prevue2">Date 2</th>
-          <th class="col-quantite-prevue3">Qte prévue 3</th>
-          <th class="col-date-prevue3">Date 3</th>
-          <th class="col-quantite-prevue4">Qte prévue 4</th>
-          <th class="col-date-prevue4">Date 4</th>
+          <th class="col-date-prevue1">Date 1er livraison</th>
+          <th class="col-quantite-prevue1">Qte 1er livraison</th>
+          <th class="col-date-prevue2">Date 2e livraison</th>
+          <th class="col-quantite-prevue2">Qte 2e livraison</th>
+          <th class="col-date-prevue3">Date 3e livraison</th>
+          <th class="col-quantite-prevue3">Qte 3e livraison</th>
+          <th class="col-date-prevue4">Date 4e livraison</th>
+          <th class="col-quantite-prevue4">Qte 4e livraison</th>
           <th class="col-bon-livraison">Bon de Livraison</th>
           <th class="col-actions">Actions</th>
         </tr>
@@ -1463,42 +1463,42 @@
                   </div>
                 <% } %>
               </td>
-              <td class="col-quantite-prevue1" data-label="Quantité prévue 1">
+              <td class="col-date-prevue1" data-label="Date 1er livraison">
+                <%= formatDateFr(mc.dateLivraisonPrevue1 || mc.dateLivraisonPrevue) || '-' %>
+              </td>
+              <td class="col-quantite-prevue1" data-label="Qte 1er livraison">
                 <div><%= mc.quantitePrevue1 != null ? mc.quantitePrevue1 : (mc.quantitePrevue != null ? mc.quantitePrevue : '-') %></div>
                 <% const qteInit1 = mc.quantitePrevueInitiale1 != null ? mc.quantitePrevueInitiale1 : mc.quantitePrevueInitiale; %>
                 <% if (qteInit1 != null) { %>
                   <div class="text-muted qte-init-prevue">Qte init prév : <%= qteInit1 %></div>
                 <% } %>
               </td>
-              <td class="col-date-prevue1" data-label="Date prévue 1">
-                <%= formatDateFr(mc.dateLivraisonPrevue1 || mc.dateLivraisonPrevue) || '-' %>
+              <td class="col-date-prevue2" data-label="Date 2e livraison">
+                <%= formatDateFr(mc.dateLivraisonPrevue2) || '-' %>
               </td>
-              <td class="col-quantite-prevue2" data-label="Quantité prévue 2">
+              <td class="col-quantite-prevue2" data-label="Qte 2e livraison">
                 <div><%= mc.quantitePrevue2 != null ? mc.quantitePrevue2 : '-' %></div>
                 <% if (mc.quantitePrevueInitiale2 != null) { %>
                   <div class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale2 %></div>
                 <% } %>
               </td>
-              <td class="col-date-prevue2" data-label="Date prévue 2">
-                <%= formatDateFr(mc.dateLivraisonPrevue2) || '-' %>
+              <td class="col-date-prevue3" data-label="Date 3e livraison">
+                <%= formatDateFr(mc.dateLivraisonPrevue3) || '-' %>
               </td>
-              <td class="col-quantite-prevue3" data-label="Quantité prévue 3">
+              <td class="col-quantite-prevue3" data-label="Qte 3e livraison">
                 <div><%= mc.quantitePrevue3 != null ? mc.quantitePrevue3 : '-' %></div>
                 <% if (mc.quantitePrevueInitiale3 != null) { %>
                   <div class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale3 %></div>
                 <% } %>
               </td>
-              <td class="col-date-prevue3" data-label="Date prévue 3">
-                <%= formatDateFr(mc.dateLivraisonPrevue3) || '-' %>
+              <td class="col-date-prevue4" data-label="Date 4e livraison">
+                <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
               </td>
-              <td class="col-quantite-prevue4" data-label="Quantité prévue 4">
+              <td class="col-quantite-prevue4" data-label="Qte 4e livraison">
                 <div><%= mc.quantitePrevue4 != null ? mc.quantitePrevue4 : '-' %></div>
                 <% if (mc.quantitePrevueInitiale4 != null) { %>
                   <div class="text-muted qte-init-prevue">Qte init prév : <%= mc.quantitePrevueInitiale4 %></div>
                 <% } %>
-              </td>
-              <td class="col-date-prevue4" data-label="Date prévue 4">
-                <%= formatDateFr(mc.dateLivraisonPrevue4) || '-' %>
               </td>
 
                 <td class="col-bon-livraison" data-column="col-bon-livraison" data-label="Bon de Livraison">
