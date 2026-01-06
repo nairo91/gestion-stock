@@ -3,6 +3,7 @@ const fs        = require('fs');
 const readline  = require('readline');
 const { sequelize } = require('../models');
 const User      = require('../models/User');
+const { Readable } = require('stream');
 
 /* ─── listes d’administrateurs ─── */
 const ADMIN_EMAILS = [
@@ -13,8 +14,17 @@ const ADMIN_EMAILS = [
 ];
 
 async function importUsers(filePath) {
-  const fileStream = fs.createReadStream(filePath, { encoding: 'utf8' });
-  const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+  let inputStream;
+  if (filePath) {
+    // Lecture depuis un fichier local
+    inputStream = fs.createReadStream(filePath, { encoding: 'utf8' });
+  } else if (process.env.USERS_CSV) {
+    // Lecture depuis la variable d'environnement USERS_CSV
+    inputStream = Readable.from([process.env.USERS_CSV]);
+  } else {
+    throw new Error('Usage: node script/importUsers.js <chemin_csv> ou définir USERS_CSV');
+  }
+  const rl = readline.createInterface({ input: inputStream, crlfDelay: Infinity });
 
   const batch = [];
   let lineNumber = 0;
@@ -68,8 +78,7 @@ async function importUsers(filePath) {
 
 /* ─── lance le script ─── */
 const filePath = process.argv[2];
-if (!filePath) {
-  console.error('Usage: node script/importUsers.js <chemin_csv>');
+importUsers(filePath).catch(err => {
+  console.error(err);
   process.exit(1);
-}
-importUsers(filePath);
+});
