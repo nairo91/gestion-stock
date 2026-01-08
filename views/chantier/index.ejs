@@ -2227,6 +2227,8 @@
         return;
       }
 
+      const userId = <%- JSON.stringify(user && user.id ? user.id : null) %>;
+      const hideStorageKey = userId ? `hideDeliveryModalUntil_user_${userId}` : 'hideDeliveryModalUntil';
       const getDateString = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -2235,7 +2237,7 @@
       };
 
       const todayString = getDateString(new Date());
-      const hideUntil = localStorage.getItem('hideDeliveryModalUntil');
+      const hideUntil = localStorage.getItem(hideStorageKey);
       if (hideUntil && hideUntil >= todayString) {
         return;
       }
@@ -2309,7 +2311,7 @@
         hideTodayButton.addEventListener('click', () => {
           const tomorrow = new Date();
           tomorrow.setDate(tomorrow.getDate() + 1);
-          localStorage.setItem('hideDeliveryModalUntil', getDateString(tomorrow));
+          localStorage.setItem(hideStorageKey, getDateString(tomorrow));
           modalInstance.hide();
         });
       }
@@ -2319,6 +2321,9 @@
         confirmButton.addEventListener('click', async () => {
           const checkedBoxes = checkboxes.filter((checkbox) => checkbox.checked);
           if (!checkedBoxes.length) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+              console.warn('[delivery-dismiss] Aucun item sélectionné pour la requête.');
+            }
             modalInstance.hide();
             return;
           }
@@ -2326,7 +2331,7 @@
           const items = checkedBoxes.map((checkbox) => {
             const raw = checkbox.value || '';
             const [id, slotIndex] = raw.split('-');
-            return { id, slotIndex };
+            return { id: Number(id), slotIndex: Number(slotIndex) };
           });
 
           try {
@@ -2342,7 +2347,11 @@
               throw new Error('Erreur serveur');
             }
 
-            modalInstance.hide();
+            const data = await resp.json();
+            if (!data || !data.success) {
+              throw new Error('Réponse invalide');
+            }
+            window.location.reload();
           } catch (err) {
             console.error('Erreur lors de la désactivation du rappel :', err);
             alert('Impossible de mettre à jour les rappels.');
