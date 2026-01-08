@@ -2015,8 +2015,157 @@
     </div>
   <% } %>
 
+  <div class="modal fade" id="deliveryReminderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Rappels de livraison</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <% if (upcomingDeliveries && upcomingDeliveries.length) { %>
+            <div class="table-responsive">
+              <table class="table table-dark table-striped align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Matériel</th>
+                    <th>Chantier</th>
+                    <th>Date prévue</th>
+                    <th>Message</th>
+                    <th>Ne plus me rappeler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% upcomingDeliveries.forEach(function(delivery) { %>
+                    <tr>
+                      <td>
+                        <a
+                          href="#"
+                          class="delivery-material-link text-decoration-none text-info"
+                          data-search="<%= delivery.materielNom %>"
+                        >
+                          <%= delivery.materielNom %>
+                        </a>
+                      </td>
+                      <td><%= delivery.chantierNom || '-' %></td>
+                      <td><%= formatDateFr(delivery.dateLivraison) || '-' %></td>
+                      <td><%= delivery.message %></td>
+                      <td>
+                        <div class="form-check">
+                          <input
+                            class="form-check-input delivery-dismiss-checkbox"
+                            type="checkbox"
+                            value="<%= delivery.id %>-<%= delivery.slotIndex %>"
+                            id="delivery-dismiss-<%= delivery.id %>-<%= delivery.slotIndex %>"
+                          >
+                          <label
+                            class="form-check-label"
+                            for="delivery-dismiss-<%= delivery.id %>-<%= delivery.slotIndex %>"
+                          >
+                            Ne plus me rappeler
+                          </label>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <p class="mb-0">Aucune livraison à rappeler pour le moment.</p>
+          <% } %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary" id="deliveryReminderValidate">Valider</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 1) Bootstrap d'abord -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script nonce="<%= nonce %>">
+    window.upcomingDeliveries = <%- JSON.stringify(upcomingDeliveries || []) %>;
+  </script>
+
+  <script nonce="<%= nonce %>">
+    (function () {
+      const deliveries = Array.isArray(window.upcomingDeliveries) ? window.upcomingDeliveries : [];
+      if (!deliveries.length) {
+        return;
+      }
+
+      const modalEl = document.getElementById('deliveryReminderModal');
+      if (!modalEl) {
+        return;
+      }
+
+      const modalInstance = new bootstrap.Modal(modalEl);
+      modalInstance.show();
+
+      modalEl.querySelectorAll('.delivery-material-link').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          const searchValue = link.getAttribute('data-search') || '';
+          const searchInput = document.querySelector('input[name="recherche"]');
+
+          if (!searchInput) {
+            return;
+          }
+
+          searchInput.value = searchValue;
+          const form = searchInput.closest('form');
+          if (form) {
+            form.submit();
+          }
+        });
+      });
+
+      const validateBtn = document.getElementById('deliveryReminderValidate');
+      if (!validateBtn) {
+        return;
+      }
+
+      validateBtn.addEventListener('click', async () => {
+        const checked = Array.from(modalEl.querySelectorAll('.delivery-dismiss-checkbox:checked'));
+        const items = checked
+          .map(input => {
+            const [id, slotIndex] = (input.value || '').split('-');
+            return {
+              id: Number(id),
+              slotIndex: Number(slotIndex)
+            };
+          })
+          .filter(item => Number.isInteger(item.id) && Number.isInteger(item.slotIndex));
+
+        if (!items.length) {
+          modalInstance.hide();
+          return;
+        }
+
+        try {
+          const response = await fetch('/chantier/materielChantier/dismiss-delivery-popup', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ items })
+          });
+
+          if (!response.ok) {
+            throw new Error('Erreur serveur');
+          }
+
+          modalInstance.hide();
+        } catch (err) {
+          console.error('Erreur désactivation rappel livraison :', err);
+          alert("Impossible d'enregistrer votre choix.");
+        }
+      });
+    })();
+  </script>
 
   <script nonce="<%= nonce %>">
     (function () {
