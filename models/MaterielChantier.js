@@ -147,6 +147,31 @@ const MaterielChantier = sequelize.define(
       allowNull: true,
     },
 
+    deliveryPopupDismissed: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    },
+
+    deliveryPopupDismissed1: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    },
+
+    deliveryPopupDismissed2: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    },
+
+    deliveryPopupDismissed3: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    },
+
+    deliveryPopupDismissed4: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+    },
+
     bonLivraisonUrls: {
       type: DataTypes.JSONB,
       allowNull: false,

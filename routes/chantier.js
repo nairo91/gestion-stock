@@ -336,6 +336,85 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       return mc;
     });
 
+    const today = dayjs().startOf('day');
+    const upcomingDeliveries = [];
+    const addDeliveryReminder = (mc, slotIndex, dateValue, quantityValue, dismissedFlag) => {
+      if (!dateValue || !quantityValue || Number(quantityValue) <= 0) {
+        return;
+      }
+      if (dismissedFlag) {
+        return;
+      }
+
+      const deliveryDate = dayjs(dateValue).startOf('day');
+      if (!deliveryDate.isValid()) {
+        return;
+      }
+
+      const diffDays = deliveryDate.diff(today, 'day');
+      if (diffDays > 1) {
+        return;
+      }
+
+      let message = 'Livraison prévue';
+      if (diffDays === 1) {
+        message = 'Livraison prévue demain';
+      } else if (diffDays === 0) {
+        message = "Livraison prévue aujourd'hui";
+      } else if (diffDays === -1) {
+        message = 'Livraison prévue hier';
+      } else {
+        message = `Livraison prévue il y a ${Math.abs(diffDays)} jours`;
+      }
+
+      upcomingDeliveries.push({
+        id: mc.id,
+        slotIndex,
+        materielName: mc.materiel ? mc.materiel.nom : 'Matériel',
+        chantierName: mc.chantier ? mc.chantier.nom : 'Chantier',
+        date: deliveryDate.toDate(),
+        message
+      });
+    };
+
+    materielChantiers.forEach(mc => {
+      addDeliveryReminder(
+        mc,
+        0,
+        mc.dateLivraisonPrevue,
+        mc.quantitePrevue,
+        mc.deliveryPopupDismissed
+      );
+      addDeliveryReminder(
+        mc,
+        1,
+        mc.dateLivraisonPrevue1,
+        mc.quantitePrevue1,
+        mc.deliveryPopupDismissed1
+      );
+      addDeliveryReminder(
+        mc,
+        2,
+        mc.dateLivraisonPrevue2,
+        mc.quantitePrevue2,
+        mc.deliveryPopupDismissed2
+      );
+      addDeliveryReminder(
+        mc,
+        3,
+        mc.dateLivraisonPrevue3,
+        mc.quantitePrevue3,
+        mc.deliveryPopupDismissed3
+      );
+      addDeliveryReminder(
+        mc,
+        4,
+        mc.dateLivraisonPrevue4,
+        mc.quantitePrevue4,
+        mc.deliveryPopupDismissed4
+      );
+    });
+
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
     const fournisseursRaw = await Materiel.findAll({
@@ -374,6 +453,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       fournisseurs,
       marques,
       categories,
+      upcomingDeliveries,
       // pour l'upload BDL direct depuis le navigateur vers Cloudinary
       cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
       cloudinaryUploadPresetBdl: process.env.CLOUDINARY_UPLOAD_PRESET_BDL || '',
@@ -383,6 +463,35 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.send("Erreur lors de la récupération du stock chantier.");
+  }
+});
+
+router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, async (req, res) => {
+  try {
+    const items = Array.isArray(req.body && req.body.items) ? req.body.items : [];
+    const allowedSlots = new Set([0, 1, 2, 3, 4]);
+
+    for (const item of items) {
+      const id = parseInt(item && item.id, 10);
+      const slotIndex = parseInt(item && item.slotIndex, 10);
+      if (!Number.isInteger(id) || !allowedSlots.has(slotIndex)) {
+        continue;
+      }
+
+      const fieldName = slotIndex === 0 ? 'deliveryPopupDismissed' : `deliveryPopupDismissed${slotIndex}`;
+      const mc = await MaterielChantier.findByPk(id);
+      if (!mc) {
+        continue;
+      }
+
+      mc.setDataValue(fieldName, true);
+      await mc.save();
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erreur dismissal popup livraison :', err);
+    return res.status(500).json({ success: false });
   }
 });
 
