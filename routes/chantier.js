@@ -502,7 +502,14 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
 router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, async (req, res) => {
   try {
-    const items = Array.isArray(req.body && req.body.items) ? req.body.items : [];
+    const items = Array.isArray(req.body && req.body.items) ? req.body.items : null;
+    if (!items) {
+      console.error('Payload dismissal popup livraison invalide :', req.body);
+      return res.status(400).json({ success: false, message: 'Invalid items' });
+    }
+    if (items.length === 0) {
+      return res.status(400).json({ success: false, message: 'No items' });
+    }
     const allowedSlots = new Set([0, 1, 2, 3, 4]);
     const slotDateFields = {
       0: 'dateLivraisonPrevue',
