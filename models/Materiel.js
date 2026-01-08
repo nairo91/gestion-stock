@@ -6,6 +6,7 @@ const Materiel = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     nom: { type: DataTypes.TEXT, allowNull: false },
+    nomNormalized: { type: DataTypes.TEXT, allowNull: false, defaultValue: '' },
     reference: { type: DataTypes.STRING },
     barcode: { type: DataTypes.STRING, allowNull: true },
     qr_code_value: { type: DataTypes.STRING, allowNull: true, unique: true },
@@ -26,6 +27,7 @@ const Materiel = sequelize.define(
     marque: { type: DataTypes.STRING, allowNull: true },
     prix: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     categorie: { type: DataTypes.TEXT },
+    categorieNormalized: { type: DataTypes.TEXT, allowNull: false, defaultValue: '' },
     fournisseur: { type: DataTypes.TEXT },
     rack: { type: DataTypes.STRING },
     compartiment: { type: DataTypes.STRING },
@@ -41,7 +43,8 @@ const Materiel = sequelize.define(
     indexes: [
       { fields: ['barcode'] },
       { unique: true, fields: ['qr_code_value'] },
-      { fields: ['categorie', 'nom'] }
+      { fields: ['categorie', 'nom'] },
+      { unique: true, fields: ['nomNormalized', 'categorieNormalized'] }
     ]
   }
 );
@@ -77,6 +80,24 @@ Materiel.addHook('afterCreate', async materiel => {
   if (!materiel.qr_code_value) {
     materiel.qr_code_value = `MAT_${materiel.id}`;
     await materiel.save();
+  }
+});
+
+const normalizeKey = str => {
+  return String(str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+};
+
+Materiel.addHook('beforeValidate', materiel => {
+  if (materiel.nom != null) {
+    materiel.nomNormalized = normalizeKey(materiel.nom);
+  }
+  if (materiel.categorie != null) {
+    materiel.categorieNormalized = normalizeKey(materiel.categorie);
   }
 });
 

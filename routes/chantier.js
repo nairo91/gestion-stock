@@ -68,6 +68,15 @@ function normalizeHeaderLabel(label) {
     .toUpperCase();
 }
 
+function normalizeKey(str) {
+  return String(str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
 function parsePlannedQuantity(cell) {
   const raw = getCellString(cell).trim();
   if (!raw) {
@@ -234,6 +243,40 @@ const toDateOrNull = value => {
   }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const normalizeNumberValue = value => (value === null || value === undefined ? null : Number(value));
+
+const normalizeDateValue = value => {
+  const parsed = toDateOrNull(value);
+  return parsed ? parsed.getTime() : null;
+};
+
+const buildPlannedUpdates = (existing, planned) => {
+  const updates = {};
+  let changed = false;
+
+  [1, 2, 3, 4].forEach(slot => {
+    const qteKey = `quantitePrevue${slot}`;
+    const initialKey = `quantitePrevueInitiale${slot}`;
+    const dateKey = `dateLivraisonPrevue${slot}`;
+    const currentQte = normalizeNumberValue(existing[qteKey]);
+    const incomingQte = normalizeNumberValue(planned[qteKey]);
+    if (currentQte !== incomingQte) {
+      updates[qteKey] = planned[qteKey];
+      updates[initialKey] = planned[qteKey];
+      changed = true;
+    }
+
+    const currentDate = normalizeDateValue(existing[dateKey]);
+    const incomingDate = normalizeDateValue(planned[dateKey]);
+    if (currentDate !== incomingDate) {
+      updates[dateKey] = planned[dateKey];
+      changed = true;
+    }
+  });
+
+  return { updates, changed };
 };
 
 const computeTotalPrevu = mc => {
@@ -1778,13 +1821,28 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
 
       let operation = 'create';
       if (status !== 'error') {
-        const existingMat = await Materiel.findOne({ where: { nom: designationStr, categorie: categorieStr } });
+        const nomNormalized = normalizeKey(designationStr);
+        const categorieNormalized = normalizeKey(categorieStr);
+        const existingMat = await Materiel.findOne({
+          where: { nomNormalized, categorieNormalized }
+        });
         if (existingMat) {
           const existingLink = await MaterielChantier.findOne({
             where: { chantierId, materielId: existingMat.id }
           });
           if (existingLink) {
-            operation = 'update';
+            const plannedValues = {
+              quantitePrevue1: qteSlots[0].value,
+              quantitePrevue2: qteSlots[1].value,
+              quantitePrevue3: qteSlots[2].value,
+              quantitePrevue4: qteSlots[3].value,
+              dateLivraisonPrevue1: dateSlots[0].value,
+              dateLivraisonPrevue2: dateSlots[1].value,
+              dateLivraisonPrevue3: dateSlots[2].value,
+              dateLivraisonPrevue4: dateSlots[3].value
+            };
+            const { changed } = buildPlannedUpdates(existingLink, plannedValues);
+            operation = changed ? 'update' : 'noop';
           }
         }
       }
@@ -1821,7 +1879,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       warn: previewRows.filter(r => r.status === 'warn').length,
       error: previewRows.filter(r => r.status === 'error').length,
       create: previewRows.filter(r => r.operation === 'create' && r.status !== 'error').length,
-      update: previewRows.filter(r => r.operation === 'update' && r.status !== 'error').length
+      update: previewRows.filter(r => r.operation === 'update' && r.status !== 'error').length,
+      noChange: previewRows.filter(r => r.operation === 'noop' && r.status !== 'error').length
     };
 
     return res.render('chantier/importPreview', {
@@ -1867,11 +1926,15 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           });
         }
 
+        const nomNormalized = normalizeKey(r.designation);
+        const categorieNormalized = normalizeKey(r.categorie);
         const [materiel] = await Materiel.findOrCreate({
-          where: { nom: r.designation, categorie: r.categorie },
+          where: { nomNormalized, categorieNormalized },
           defaults: {
             nom: r.designation,
             categorie: r.categorie,
+            nomNormalized,
+            categorieNormalized,
             quantite: 0,
             fournisseur: r.fournisseur || null
           }
@@ -1881,48 +1944,70 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         const datePrevue2 = toDateOrNull(r.datePrevue2);
         const datePrevue3 = toDateOrNull(r.datePrevue3);
         const datePrevue4 = toDateOrNull(r.datePrevue4);
-        const initial1 = r.qtePrevue1 ?? null;
-        const initial2 = r.qtePrevue2 ?? null;
-        const initial3 = r.qtePrevue3 ?? null;
-        const initial4 = r.qtePrevue4 ?? null;
-
-        await MaterielChantier.upsert({
-          chantierId: preview.chantierId,
-          materielId: materiel.id,
-          quantite: 0,
-          quantitePrevue: null,
-          quantitePrevueInitiale: null,
-          quantitePrevue1: r.qtePrevue1,
-          quantitePrevue2: r.qtePrevue2,
-          quantitePrevue3: r.qtePrevue3,
-          quantitePrevue4: r.qtePrevue4,
-          quantitePrevueInitiale1: initial1,
-          quantitePrevueInitiale2: initial2,
-          quantitePrevueInitiale3: initial3,
-          quantitePrevueInitiale4: initial4,
-          dateLivraisonPrevue: null,
+        const plannedValues = {
+          quantitePrevue1: r.qtePrevue1 ?? null,
+          quantitePrevue2: r.qtePrevue2 ?? null,
+          quantitePrevue3: r.qtePrevue3 ?? null,
+          quantitePrevue4: r.qtePrevue4 ?? null,
           dateLivraisonPrevue1: datePrevue1,
           dateLivraisonPrevue2: datePrevue2,
           dateLivraisonPrevue3: datePrevue3,
-          dateLivraisonPrevue4: datePrevue4,
-          remarque: null
+          dateLivraisonPrevue4: datePrevue4
+        };
+
+        const [materielChantier, materielChantierCreated] = await MaterielChantier.findOrCreate({
+          where: { chantierId: preview.chantierId, materielId: materiel.id },
+          defaults: {
+            chantierId: preview.chantierId,
+            materielId: materiel.id,
+            quantite: 0,
+            quantiteActuelle: 0,
+            quantitePrevue: null,
+            quantitePrevueInitiale: null,
+            quantitePrevue1: plannedValues.quantitePrevue1,
+            quantitePrevue2: plannedValues.quantitePrevue2,
+            quantitePrevue3: plannedValues.quantitePrevue3,
+            quantitePrevue4: plannedValues.quantitePrevue4,
+            quantitePrevueInitiale1: plannedValues.quantitePrevue1,
+            quantitePrevueInitiale2: plannedValues.quantitePrevue2,
+            quantitePrevueInitiale3: plannedValues.quantitePrevue3,
+            quantitePrevueInitiale4: plannedValues.quantitePrevue4,
+            dateLivraisonPrevue: null,
+            dateLivraisonPrevue1: plannedValues.dateLivraisonPrevue1,
+            dateLivraisonPrevue2: plannedValues.dateLivraisonPrevue2,
+            dateLivraisonPrevue3: plannedValues.dateLivraisonPrevue3,
+            dateLivraisonPrevue4: plannedValues.dateLivraisonPrevue4,
+            remarque: null
+          }
         });
 
-        if (r.operation === 'update') {
-          updated += 1;
-        } else {
+        if (materielChantierCreated) {
           created += 1;
+          await Historique.create({
+            materielId: materiel.id,
+            oldQuantite: null,
+            newQuantite: 0,
+            userId: req.user ? req.user.id : null,
+            action: 'IMPORT EXCEL (création)',
+            materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
+            stockType: 'chantier'
+          });
+        } else {
+          const { updates, changed } = buildPlannedUpdates(materielChantier, plannedValues);
+          if (changed) {
+            await materielChantier.update(updates);
+            updated += 1;
+            await Historique.create({
+              materielId: materiel.id,
+              oldQuantite: null,
+              newQuantite: 0,
+              userId: req.user ? req.user.id : null,
+              action: 'IMPORT EXCEL (mise à jour)',
+              materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
+              stockType: 'chantier'
+            });
+          }
         }
-
-        await Historique.create({
-          materielId: materiel.id,
-          oldQuantite: null,
-          newQuantite: 0,
-          userId: req.user ? req.user.id : null,
-          action: 'IMPORT EXCEL (confirmé)',
-          materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
-          stockType: 'chantier'
-        });
       } catch (e) {
         console.error('Erreur import ligne', {
           categorie: r.categorie,
@@ -2081,15 +2166,19 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
       }
 
       // Création ou récupération du matériel (stock chantier commence à 0)
+      const nomNormalized = normalizeKey(designationStr);
+      const categorieNormalized = normalizeKey(categorieStr);
       const [materiel] = await Materiel.findOrCreate({
-        where: { nom: designationStr, categorie: categorieStr },
+        where: { nomNormalized, categorieNormalized },
         defaults: {
           nom: designationStr,
+          nomNormalized,
           reference: null,
           quantite: 0,
           description: null,
           prix: null,
           categorie: categorieStr,
+          categorieNormalized,
           fournisseur: fournisseurStr || null,
           vehiculeId: null,
           chantierId: null,
@@ -2100,6 +2189,17 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         }
       });
 
+      const plannedValues = {
+        quantitePrevue1: qteSlots[0],
+        quantitePrevue2: qteSlots[1],
+        quantitePrevue3: qteSlots[2],
+        quantitePrevue4: qteSlots[3],
+        dateLivraisonPrevue1: dateSlots[0],
+        dateLivraisonPrevue2: dateSlots[1],
+        dateLivraisonPrevue3: dateSlots[2],
+        dateLivraisonPrevue4: dateSlots[3]
+      };
+
       const [materielChantier, materielChantierCreated] = await MaterielChantier.findOrCreate({
         where: { chantierId: chantierId, materielId: materiel.id },
         defaults: {
@@ -2109,49 +2209,50 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
           quantiteActuelle: 0,
           quantitePrevue: null,
           quantitePrevueInitiale: null,
-          quantitePrevue1: qteSlots[0],
-          quantitePrevue2: qteSlots[1],
-          quantitePrevue3: qteSlots[2],
-          quantitePrevue4: qteSlots[3],
-          quantitePrevueInitiale1: qteSlots[0],
-          quantitePrevueInitiale2: qteSlots[1],
-          quantitePrevueInitiale3: qteSlots[2],
-          quantitePrevueInitiale4: qteSlots[3],
+          quantitePrevue1: plannedValues.quantitePrevue1,
+          quantitePrevue2: plannedValues.quantitePrevue2,
+          quantitePrevue3: plannedValues.quantitePrevue3,
+          quantitePrevue4: plannedValues.quantitePrevue4,
+          quantitePrevueInitiale1: plannedValues.quantitePrevue1,
+          quantitePrevueInitiale2: plannedValues.quantitePrevue2,
+          quantitePrevueInitiale3: plannedValues.quantitePrevue3,
+          quantitePrevueInitiale4: plannedValues.quantitePrevue4,
           dateLivraisonPrevue: null,
-          dateLivraisonPrevue1: dateSlots[0],
-          dateLivraisonPrevue2: dateSlots[1],
-          dateLivraisonPrevue3: dateSlots[2],
-          dateLivraisonPrevue4: dateSlots[3],
+          dateLivraisonPrevue1: plannedValues.dateLivraisonPrevue1,
+          dateLivraisonPrevue2: plannedValues.dateLivraisonPrevue2,
+          dateLivraisonPrevue3: plannedValues.dateLivraisonPrevue3,
+          dateLivraisonPrevue4: plannedValues.dateLivraisonPrevue4,
           remarque: null
         }
       });
 
       if (!materielChantierCreated) {
-        materielChantier.quantitePrevue1 = qteSlots[0];
-        materielChantier.quantitePrevue2 = qteSlots[1];
-        materielChantier.quantitePrevue3 = qteSlots[2];
-        materielChantier.quantitePrevue4 = qteSlots[3];
-        materielChantier.quantitePrevueInitiale1 = qteSlots[0];
-        materielChantier.quantitePrevueInitiale2 = qteSlots[1];
-        materielChantier.quantitePrevueInitiale3 = qteSlots[2];
-        materielChantier.quantitePrevueInitiale4 = qteSlots[3];
-        materielChantier.dateLivraisonPrevue1 = dateSlots[0];
-        materielChantier.dateLivraisonPrevue2 = dateSlots[1];
-        materielChantier.dateLivraisonPrevue3 = dateSlots[2];
-        materielChantier.dateLivraisonPrevue4 = dateSlots[3];
-        await materielChantier.save();
+        const { updates, changed } = buildPlannedUpdates(materielChantier, plannedValues);
+        if (changed) {
+          await materielChantier.update(updates);
+          await Historique.create({
+            materielId: materiel.id,
+            oldQuantite: null,
+            newQuantite: 0,
+            userId: req.user ? req.user.id : null,
+            action: 'IMPORT EXCEL (mise à jour)',
+            materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
+            stockType: 'chantier'
+          });
+        }
       }
 
-      // Enregistrement dans l'historique
-      await Historique.create({
-        materielId: materiel.id,
-        oldQuantite: null,
-        newQuantite: 0,
-        userId: req.user ? req.user.id : null,
-        action: 'IMPORT EXCEL (confirmé)',
-        materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
-        stockType: 'chantier'
-      });
+      if (materielChantierCreated) {
+        await Historique.create({
+          materielId: materiel.id,
+          oldQuantite: null,
+          newQuantite: 0,
+          userId: req.user ? req.user.id : null,
+          action: 'IMPORT EXCEL (création)',
+          materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
+          stockType: 'chantier'
+        });
+      }
 
       createdCount.lignes++;
     }
