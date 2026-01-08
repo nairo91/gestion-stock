@@ -337,8 +337,52 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     });
 
     const today = dayjs().startOf('day');
+    const now = dayjs();
     const upcomingDeliveries = [];
-    const addDeliveryReminder = (mc, slotIndex, dateValue, quantityValue, dismissedFlag) => {
+    const slots = [
+      {
+        index: 0,
+        dateField: 'dateLivraisonPrevue',
+        quantityField: 'quantitePrevue',
+        dismissedField: 'deliveryPopupDismissed',
+        snoozeField: 'deliveryPopupSnoozeUntil'
+      },
+      {
+        index: 1,
+        dateField: 'dateLivraisonPrevue1',
+        quantityField: 'quantitePrevue1',
+        dismissedField: 'deliveryPopupDismissed1',
+        snoozeField: 'deliveryPopupSnoozeUntil1'
+      },
+      {
+        index: 2,
+        dateField: 'dateLivraisonPrevue2',
+        quantityField: 'quantitePrevue2',
+        dismissedField: 'deliveryPopupDismissed2',
+        snoozeField: 'deliveryPopupSnoozeUntil2'
+      },
+      {
+        index: 3,
+        dateField: 'dateLivraisonPrevue3',
+        quantityField: 'quantitePrevue3',
+        dismissedField: 'deliveryPopupDismissed3',
+        snoozeField: 'deliveryPopupSnoozeUntil3'
+      },
+      {
+        index: 4,
+        dateField: 'dateLivraisonPrevue4',
+        quantityField: 'quantitePrevue4',
+        dismissedField: 'deliveryPopupDismissed4',
+        snoozeField: 'deliveryPopupSnoozeUntil4'
+      }
+    ];
+
+    const addDeliveryReminder = (mc, slot) => {
+      const dateValue = mc[slot.dateField];
+      const quantityValue = mc[slot.quantityField];
+      const dismissedFlag = mc[slot.dismissedField];
+      const snoozeUntilValue = mc[slot.snoozeField];
+
       if (!dateValue || !quantityValue || Number(quantityValue) <= 0) {
         return;
       }
@@ -356,6 +400,13 @@ router.get('/', ensureAuthenticated, async (req, res) => {
         return;
       }
 
+      if (snoozeUntilValue) {
+        const snoozeUntil = dayjs(snoozeUntilValue);
+        if (snoozeUntil.isValid() && (now.isBefore(snoozeUntil) || now.isSame(snoozeUntil))) {
+          return;
+        }
+      }
+
       let message = 'Livraison prévue';
       if (diffDays === 1) {
         message = 'Livraison prévue demain';
@@ -367,52 +418,35 @@ router.get('/', ensureAuthenticated, async (req, res) => {
         message = `Livraison prévue il y a ${Math.abs(diffDays)} jours`;
       }
 
+      const status = diffDays === 1 ? 'tomorrow' : diffDays === 0 ? 'today' : 'late';
+      const priority = status === 'late' ? 1 : status === 'today' ? 2 : 3;
+
       upcomingDeliveries.push({
         id: mc.id,
-        slotIndex,
+        slotIndex: slot.index,
         materielName: mc.materiel ? mc.materiel.nom : 'Matériel',
         chantierName: mc.chantier ? mc.chantier.nom : 'Chantier',
         date: deliveryDate.toDate(),
-        message
+        message,
+        status,
+        priority,
+        diffDays
       });
     };
 
     materielChantiers.forEach(mc => {
-      addDeliveryReminder(
-        mc,
-        0,
-        mc.dateLivraisonPrevue,
-        mc.quantitePrevue,
-        mc.deliveryPopupDismissed
-      );
-      addDeliveryReminder(
-        mc,
-        1,
-        mc.dateLivraisonPrevue1,
-        mc.quantitePrevue1,
-        mc.deliveryPopupDismissed1
-      );
-      addDeliveryReminder(
-        mc,
-        2,
-        mc.dateLivraisonPrevue2,
-        mc.quantitePrevue2,
-        mc.deliveryPopupDismissed2
-      );
-      addDeliveryReminder(
-        mc,
-        3,
-        mc.dateLivraisonPrevue3,
-        mc.quantitePrevue3,
-        mc.deliveryPopupDismissed3
-      );
-      addDeliveryReminder(
-        mc,
-        4,
-        mc.dateLivraisonPrevue4,
-        mc.quantitePrevue4,
-        mc.deliveryPopupDismissed4
-      );
+      slots.forEach(slot => addDeliveryReminder(mc, slot));
+    });
+
+    upcomingDeliveries.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
+      const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (dateDiff !== 0) {
+        return dateDiff;
+      }
+      return a.materielName.localeCompare(b.materielName, 'fr', { sensitivity: 'base' });
     });
 
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
@@ -470,6 +504,13 @@ router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, asy
   try {
     const items = Array.isArray(req.body && req.body.items) ? req.body.items : [];
     const allowedSlots = new Set([0, 1, 2, 3, 4]);
+    const slotDateFields = {
+      0: 'dateLivraisonPrevue',
+      1: 'dateLivraisonPrevue1',
+      2: 'dateLivraisonPrevue2',
+      3: 'dateLivraisonPrevue3',
+      4: 'dateLivraisonPrevue4'
+    };
 
     for (const item of items) {
       const id = parseInt(item && item.id, 10);
@@ -478,13 +519,19 @@ router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, asy
         continue;
       }
 
-      const fieldName = slotIndex === 0 ? 'deliveryPopupDismissed' : `deliveryPopupDismissed${slotIndex}`;
+      const fieldName = slotIndex === 0 ? 'deliveryPopupSnoozeUntil' : `deliveryPopupSnoozeUntil${slotIndex}`;
       const mc = await MaterielChantier.findByPk(id);
       if (!mc) {
         continue;
       }
 
-      mc.setDataValue(fieldName, true);
+      const slotDateValue = mc[slotDateFields[slotIndex]];
+      const deliveryDate = slotDateValue ? dayjs(slotDateValue) : null;
+      if (!deliveryDate || !deliveryDate.isValid()) {
+        continue;
+      }
+
+      mc.setDataValue(fieldName, deliveryDate.endOf('day').toDate());
       await mc.save();
     }
 

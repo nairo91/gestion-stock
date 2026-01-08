@@ -172,6 +172,31 @@ const MaterielChantier = sequelize.define(
       allowNull: true,
     },
 
+    deliveryPopupSnoozeUntil: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    deliveryPopupSnoozeUntil1: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    deliveryPopupSnoozeUntil2: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    deliveryPopupSnoozeUntil3: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    deliveryPopupSnoozeUntil4: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
     bonLivraisonUrls: {
       type: DataTypes.JSONB,
       allowNull: false,
