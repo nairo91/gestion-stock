@@ -420,12 +420,14 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 
       const status = diffDays === 1 ? 'tomorrow' : diffDays === 0 ? 'today' : 'late';
       const priority = status === 'late' ? 1 : status === 'today' ? 2 : 3;
+      const fournisseurName = (mc.Materiel?.fournisseur || mc.materiel?.fournisseur || '').trim();
 
       upcomingDeliveries.push({
         id: mc.id,
         slotIndex: slot.index,
         materielName: mc.materiel ? mc.materiel.nom : 'Matériel',
         chantierName: mc.chantier ? mc.chantier.nom : 'Chantier',
+        fournisseurName,
         date: deliveryDate.toDate(),
         message,
         status,
