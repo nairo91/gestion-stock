@@ -336,6 +336,50 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       return mc;
     });
 
+    const today = dayjs().startOf('day');
+    const deliverySlots = [
+      { index: 0, dateKey: 'dateLivraisonPrevue', qtyKey: 'quantitePrevue', dismissKey: 'deliveryPopupDismissed' },
+      { index: 1, dateKey: 'dateLivraisonPrevue1', qtyKey: 'quantitePrevue1', dismissKey: 'deliveryPopupDismissed1' },
+      { index: 2, dateKey: 'dateLivraisonPrevue2', qtyKey: 'quantitePrevue2', dismissKey: 'deliveryPopupDismissed2' },
+      { index: 3, dateKey: 'dateLivraisonPrevue3', qtyKey: 'quantitePrevue3', dismissKey: 'deliveryPopupDismissed3' },
+      { index: 4, dateKey: 'dateLivraisonPrevue4', qtyKey: 'quantitePrevue4', dismissKey: 'deliveryPopupDismissed4' }
+    ];
+
+    const upcomingDeliveries = [];
+    materielChantiers.forEach(mc => {
+      deliverySlots.forEach(slot => {
+        const plannedDate = mc[slot.dateKey];
+        const plannedQty = mc[slot.qtyKey];
+
+        if (!plannedDate) return;
+        if (!plannedQty || Number(plannedQty) <= 0) return;
+        if (mc[slot.dismissKey]) return;
+
+        const diffDays = dayjs(plannedDate).startOf('day').diff(today, 'day');
+        if (diffDays > 1) return;
+
+        let message = '';
+        if (diffDays === 1) {
+          message = 'Livraison prévue demain';
+        } else if (diffDays === 0) {
+          message = "Livraison prévue aujourd'hui";
+        } else if (diffDays === -1) {
+          message = 'Livraison prévue hier';
+        } else {
+          message = `Livraison prévue il y a ${Math.abs(diffDays)} jours`;
+        }
+
+        upcomingDeliveries.push({
+          id: mc.id,
+          slotIndex: slot.index,
+          materielNom: mc.materiel ? mc.materiel.nom : 'Matériel',
+          chantierNom: mc.chantier ? mc.chantier.nom : '',
+          dateLivraison: plannedDate,
+          message
+        });
+      });
+    });
+
     const chantiers = await Chantier.findAll(); // Pour la liste déroulante
     const emplacements = await Emplacement.findAll(); // AJOUTÉ
     const fournisseursRaw = await Materiel.findAll({
@@ -374,6 +418,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       fournisseurs,
       marques,
       categories,
+      upcomingDeliveries,
       // pour l'upload BDL direct depuis le navigateur vers Cloudinary
       cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
       cloudinaryUploadPresetBdl: process.env.CLOUDINARY_UPLOAD_PRESET_BDL || '',
@@ -383,6 +428,38 @@ router.get('/', ensureAuthenticated, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.send("Erreur lors de la récupération du stock chantier.");
+  }
+});
+
+router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, async (req, res) => {
+  try {
+    const items = Array.isArray(req.body.items) ? req.body.items : [];
+    const normalizedItems = items.map(item => ({
+      id: parseInt(item.id, 10),
+      slotIndex: parseInt(item.slotIndex, 10)
+    })).filter(item => Number.isInteger(item.id) && Number.isInteger(item.slotIndex));
+
+    for (const item of normalizedItems) {
+      const mc = await MaterielChantier.findByPk(item.id);
+      if (!mc) continue;
+
+      let field = null;
+      if (item.slotIndex === 0) {
+        field = 'deliveryPopupDismissed';
+      } else if (item.slotIndex >= 1 && item.slotIndex <= 4) {
+        field = `deliveryPopupDismissed${item.slotIndex}`;
+      }
+
+      if (!field) continue;
+
+      mc[field] = true;
+      await mc.save();
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erreur lors de la désactivation du rappel livraison :', err);
+    return res.status(500).json({ success: false });
   }
 });
 
