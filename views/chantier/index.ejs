@@ -1909,6 +1909,25 @@
           <% if (!upcomingDeliveriesList.length) { %>
             <div class="text-center text-muted py-4">Aucune livraison imminente.</div>
           <% } else { %>
+            <div class="border rounded bg-light-subtle p-2 mb-3">
+              <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-6">
+                  <label class="small text-muted" for="deliveryFilterChantier">Chantier</label>
+                  <select id="deliveryFilterChantier" class="form-select form-select-sm">
+                    <option value="">Tous les chantiers</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="small text-muted" for="deliveryFilterFournisseur">Fournisseur</label>
+                  <select id="deliveryFilterFournisseur" class="form-select form-select-sm">
+                    <option value="">Tous les fournisseurs</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div id="deliveryFilterEmpty" class="alert alert-light border text-muted small py-2 mb-3 d-none">
+              Aucune livraison pour ce filtre.
+            </div>
             <% sections.forEach(function(section) { %>
               <div class="mb-4">
                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -1932,7 +1951,11 @@
                       </thead>
                       <tbody>
                         <% section.items.forEach(function(delivery) { %>
-                          <tr>
+                          <tr
+                            data-chantier="<%= (delivery.chantierName || '').trim().toLowerCase() %>"
+                            data-fournisseur="<%= (delivery.fournisseurName || '').trim().toLowerCase() %>"
+                            data-status="<%= delivery.status %>"
+                          >
                             <td>
                               <a
                                 href="#"
@@ -2251,19 +2274,29 @@
       modalInstance.show();
 
       const subtitle = document.getElementById('deliveryReminderSubtitle');
-      if (subtitle) {
-        const counts = deliveries.reduce((acc, delivery) => {
-          if (delivery.status === 'tomorrow') {
+      const emptyFilterMessage = document.getElementById('deliveryFilterEmpty');
+      const filterChantierSelect = document.getElementById('deliveryFilterChantier');
+      const filterFournisseurSelect = document.getElementById('deliveryFilterFournisseur');
+      const rows = Array.from(document.querySelectorAll('#deliveryReminderModal tbody tr'));
+      const normalizeValue = (value) => String(value || '').trim().toLowerCase();
+      const getVisibleRows = () => rows.filter((row) => !row.classList.contains('d-none'));
+      const updateSubtitleCounts = () => {
+        if (!subtitle) {
+          return;
+        }
+        const counts = getVisibleRows().reduce((acc, row) => {
+          const status = row.dataset.status || '';
+          if (status === 'tomorrow') {
             acc.tomorrow += 1;
-          } else if (delivery.status === 'today') {
+          } else if (status === 'today') {
             acc.today += 1;
-          } else if (delivery.status === 'late') {
+          } else if (status === 'late') {
             acc.late += 1;
           }
           return acc;
         }, { tomorrow: 0, today: 0, late: 0 });
         subtitle.textContent = `${counts.tomorrow} demain \u2022 ${counts.today} aujourd'hui \u2022 ${counts.late} en retard`;
-      }
+      };
 
       const filterForm = document.querySelector('form[action="/chantier"]');
       const searchInput = document.querySelector('input[name="recherche"]');
@@ -2283,18 +2316,28 @@
 
       const checkboxes = Array.from(document.querySelectorAll('.delivery-dismiss-checkbox'));
       const selectAllCheckbox = document.getElementById('deliverySelectAll');
+      const getVisibleCheckboxes = () => checkboxes.filter((checkbox) => {
+        const row = checkbox.closest('tr');
+        return row && !row.classList.contains('d-none');
+      });
       const updateSelectAllState = () => {
         if (!selectAllCheckbox) {
           return;
         }
-        const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
-        selectAllCheckbox.checked = checkboxes.length > 0 && checkedCount === checkboxes.length;
-        selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+        const visibleCheckboxes = getVisibleCheckboxes();
+        if (!visibleCheckboxes.length) {
+          selectAllCheckbox.checked = false;
+          selectAllCheckbox.indeterminate = false;
+          return;
+        }
+        const checkedCount = visibleCheckboxes.filter((checkbox) => checkbox.checked).length;
+        selectAllCheckbox.checked = checkedCount === visibleCheckboxes.length;
+        selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < visibleCheckboxes.length;
       };
 
       if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', () => {
-          checkboxes.forEach((checkbox) => {
+          getVisibleCheckboxes().forEach((checkbox) => {
             checkbox.checked = selectAllCheckbox.checked;
           });
           updateSelectAllState();
@@ -2319,7 +2362,7 @@
       const confirmButton = document.getElementById('confirmDeliveryDismiss');
       if (confirmButton) {
         confirmButton.addEventListener('click', async () => {
-          const checkedBoxes = checkboxes.filter((checkbox) => checkbox.checked);
+          const checkedBoxes = getVisibleCheckboxes().filter((checkbox) => checkbox.checked);
           if (!checkedBoxes.length) {
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
               console.warn('[delivery-dismiss] Aucun item sélectionné pour la requête.');
@@ -2358,6 +2401,97 @@
           }
         });
       }
+
+      const buildSelectOptions = (select, options, allLabel) => {
+        if (!select) {
+          return;
+        }
+        select.innerHTML = '';
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = allLabel;
+        select.appendChild(defaultOption);
+        options.forEach((option) => {
+          const opt = document.createElement('option');
+          opt.value = option.normalized;
+          opt.textContent = option.display;
+          select.appendChild(opt);
+        });
+      };
+
+      const buildChantierOptions = () => {
+        const map = new Map();
+        deliveries.forEach((delivery) => {
+          const display = String(delivery.chantierName || '').trim();
+          if (!display) {
+            return;
+          }
+          const normalized = normalizeValue(display);
+          if (!map.has(normalized)) {
+            map.set(normalized, display);
+          }
+        });
+        return Array.from(map.entries())
+          .map(([normalized, display]) => ({ normalized, display }))
+          .sort((a, b) => a.display.localeCompare(b.display, 'fr', { sensitivity: 'base' }));
+      };
+
+      const buildFournisseurOptions = (selectedChantier) => {
+        const map = new Map();
+        deliveries.forEach((delivery) => {
+          const chantierNormalized = normalizeValue(delivery.chantierName || '');
+          if (selectedChantier && chantierNormalized !== selectedChantier) {
+            return;
+          }
+          const display = String(delivery.fournisseurName || '').trim();
+          if (!display) {
+            return;
+          }
+          const normalized = normalizeValue(display);
+          if (!map.has(normalized)) {
+            map.set(normalized, display);
+          }
+        });
+        return Array.from(map.entries())
+          .map(([normalized, display]) => ({ normalized, display }))
+          .sort((a, b) => a.display.localeCompare(b.display, 'fr', { sensitivity: 'base' }));
+      };
+
+      const applyFilters = () => {
+        const selectedChantier = normalizeValue(filterChantierSelect && filterChantierSelect.value);
+        const selectedFournisseur = normalizeValue(filterFournisseurSelect && filterFournisseurSelect.value);
+        rows.forEach((row) => {
+          const chantierOk = !selectedChantier || row.dataset.chantier === selectedChantier;
+          const fournisseurOk = !selectedFournisseur || row.dataset.fournisseur === selectedFournisseur;
+          row.classList.toggle('d-none', !(chantierOk && fournisseurOk));
+        });
+        updateSubtitleCounts();
+        updateSelectAllState();
+        if (emptyFilterMessage) {
+          emptyFilterMessage.classList.toggle('d-none', getVisibleRows().length > 0);
+        }
+      };
+
+      if (filterChantierSelect && filterFournisseurSelect) {
+        buildSelectOptions(filterChantierSelect, buildChantierOptions(), 'Tous les chantiers');
+        buildSelectOptions(filterFournisseurSelect, buildFournisseurOptions(''), 'Tous les fournisseurs');
+
+        filterChantierSelect.addEventListener('change', () => {
+          buildSelectOptions(
+            filterFournisseurSelect,
+            buildFournisseurOptions(normalizeValue(filterChantierSelect.value)),
+            'Tous les fournisseurs'
+          );
+          filterFournisseurSelect.value = '';
+          applyFilters();
+        });
+
+        filterFournisseurSelect.addEventListener('change', () => {
+          applyFilters();
+        });
+      }
+
+      applyFilters();
     })();
   </script>
 
