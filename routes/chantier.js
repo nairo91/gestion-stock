@@ -488,6 +488,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       marques,
       categories,
       upcomingDeliveries,
+      user: req.user,
       // pour l'upload BDL direct depuis le navigateur vers Cloudinary
       cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
       cloudinaryUploadPresetBdl: process.env.CLOUDINARY_UPLOAD_PRESET_BDL || '',
