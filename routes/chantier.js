@@ -533,13 +533,8 @@ router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, asy
         continue;
       }
 
-      const slotDateValue = mc[slotDateFields[slotIndex]];
-      const deliveryDate = slotDateValue ? dayjs(slotDateValue) : null;
-      if (!deliveryDate || !deliveryDate.isValid()) {
-        continue;
-      }
-
-      mc.setDataValue(fieldName, deliveryDate.endOf('day').toDate());
+      const snoozeUntil = dayjs().endOf('day').toDate();
+      mc[fieldName] = snoozeUntil;
       await mc.save();
     }
 
