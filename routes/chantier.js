@@ -2080,55 +2080,76 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         });
       }
 
-      // Création du matériel (stock chantier commence à 0)
-      const nouveauMateriel = await Materiel.create({
-        nom: designationStr,
-        reference: null,
-        quantite: 0,
-        description: null,
-        prix: null,
-        categorie: categorieStr,
-        fournisseur: fournisseurStr || null,
-        vehiculeId: null,
-        chantierId: null,
-        emplacementId: null,
-        rack: null,
-        compartiment: null,
-        niveau: null
+      // Création ou récupération du matériel (stock chantier commence à 0)
+      const [materiel] = await Materiel.findOrCreate({
+        where: { nom: designationStr, categorie: categorieStr },
+        defaults: {
+          nom: designationStr,
+          reference: null,
+          quantite: 0,
+          description: null,
+          prix: null,
+          categorie: categorieStr,
+          fournisseur: fournisseurStr || null,
+          vehiculeId: null,
+          chantierId: null,
+          emplacementId: null,
+          rack: null,
+          compartiment: null,
+          niveau: null
+        }
       });
 
-      // Création de l'association MaterielChantier
-      await MaterielChantier.create({
-        chantierId: chantierId,
-        materielId: nouveauMateriel.id,
-        quantite: 0,
-        quantiteActuelle: 0,
-        quantitePrevue: null,
-        quantitePrevueInitiale: null,
-        quantitePrevue1: qteSlots[0],
-        quantitePrevue2: qteSlots[1],
-        quantitePrevue3: qteSlots[2],
-        quantitePrevue4: qteSlots[3],
-        quantitePrevueInitiale1: qteSlots[0],
-        quantitePrevueInitiale2: qteSlots[1],
-        quantitePrevueInitiale3: qteSlots[2],
-        quantitePrevueInitiale4: qteSlots[3],
-        dateLivraisonPrevue: null,
-        dateLivraisonPrevue1: dateSlots[0],
-        dateLivraisonPrevue2: dateSlots[1],
-        dateLivraisonPrevue3: dateSlots[2],
-        dateLivraisonPrevue4: dateSlots[3],
-        remarque: null
+      const [materielChantier, materielChantierCreated] = await MaterielChantier.findOrCreate({
+        where: { chantierId: chantierId, materielId: materiel.id },
+        defaults: {
+          chantierId: chantierId,
+          materielId: materiel.id,
+          quantite: 0,
+          quantiteActuelle: 0,
+          quantitePrevue: null,
+          quantitePrevueInitiale: null,
+          quantitePrevue1: qteSlots[0],
+          quantitePrevue2: qteSlots[1],
+          quantitePrevue3: qteSlots[2],
+          quantitePrevue4: qteSlots[3],
+          quantitePrevueInitiale1: qteSlots[0],
+          quantitePrevueInitiale2: qteSlots[1],
+          quantitePrevueInitiale3: qteSlots[2],
+          quantitePrevueInitiale4: qteSlots[3],
+          dateLivraisonPrevue: null,
+          dateLivraisonPrevue1: dateSlots[0],
+          dateLivraisonPrevue2: dateSlots[1],
+          dateLivraisonPrevue3: dateSlots[2],
+          dateLivraisonPrevue4: dateSlots[3],
+          remarque: null
+        }
       });
+
+      if (!materielChantierCreated) {
+        materielChantier.quantitePrevue1 = qteSlots[0];
+        materielChantier.quantitePrevue2 = qteSlots[1];
+        materielChantier.quantitePrevue3 = qteSlots[2];
+        materielChantier.quantitePrevue4 = qteSlots[3];
+        materielChantier.quantitePrevueInitiale1 = qteSlots[0];
+        materielChantier.quantitePrevueInitiale2 = qteSlots[1];
+        materielChantier.quantitePrevueInitiale3 = qteSlots[2];
+        materielChantier.quantitePrevueInitiale4 = qteSlots[3];
+        materielChantier.dateLivraisonPrevue1 = dateSlots[0];
+        materielChantier.dateLivraisonPrevue2 = dateSlots[1];
+        materielChantier.dateLivraisonPrevue3 = dateSlots[2];
+        materielChantier.dateLivraisonPrevue4 = dateSlots[3];
+        await materielChantier.save();
+      }
 
       // Enregistrement dans l'historique
       await Historique.create({
-        materielId: nouveauMateriel.id,
+        materielId: materiel.id,
         oldQuantite: null,
         newQuantite: 0,
         userId: req.user ? req.user.id : null,
-        action: 'IMPORTÉ SUR CHANTIER',
-        materielNom: `${nouveauMateriel.nom} (Chantier : ${chantier.nom})`,
+        action: 'IMPORT EXCEL (confirmé)',
+        materielNom: `${materiel.nom} (Chantier : ${chantier.nom})`,
         stockType: 'chantier'
       });
 
