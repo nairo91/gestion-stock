@@ -1887,60 +1887,95 @@
   </div>
 
   <% const upcomingDeliveriesList = Array.isArray(upcomingDeliveries) ? upcomingDeliveries : []; %>
+  <% const tomorrowDeliveries = upcomingDeliveriesList.filter(delivery => delivery.status === 'tomorrow'); %>
+  <% const todayDeliveries = upcomingDeliveriesList.filter(delivery => delivery.status === 'today'); %>
+  <% const lateDeliveries = upcomingDeliveriesList.filter(delivery => delivery.status === 'late'); %>
   <div class="modal fade" id="deliveryReminderModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Rappel des livraisons prévues</h5>
+          <div>
+            <h5 class="modal-title mb-1">Livraisons à surveiller</h5>
+            <div class="text-muted small" id="deliveryReminderSubtitle">0 demain • 0 aujourd'hui • 0 en retard</div>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
         </div>
         <div class="modal-body">
-          <div class="table-responsive">
-            <table class="table table-striped align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Matériel</th>
-                  <th>Chantier</th>
-                  <th>Date prévue</th>
-                  <th>Message</th>
-                  <th class="text-center">Ne plus me rappeler</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if (!upcomingDeliveriesList.length) { %>
-                  <tr>
-                    <td colspan="5" class="text-center">Aucune livraison imminente.</td>
-                  </tr>
+          <% const sections = [
+            { title: 'Demain', items: tomorrowDeliveries, badgeClass: 'bg-primary' },
+            { title: "Aujourd'hui", items: todayDeliveries, badgeClass: 'bg-success' },
+            { title: 'En retard', items: lateDeliveries, badgeClass: 'bg-danger' }
+          ]; %>
+          <% if (!upcomingDeliveriesList.length) { %>
+            <div class="text-center text-muted py-4">Aucune livraison imminente.</div>
+          <% } else { %>
+            <% sections.forEach(function(section) { %>
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h6 class="mb-0 text-uppercase small"><%= section.title %></h6>
+                  <span class="badge <%= section.badgeClass %>"><%= section.items.length %></span>
+                </div>
+                <% if (!section.items.length) { %>
+                  <div class="text-muted small">Aucune livraison.</div>
                 <% } else { %>
-                  <% upcomingDeliveriesList.forEach(function(delivery) { %>
-                    <tr>
-                      <td>
-                        <a
-                          href="#"
-                          class="delivery-material-link"
-                          data-material-name="<%= delivery.materielName %>"
-                        ><%= delivery.materielName %></a>
-                      </td>
-                      <td><%= delivery.chantierName %></td>
-                      <td><%= formatDateFr(delivery.date) || '-' %></td>
-                      <td><%= delivery.message %></td>
-                      <td class="text-center">
-                        <input
-                          class="form-check-input delivery-dismiss-checkbox"
-                          type="checkbox"
-                          value="<%= delivery.id %>-<%= delivery.slotIndex %>"
-                          aria-label="Ne plus me rappeler"
-                        >
-                      </td>
-                    </tr>
-                  <% }); %>
+                  <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>Matériel</th>
+                          <th>Chantier</th>
+                          <th>Date prévue</th>
+                          <th>Message</th>
+                          <th class="text-center">Statut</th>
+                          <th class="text-center">Ne plus me rappeler</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% section.items.forEach(function(delivery) { %>
+                          <tr>
+                            <td>
+                              <a
+                                href="#"
+                                class="delivery-material-link"
+                                data-material-name="<%= delivery.materielName %>"
+                              ><%= delivery.materielName %></a>
+                            </td>
+                            <td><%= delivery.chantierName %></td>
+                            <td><%= formatDateFr(delivery.date) || '-' %></td>
+                            <td><%= delivery.message %></td>
+                            <td class="text-center">
+                              <% if (delivery.status === 'tomorrow') { %>
+                                <span class="badge bg-primary">Demain</span>
+                              <% } else if (delivery.status === 'today') { %>
+                                <span class="badge bg-success">Aujourd'hui</span>
+                              <% } else { %>
+                                <span class="badge bg-danger">En retard</span>
+                              <% } %>
+                            </td>
+                            <td class="text-center">
+                              <input
+                                class="form-check-input delivery-dismiss-checkbox"
+                                type="checkbox"
+                                value="<%= delivery.id %>-<%= delivery.slotIndex %>"
+                                aria-label="Ne plus me rappeler"
+                              >
+                            </td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
                 <% } %>
-              </tbody>
-            </table>
-          </div>
+              </div>
+            <% }); %>
+          <% } %>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <div class="form-check me-auto">
+            <input class="form-check-input" type="checkbox" id="deliverySelectAll">
+            <label class="form-check-label" for="deliverySelectAll">Tout cocher</label>
+          </div>
+          <button type="button" class="btn btn-outline-secondary" id="hideDeliveryModalToday">Masquer pour aujourd'hui</button>
           <button type="button" class="btn btn-primary" id="confirmDeliveryDismiss">Valider</button>
         </div>
       </div>
@@ -2192,6 +2227,19 @@
         return;
       }
 
+      const getDateString = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const todayString = getDateString(new Date());
+      const hideUntil = localStorage.getItem('hideDeliveryModalUntil');
+      if (hideUntil && hideUntil >= todayString) {
+        return;
+      }
+
       const modalElement = document.getElementById('deliveryReminderModal');
       if (!modalElement) {
         return;
@@ -2199,6 +2247,21 @@
 
       const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
       modalInstance.show();
+
+      const subtitle = document.getElementById('deliveryReminderSubtitle');
+      if (subtitle) {
+        const counts = deliveries.reduce((acc, delivery) => {
+          if (delivery.status === 'tomorrow') {
+            acc.tomorrow += 1;
+          } else if (delivery.status === 'today') {
+            acc.today += 1;
+          } else if (delivery.status === 'late') {
+            acc.late += 1;
+          }
+          return acc;
+        }, { tomorrow: 0, today: 0, late: 0 });
+        subtitle.textContent = `${counts.tomorrow} demain \u2022 ${counts.today} aujourd'hui \u2022 ${counts.late} en retard`;
+      }
 
       const filterForm = document.querySelector('form[action="/chantier"]');
       const searchInput = document.querySelector('input[name="recherche"]');
@@ -2216,11 +2279,45 @@
         });
       });
 
+      const checkboxes = Array.from(document.querySelectorAll('.delivery-dismiss-checkbox'));
+      const selectAllCheckbox = document.getElementById('deliverySelectAll');
+      const updateSelectAllState = () => {
+        if (!selectAllCheckbox) {
+          return;
+        }
+        const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
+        selectAllCheckbox.checked = checkboxes.length > 0 && checkedCount === checkboxes.length;
+        selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+      };
+
+      if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', () => {
+          checkboxes.forEach((checkbox) => {
+            checkbox.checked = selectAllCheckbox.checked;
+          });
+          updateSelectAllState();
+        });
+      }
+
+      checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', updateSelectAllState);
+      });
+      updateSelectAllState();
+
+      const hideTodayButton = document.getElementById('hideDeliveryModalToday');
+      if (hideTodayButton) {
+        hideTodayButton.addEventListener('click', () => {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          localStorage.setItem('hideDeliveryModalUntil', getDateString(tomorrow));
+          modalInstance.hide();
+        });
+      }
+
       const confirmButton = document.getElementById('confirmDeliveryDismiss');
       if (confirmButton) {
         confirmButton.addEventListener('click', async () => {
-          const checkedBoxes = Array.from(document.querySelectorAll('.delivery-dismiss-checkbox'))
-            .filter((checkbox) => checkbox.checked);
+          const checkedBoxes = checkboxes.filter((checkbox) => checkbox.checked);
           if (!checkedBoxes.length) {
             modalInstance.hide();
             return;
