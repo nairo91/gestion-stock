@@ -1886,6 +1886,67 @@
     </div>
   </div>
 
+  <% const upcomingDeliveriesList = Array.isArray(upcomingDeliveries) ? upcomingDeliveries : []; %>
+  <div class="modal fade" id="deliveryReminderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Rappel des livraisons prévues</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Matériel</th>
+                  <th>Chantier</th>
+                  <th>Date prévue</th>
+                  <th>Message</th>
+                  <th class="text-center">Ne plus me rappeler</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!upcomingDeliveriesList.length) { %>
+                  <tr>
+                    <td colspan="5" class="text-center">Aucune livraison imminente.</td>
+                  </tr>
+                <% } else { %>
+                  <% upcomingDeliveriesList.forEach(function(delivery) { %>
+                    <tr>
+                      <td>
+                        <a
+                          href="#"
+                          class="delivery-material-link"
+                          data-material-name="<%= delivery.materielName %>"
+                        ><%= delivery.materielName %></a>
+                      </td>
+                      <td><%= delivery.chantierName %></td>
+                      <td><%= formatDateFr(delivery.date) || '-' %></td>
+                      <td><%= delivery.message %></td>
+                      <td class="text-center">
+                        <input
+                          class="form-check-input delivery-dismiss-checkbox"
+                          type="checkbox"
+                          value="<%= delivery.id %>-<%= delivery.slotIndex %>"
+                          aria-label="Ne plus me rappeler"
+                        >
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary" id="confirmDeliveryDismiss">Valider</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade" id="fournisseurContactModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
@@ -2123,10 +2184,81 @@
     })();
   </script>
 
+  <script nonce="<%= nonce %>">
+    window.upcomingDeliveries = <%- JSON.stringify(upcomingDeliveriesList || []) %>;
+    (function () {
+      const deliveries = Array.isArray(window.upcomingDeliveries) ? window.upcomingDeliveries : [];
+      if (!deliveries.length) {
+        return;
+      }
+
+      const modalElement = document.getElementById('deliveryReminderModal');
+      if (!modalElement) {
+        return;
+      }
+
+      const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+      modalInstance.show();
+
+      const filterForm = document.querySelector('form[action="/chantier"]');
+      const searchInput = document.querySelector('input[name="recherche"]');
+
+      document.querySelectorAll('.delivery-material-link').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          const materialName = link.dataset.materialName || '';
+          if (searchInput) {
+            searchInput.value = materialName;
+          }
+          if (filterForm) {
+            filterForm.submit();
+          }
+        });
+      });
+
+      const confirmButton = document.getElementById('confirmDeliveryDismiss');
+      if (confirmButton) {
+        confirmButton.addEventListener('click', async () => {
+          const checkedBoxes = Array.from(document.querySelectorAll('.delivery-dismiss-checkbox'))
+            .filter((checkbox) => checkbox.checked);
+          if (!checkedBoxes.length) {
+            modalInstance.hide();
+            return;
+          }
+
+          const items = checkedBoxes.map((checkbox) => {
+            const raw = checkbox.value || '';
+            const [id, slotIndex] = raw.split('-');
+            return { id, slotIndex };
+          });
+
+          try {
+            const resp = await fetch('/chantier/materielChantier/dismiss-delivery-popup', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ items })
+            });
+
+            if (!resp.ok) {
+              throw new Error('Erreur serveur');
+            }
+
+            modalInstance.hide();
+          } catch (err) {
+            console.error('Erreur lors de la désactivation du rappel :', err);
+            alert('Impossible de mettre à jour les rappels.');
+          }
+        });
+      }
+    })();
+  </script>
+
   <!-- 2) Déplacer les modales SOUS <body> une fois le DOM prêt -->
   <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
-      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','fournisseurContactModal']
+      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','deliveryReminderModal','fournisseurContactModal']
         .forEach(function (id) {
           var el = document.getElementById(id);
           if (el && el.parentNode !== document.body) {
