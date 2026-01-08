@@ -6,7 +6,12 @@ const Materiel = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     nom: { type: DataTypes.TEXT, allowNull: false },
-    nomNormalized: { type: DataTypes.TEXT, allowNull: false, defaultValue: '' },
+    nomNormalized: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      defaultValue: '',
+      field: 'nom_normalized'
+    },
     reference: { type: DataTypes.STRING },
     barcode: { type: DataTypes.STRING, allowNull: true },
     qr_code_value: { type: DataTypes.STRING, allowNull: true, unique: true },
@@ -27,7 +32,12 @@ const Materiel = sequelize.define(
     marque: { type: DataTypes.STRING, allowNull: true },
     prix: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     categorie: { type: DataTypes.TEXT },
-    categorieNormalized: { type: DataTypes.TEXT, allowNull: false, defaultValue: '' },
+    categorieNormalized: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      defaultValue: '',
+      field: 'categorie_normalized'
+    },
     fournisseur: { type: DataTypes.TEXT },
     rack: { type: DataTypes.STRING },
     compartiment: { type: DataTypes.STRING },
@@ -44,7 +54,7 @@ const Materiel = sequelize.define(
       { fields: ['barcode'] },
       { unique: true, fields: ['qr_code_value'] },
       { fields: ['categorie', 'nom'] },
-      { unique: true, fields: ['nomNormalized', 'categorieNormalized'] }
+      { unique: true, fields: ['nom_normalized', 'categorie_normalized'] }
     ]
   }
 );

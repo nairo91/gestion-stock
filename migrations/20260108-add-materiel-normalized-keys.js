@@ -15,7 +15,7 @@ module.exports = {
     try {
       await queryInterface.addColumn(
         'materiels',
-        'nomNormalized',
+        'nom_normalized',
         {
           type: Sequelize.TEXT,
           allowNull: false,
@@ -26,7 +26,7 @@ module.exports = {
 
       await queryInterface.addColumn(
         'materiels',
-        'categorieNormalized',
+        'categorie_normalized',
         {
           type: Sequelize.TEXT,
           allowNull: false,
@@ -44,7 +44,7 @@ module.exports = {
         const nomNormalized = normalizeKey(row.nom);
         const categorieNormalized = normalizeKey(row.categorie);
         await queryInterface.sequelize.query(
-          'UPDATE materiels SET nomNormalized = ?, categorieNormalized = ? WHERE id = ?',
+          'UPDATE materiels SET nom_normalized = ?, categorie_normalized = ? WHERE id = ?',
           {
             replacements: [nomNormalized, categorieNormalized, row.id],
             transaction
@@ -54,7 +54,7 @@ module.exports = {
 
       await queryInterface.addIndex(
         'materiels',
-        ['nomNormalized', 'categorieNormalized'],
+        ['nom_normalized', 'categorie_normalized'],
         {
           unique: true,
           name: 'materiels_nom_categorie_normalized_unique',
@@ -73,8 +73,8 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
     try {
       await queryInterface.removeIndex('materiels', 'materiels_nom_categorie_normalized_unique', { transaction });
-      await queryInterface.removeColumn('materiels', 'nomNormalized', { transaction });
-      await queryInterface.removeColumn('materiels', 'categorieNormalized', { transaction });
+      await queryInterface.removeColumn('materiels', 'nom_normalized', { transaction });
+      await queryInterface.removeColumn('materiels', 'categorie_normalized', { transaction });
       await transaction.commit();
     } catch (error) {
       await transaction.rollback();
