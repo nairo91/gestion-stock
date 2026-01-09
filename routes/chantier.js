@@ -1776,6 +1776,16 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
     };
     const areSameDates = (left, right) => dateKey(left) === dateKey(right);
 
+    const markSkipped = (rowIndex, reason) => {
+      const target = previewRows[rowIndex];
+      if (!target || target.operation === 'skipped') {
+        return;
+      }
+      target.status = 'error';
+      target.operation = 'skipped';
+      target.reason = reason;
+    };
+
     for (let r = startRow; r <= worksheet.actualRowCount; r++) {
       const row = worksheet.getRow(r);
       const categorieStr = getCellString(row.getCell(headerMap.categorie)).trim();
@@ -1852,13 +1862,13 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         const exactKey = `${catKey}|${nomKey}|${refLabel ?? ''}`;
         const groupKey = `${catKey}|${nomKey}`;
         const seenExactRow = seenExact.get(exactKey);
-        const groupEntry = seenGroup.get(groupKey) || {};
+        const groupEntry = seenGroup.get(groupKey) || { noRefIndexes: [], firstWithRefRow: null };
 
         if (seenExactRow) {
           status = 'error';
           operation = 'skipped';
           reasons.length = 0;
-          reasons.push(`Doublon dans le fichier (déjà présent ligne Excel ${seenExactRow})`);
+          reasons.push(`Doublon dans le fichier (déjà présent ligne Excel ${seenExactRow.excelRow})`);
         } else if (refLabel == null && groupEntry.firstWithRefRow) {
           status = 'error';
           operation = 'skipped';
@@ -1867,13 +1877,32 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
             `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Réf (ligne Excel ${groupEntry.firstWithRefRow})`
           );
         } else {
-          seenExact.set(exactKey, r);
+          seenExact.set(exactKey, { excelRow: r, index: previewRows.length });
           const nextGroupEntry = { ...groupEntry };
-          if (refLabel == null && !nextGroupEntry.firstNoRefRow) {
-            nextGroupEntry.firstNoRefRow = r;
-          }
-          if (refLabel != null && !nextGroupEntry.firstWithRefRow) {
-            nextGroupEntry.firstWithRefRow = r;
+          if (refLabel == null) {
+            if (!nextGroupEntry.firstWithRefRow) {
+              nextGroupEntry.noRefIndexes = [...nextGroupEntry.noRefIndexes, previewRows.length];
+            } else {
+              status = 'error';
+              operation = 'skipped';
+              reasons.length = 0;
+              reasons.push(
+                `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Réf (ligne Excel ${nextGroupEntry.firstWithRefRow})`
+              );
+            }
+          } else {
+            if (nextGroupEntry.noRefIndexes && nextGroupEntry.noRefIndexes.length > 0) {
+              nextGroupEntry.noRefIndexes.forEach(index =>
+                markSkipped(
+                  index,
+                  `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Réf (ligne Excel ${r})`
+                )
+              );
+              nextGroupEntry.noRefIndexes = [];
+            }
+            if (!nextGroupEntry.firstWithRefRow) {
+              nextGroupEntry.firstWithRefRow = r;
+            }
           }
           seenGroup.set(groupKey, nextGroupEntry);
         }
@@ -2019,7 +2048,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         .toUpperCase() || null;
 
     for (const r of preview.rows) {
-      if (r.status === 'error' || r.status === 'ignored') {
+      if (r.status === 'error' || r.status === 'ignored' || r.operation === 'skipped') {
         skipped += 1;
         continue;
       }

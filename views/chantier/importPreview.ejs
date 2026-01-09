@@ -138,6 +138,8 @@
       <span class="badge badge-warn">AVERT.: <%= stats.warn %></span>
       <span class="badge badge-error">ERREURS: <%= stats.error %></span>
       <span class="badge badge-ignored">IGNORÉES: <%= stats.ignored %></span>
+      <span class="badge badge-ignored">Doublons: <%= stats.duplicate %></span>
+      <span class="badge badge-ok">Importables: <%= stats.importable %></span>
       <span class="badge badge-create">Créations: <%= stats.create %></span>
       <span class="badge badge-update">Mises à jour: <%= stats.update %></span>
       <span class="badge badge-unchanged">Aucun changement: <%= stats.unchanged %></span>
@@ -182,6 +184,7 @@
         <option value="Create">Create</option>
         <option value="Update">Update</option>
         <option value="Aucun changement">Aucun changement</option>
+        <option value="Ignorée (doublon)">Ignorée (doublon)</option>
       </select>
     </div>
   </div>
@@ -210,7 +213,13 @@
       <tbody>
         <% (rows || []).forEach(function(r){
              const etatText = (r.status === 'ok') ? 'OK' : (r.status === 'warn' ? 'Avert.' : (r.status === 'ignored' ? 'Ignorée' : 'Erreur'));
-             const opText = (r.operation === 'update') ? 'Update' : (r.operation === 'unchanged' ? 'Aucun changement' : 'Create');
+             const opText = (r.operation === 'update')
+               ? 'Update'
+               : (r.operation === 'unchanged')
+                 ? 'Aucun changement'
+                 : (r.operation === 'skipped')
+                   ? 'Ignorée (doublon)'
+                   : 'Create';
         %>
           <tr data-etat="<%= etatText %>" data-op="<%= opText %>">
             <td><%= r.excelRow != null ? r.excelRow : '' %></td>
@@ -230,6 +239,8 @@
                 <span class="badge badge-update">Update</span>
               <% } else if (r.operation === 'unchanged') { %>
                 <span class="badge badge-unchanged">Aucun changement</span>
+              <% } else if (r.operation === 'skipped') { %>
+                <span class="badge badge-ignored">Ignorée (doublon)</span>
               <% } else { %>
                 <span class="badge badge-create">Create</span>
               <% } %>
