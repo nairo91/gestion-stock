@@ -1708,6 +1708,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
 
     let headerRowIdx = null;
     const headerMap = {};
+    let referencePreferredIdx = null;
+    let referenceFallbackIdx = null;
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       const labels = row.values.map((v, idx) => (idx === 0 ? '' : getCellString(row.getCell(idx)).trim()));
       const upper = labels.map(l => normalizeHeaderLabel(l));
@@ -1720,6 +1722,11 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           if (val === 'CATEGORIE' || val === 'LOT') headerMap.categorie = idx;
           if (val === 'DESIGNATION') headerMap.designation = idx;
           if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
+          if (val === 'REF FOURNISSEUR' || val === 'REF_FOURNISSEUR') {
+            referencePreferredIdx = idx;
+          } else if (val === 'REF' || val === 'REFERENCE') {
+            referenceFallbackIdx = idx;
+          }
           const qteMatch = val.match(/^QTE\s*(\d)(?:ER|ERE|E|EME)?\s*LIVRAISON$/);
           if (qteMatch) {
             headerMap[`qte${qteMatch[1]}`] = idx;
@@ -1729,6 +1736,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
             headerMap[`date${dateMatch[1]}`] = idx;
           }
         });
+        headerMap.referenceFournisseur = referencePreferredIdx ?? referenceFallbackIdx;
         return false;
       }
     });
@@ -1746,6 +1754,13 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         .replace(/\s+/g, ' ')
         .trim()
         .toUpperCase();
+    const refKey = value =>
+      String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase() || null;
     const normalizeNumber = value => (value == null || value === '' ? null : Number(value));
     const dateKey = value => {
       const date = toDateOrNull(value);
@@ -1764,6 +1779,10 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       const categorieStr = getCellString(row.getCell(headerMap.categorie)).trim();
       const designationStr = getCellString(row.getCell(headerMap.designation)).trim();
       const fournisseurStr = headerMap.fournisseur ? getCellString(row.getCell(headerMap.fournisseur)).trim() : '';
+      const referenceFournisseurStr =
+        headerMap.referenceFournisseur != null
+          ? getCellString(row.getCell(headerMap.referenceFournisseur)).trim()
+          : '';
       const qteSlots = [1, 2, 3, 4].map(idx => {
         const cell = headerMap[`qte${idx}`] ? row.getCell(headerMap[`qte${idx}`]) : null;
         return parsePlannedQuantity(cell);
@@ -1775,12 +1794,20 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
 
       const hasAnyQte = qteSlots.some(slot => slot.value != null || slot.invalid);
       const hasAnyDate = dateSlots.some(slot => slot.value != null || slot.invalid);
-      if (!categorieStr && !designationStr && !fournisseurStr && !hasAnyQte && !hasAnyDate) {
+      if (
+        !categorieStr &&
+        !designationStr &&
+        !fournisseurStr &&
+        !referenceFournisseurStr &&
+        !hasAnyQte &&
+        !hasAnyDate
+      ) {
         previewRows.push({
           excelRow: r,
           categorie: '',
           designation: '',
           fournisseur: null,
+          referenceFournisseur: null,
           qtePrevue: null,
           qtePrevue1: null,
           qtePrevue2: null,
@@ -1819,7 +1846,28 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         const designationLabel = designationStr.trim();
         const nomKey = norm(designationLabel);
         const catKey = norm(categorieLabel);
-        const existingMat = await Materiel.findOne({ where: { nomKey, categorieKey: catKey } });
+        const refLabel = refKey(referenceFournisseurStr);
+        let existingMat = null;
+        if (refLabel) {
+          existingMat = await Materiel.findOne({
+            where: { nomKey, categorieKey: catKey, reference: refLabel }
+          });
+          if (!existingMat) {
+            const fallbackCandidates = await Materiel.findAll({
+              where: { nomKey, categorieKey: catKey }
+            });
+            const emptyRefCandidates = fallbackCandidates.filter(
+              candidate => !refKey(candidate.reference)
+            );
+            if (emptyRefCandidates.length === 1) {
+              existingMat = emptyRefCandidates[0];
+            }
+          }
+        } else {
+          existingMat = await Materiel.findOne({
+            where: { nomKey, categorieKey: catKey }
+          });
+        }
         const qtePrevue1 = qteSlots[0].value ?? null;
         const qtePrevue2 = qteSlots[1].value ?? null;
         const qtePrevue3 = qteSlots[2].value ?? null;
@@ -1853,6 +1901,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         categorie: categorieStr,
         designation: designationStr,
         fournisseur: fournisseurStr || null,
+        referenceFournisseur: referenceFournisseurStr || null,
+        referenceFournisseurKey: refKey(referenceFournisseurStr),
         qtePrevue: null,
         qtePrevue1: qteSlots[0].value,
         qtePrevue2: qteSlots[1].value,
@@ -1921,9 +1971,16 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         .replace(/\s+/g, ' ')
         .trim()
         .toUpperCase();
+    const refKey = value =>
+      String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase() || null;
 
     for (const r of preview.rows) {
-      if (r.status === 'error') {
+      if (r.status === 'error' || r.status === 'ignored') {
         skipped += 1;
         continue;
       }
@@ -1935,6 +1992,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           const fournisseurLabel = typeof r.fournisseur === 'string' ? r.fournisseur.trim() : r.fournisseur;
           const nomKey = norm(designationLabel);
           const catKey = norm(categorieLabel);
+          const refLabel = refKey(r.referenceFournisseur);
 
           const [categorie] = await Categorie.findOrCreate({
             where: { nom: categorieLabel },
@@ -1948,22 +2006,56 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
             });
           }
 
-          const [materiel] = await Materiel.findOrCreate({
-            where: { nomKey, categorieKey: catKey },
-            defaults: {
-              nom: designationLabel,
-              categorie: categorieLabel,
-              nomKey,
-              categorieKey: catKey,
-              quantite: 0,
-              fournisseur: fournisseurLabel || null
-            },
-            transaction
-          });
+          let materiel = null;
+          if (refLabel) {
+            materiel = await Materiel.findOne({
+              where: { nomKey, categorieKey: catKey, reference: refLabel },
+              transaction
+            });
+            if (!materiel) {
+              const fallbackCandidates = await Materiel.findAll({
+                where: { nomKey, categorieKey: catKey },
+                transaction
+              });
+              const emptyRefCandidates = fallbackCandidates.filter(
+                candidate => !refKey(candidate.reference)
+              );
+              if (emptyRefCandidates.length === 1) {
+                const fallbackMat = emptyRefCandidates[0];
+                fallbackMat.reference = refLabel;
+                await fallbackMat.save({ transaction });
+                materiel = fallbackMat;
+              }
+            }
+          } else {
+            materiel = await Materiel.findOne({
+              where: { nomKey, categorieKey: catKey },
+              transaction
+            });
+          }
+
+          if (!materiel) {
+            materiel = await Materiel.create(
+              {
+                nom: designationLabel,
+                categorie: categorieLabel,
+                reference: refLabel,
+                nomKey,
+                categorieKey: catKey,
+                quantite: 0,
+                fournisseur: fournisseurLabel || null
+              },
+              { transaction }
+            );
+          }
 
           if (!materiel.nomKey || !materiel.categorieKey) {
             materiel.nomKey = nomKey;
             materiel.categorieKey = catKey;
+            await materiel.save({ transaction });
+          }
+          if (!materiel.reference && refLabel) {
+            materiel.reference = refLabel;
             await materiel.save({ transaction });
           }
 
