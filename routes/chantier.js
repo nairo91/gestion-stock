@@ -1747,17 +1747,19 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         .trim()
         .toUpperCase();
     const normalizeNumber = value => (value == null || value === '' ? null : Number(value));
-    const areSameDates = (left, right) => {
-      if (!left && !right) return true;
-      if (!left || !right) return false;
-      const leftDate = toDateOrNull(left);
-      const rightDate = toDateOrNull(right);
-      if (!leftDate && !rightDate) return true;
-      if (!leftDate || !rightDate) return false;
-      return leftDate.getTime() === rightDate.getTime();
+    const dateKey = value => {
+      const date = toDateOrNull(value);
+      if (!date) {
+        return null;
+      }
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     };
+    const areSameDates = (left, right) => dateKey(left) === dateKey(right);
 
-    for (let r = startRow; r <= worksheet.rowCount; r++) {
+    for (let r = startRow; r <= worksheet.actualRowCount; r++) {
       const row = worksheet.getRow(r);
       const categorieStr = getCellString(row.getCell(headerMap.categorie)).trim();
       const designationStr = getCellString(row.getCell(headerMap.designation)).trim();
@@ -1774,6 +1776,24 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       const hasAnyQte = qteSlots.some(slot => slot.value != null || slot.invalid);
       const hasAnyDate = dateSlots.some(slot => slot.value != null || slot.invalid);
       if (!categorieStr && !designationStr && !fournisseurStr && !hasAnyQte && !hasAnyDate) {
+        previewRows.push({
+          excelRow: r,
+          categorie: '',
+          designation: '',
+          fournisseur: null,
+          qtePrevue: null,
+          qtePrevue1: null,
+          qtePrevue2: null,
+          qtePrevue3: null,
+          qtePrevue4: null,
+          datePrevue1: null,
+          datePrevue2: null,
+          datePrevue3: null,
+          datePrevue4: null,
+          status: 'ignored',
+          reason: 'Ligne vide',
+          operation: 'unchanged'
+        });
         continue;
       }
 
@@ -1829,6 +1849,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       }
 
       previewRows.push({
+        excelRow: r,
         categorie: categorieStr,
         designation: designationStr,
         fournisseur: fournisseurStr || null,
@@ -1859,9 +1880,10 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       ok: previewRows.filter(r => r.status === 'ok').length,
       warn: previewRows.filter(r => r.status === 'warn').length,
       error: previewRows.filter(r => r.status === 'error').length,
-      create: previewRows.filter(r => r.operation === 'create' && r.status !== 'error').length,
-      update: previewRows.filter(r => r.operation === 'update' && r.status !== 'error').length,
-      unchanged: previewRows.filter(r => r.operation === 'unchanged' && r.status !== 'error').length
+      ignored: previewRows.filter(r => r.status === 'ignored').length,
+      create: previewRows.filter(r => r.operation === 'create' && r.status !== 'error' && r.status !== 'ignored').length,
+      update: previewRows.filter(r => r.operation === 'update' && r.status !== 'error' && r.status !== 'ignored').length,
+      unchanged: previewRows.filter(r => r.operation === 'unchanged' && r.status !== 'error' && r.status !== 'ignored').length
     };
 
     return res.render('chantier/importPreview', {
