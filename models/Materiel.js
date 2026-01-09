@@ -6,6 +6,7 @@ const Materiel = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     nom: { type: DataTypes.TEXT, allowNull: false },
+    nomKey: { type: DataTypes.STRING, allowNull: true },
     reference: { type: DataTypes.STRING },
     barcode: { type: DataTypes.STRING, allowNull: true },
     qr_code_value: { type: DataTypes.STRING, allowNull: true, unique: true },
@@ -26,6 +27,7 @@ const Materiel = sequelize.define(
     marque: { type: DataTypes.STRING, allowNull: true },
     prix: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     categorie: { type: DataTypes.TEXT },
+    categorieKey: { type: DataTypes.STRING, allowNull: true },
     fournisseur: { type: DataTypes.TEXT },
     rack: { type: DataTypes.STRING },
     compartiment: { type: DataTypes.STRING },
@@ -41,7 +43,8 @@ const Materiel = sequelize.define(
     indexes: [
       { fields: ['barcode'] },
       { unique: true, fields: ['qr_code_value'] },
-      { fields: ['categorie', 'nom'] }
+      { fields: ['categorie', 'nom'] },
+      { fields: ['nomKey', 'categorieKey'] }
     ]
   }
 );

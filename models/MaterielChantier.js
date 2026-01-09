@@ -232,6 +232,7 @@ const MaterielChantier = sequelize.define(
     indexes: [
       { fields: ['barcode'] },
       { unique: true, fields: ['qr_code_value'] },
+      { unique: true, fields: ['chantierId', 'materielId'] },
       { fields: ['deliveryReminderSentAt'] },
       { fields: ['deliveryReminderFollowUpSentAt'] },
     ],
