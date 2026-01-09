@@ -1747,6 +1747,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
 
     const startRow = headerRowIdx + 1;
     const previewRows = [];
+    const seenExact = new Map();
+    const seenGroup = new Map();
     const norm = value =>
       String(value ?? '')
         .normalize('NFD')
@@ -1841,12 +1843,43 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       }
 
       let operation = 'create';
+      const categorieLabel = categorieStr.trim();
+      const designationLabel = designationStr.trim();
+      const nomKey = norm(designationLabel);
+      const catKey = norm(categorieLabel);
+      const refLabel = refKey(referenceFournisseurStr);
       if (status !== 'error') {
-        const categorieLabel = categorieStr.trim();
-        const designationLabel = designationStr.trim();
-        const nomKey = norm(designationLabel);
-        const catKey = norm(categorieLabel);
-        const refLabel = refKey(referenceFournisseurStr);
+        const exactKey = `${catKey}|${nomKey}|${refLabel ?? ''}`;
+        const groupKey = `${catKey}|${nomKey}`;
+        const seenExactRow = seenExact.get(exactKey);
+        const groupEntry = seenGroup.get(groupKey) || {};
+
+        if (seenExactRow) {
+          status = 'error';
+          operation = 'skipped';
+          reasons.length = 0;
+          reasons.push(`Doublon dans le fichier (déjà présent ligne Excel ${seenExactRow})`);
+        } else if (refLabel == null && groupEntry.firstWithRefRow) {
+          status = 'error';
+          operation = 'skipped';
+          reasons.length = 0;
+          reasons.push(
+            `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Réf (ligne Excel ${groupEntry.firstWithRefRow})`
+          );
+        } else {
+          seenExact.set(exactKey, r);
+          const nextGroupEntry = { ...groupEntry };
+          if (refLabel == null && !nextGroupEntry.firstNoRefRow) {
+            nextGroupEntry.firstNoRefRow = r;
+          }
+          if (refLabel != null && !nextGroupEntry.firstWithRefRow) {
+            nextGroupEntry.firstWithRefRow = r;
+          }
+          seenGroup.set(groupKey, nextGroupEntry);
+        }
+      }
+
+      if (status !== 'error') {
         let existingMat = null;
         if (refLabel) {
           existingMat = await Materiel.findOne({
@@ -1925,15 +1958,21 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       rows: previewRows
     };
 
+    const importable = previewRows.filter(
+      row => row.status !== 'error' && row.status !== 'ignored' && row.operation !== 'skipped'
+    );
+
     const stats = {
       total: previewRows.length,
+      importable: importable.length,
       ok: previewRows.filter(r => r.status === 'ok').length,
       warn: previewRows.filter(r => r.status === 'warn').length,
       error: previewRows.filter(r => r.status === 'error').length,
       ignored: previewRows.filter(r => r.status === 'ignored').length,
-      create: previewRows.filter(r => r.operation === 'create' && r.status !== 'error' && r.status !== 'ignored').length,
-      update: previewRows.filter(r => r.operation === 'update' && r.status !== 'error' && r.status !== 'ignored').length,
-      unchanged: previewRows.filter(r => r.operation === 'unchanged' && r.status !== 'error' && r.status !== 'ignored').length
+      duplicate: previewRows.filter(r => r.operation === 'skipped').length,
+      create: importable.filter(r => r.operation === 'create').length,
+      update: importable.filter(r => r.operation === 'update').length,
+      unchanged: importable.filter(r => r.operation === 'unchanged').length
     };
 
     return res.render('chantier/importPreview', {
