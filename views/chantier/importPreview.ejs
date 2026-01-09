@@ -23,6 +23,7 @@
       --ok:#1cc88a;
       --warn:#f6c23e;
       --err:#e74a3b;
+      --ignored:#858796;
       --create:#5c41c5; /* violet brand */
       --update:#36b9cc;
       --unchanged:#858796;
@@ -45,6 +46,7 @@
     .badge-ok{ background:var(--ok); }
     .badge-warn{ background:var(--warn); color:#1b1b1b; }
     .badge-error{ background:var(--err); }
+    .badge-ignored{ background:var(--ignored); }
     .badge-create{ background:var(--create); }
     .badge-update{ background:var(--update); }
     .badge-unchanged{ background:var(--unchanged); }
@@ -135,6 +137,7 @@
       <span class="badge badge-ok">OK: <%= stats.ok %></span>
       <span class="badge badge-warn">AVERT.: <%= stats.warn %></span>
       <span class="badge badge-error">ERREURS: <%= stats.error %></span>
+      <span class="badge badge-ignored">IGNORÉES: <%= stats.ignored %></span>
       <span class="badge badge-create">Créations: <%= stats.create %></span>
       <span class="badge badge-update">Mises à jour: <%= stats.update %></span>
       <span class="badge badge-unchanged">Aucun changement: <%= stats.unchanged %></span>
@@ -169,6 +172,7 @@
         <option value="OK">OK</option>
         <option value="Avert.">Avert.</option>
         <option value="Erreur">Erreur</option>
+        <option value="Ignorée">Ignorée</option>
       </select>
     </div>
     <div class="" style="min-width:180px">
@@ -186,6 +190,7 @@
     <table id="previewTable" class="table table-bordered table-sm table-sticky">
       <thead>
         <tr>
+          <th style="width:90px">Ligne Excel</th>
           <th style="width:100px">État</th>
           <th style="width:100px">Opération</th>
           <th>Catégorie</th>
@@ -204,15 +209,18 @@
       </thead>
       <tbody>
         <% (rows || []).forEach(function(r){
-             const etatText = (r.status === 'ok') ? 'OK' : (r.status === 'warn' ? 'Avert.' : 'Erreur');
+             const etatText = (r.status === 'ok') ? 'OK' : (r.status === 'warn' ? 'Avert.' : (r.status === 'ignored' ? 'Ignorée' : 'Erreur'));
              const opText = (r.operation === 'update') ? 'Update' : (r.operation === 'unchanged' ? 'Aucun changement' : 'Create');
         %>
           <tr data-etat="<%= etatText %>" data-op="<%= opText %>">
+            <td><%= r.excelRow != null ? r.excelRow : '' %></td>
             <td>
               <% if (r.status === 'ok') { %>
                 <span class="badge badge-ok">OK</span>
               <% } else if (r.status === 'warn') { %>
                 <span class="badge badge-warn">Avert.</span>
+              <% } else if (r.status === 'ignored') { %>
+                <span class="badge badge-ignored">Ignorée</span>
               <% } else { %>
                 <span class="badge badge-error">Erreur</span>
               <% } %>
@@ -256,9 +264,9 @@
         // Ne filtre que le tableau #previewTable
         if (!settings.nTable || settings.nTable.id !== 'previewTable') return true;
         const $tr = $(settings.aoData[dataIndex].nTr);
-        // 0: État, 1: Opération
-        const etatRow = normalize($tr.find('td:eq(0)').text());
-        const opRow   = normalize($tr.find('td:eq(1)').text());
+        // 1: État, 2: Opération
+        const etatRow = normalize($tr.find('td:eq(1)').text());
+        const opRow   = normalize($tr.find('td:eq(2)').text());
         const etatSel = normalize($('#filtre-etat').val());
         const opSel   = normalize($('#filtre-op').val());
         // "contains" au lieu d'égalité stricte -> plus tolérant aux espaces/retours/labels
@@ -279,7 +287,7 @@
         paging: true,
         pageLength: 25,
         lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'Tous']],
-        order: [[1, 'asc'], [2, 'asc']], // Opération, puis LOT
+        order: [[2, 'asc'], [3, 'asc']], // Opération, puis LOT
         // Pas de langue distante pour respecter la CSP (optionnel)
         dom: 'lrtip'
       });
