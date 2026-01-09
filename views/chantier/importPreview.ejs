@@ -25,6 +25,7 @@
       --err:#e74a3b;
       --create:#5c41c5; /* violet brand */
       --update:#36b9cc;
+      --unchanged:#858796;
     }
     body{
       color:var(--text);
@@ -46,6 +47,7 @@
     .badge-error{ background:var(--err); }
     .badge-create{ background:var(--create); }
     .badge-update{ background:var(--update); }
+    .badge-unchanged{ background:var(--unchanged); }
     .table-responsive{
       background:var(--card-bg);
       border:1px solid var(--card-border);
@@ -135,6 +137,7 @@
       <span class="badge badge-error">ERREURS: <%= stats.error %></span>
       <span class="badge badge-create">Créations: <%= stats.create %></span>
       <span class="badge badge-update">Mises à jour: <%= stats.update %></span>
+      <span class="badge badge-unchanged">Aucun changement: <%= stats.unchanged %></span>
       <span class="ms-auto">Total: <strong><%= stats.total %></strong></span>
     </div>
   </div>
@@ -174,6 +177,7 @@
         <option value="">Toutes</option>
         <option value="Create">Create</option>
         <option value="Update">Update</option>
+        <option value="Aucun changement">Aucun changement</option>
       </select>
     </div>
   </div>
@@ -201,7 +205,7 @@
       <tbody>
         <% (rows || []).forEach(function(r){
              const etatText = (r.status === 'ok') ? 'OK' : (r.status === 'warn' ? 'Avert.' : 'Erreur');
-             const opText = (r.operation === 'update') ? 'Update' : 'Create';
+             const opText = (r.operation === 'update') ? 'Update' : (r.operation === 'unchanged' ? 'Aucun changement' : 'Create');
         %>
           <tr data-etat="<%= etatText %>" data-op="<%= opText %>">
             <td>
@@ -216,6 +220,8 @@
             <td>
               <% if (r.operation === 'update') { %>
                 <span class="badge badge-update">Update</span>
+              <% } else if (r.operation === 'unchanged') { %>
+                <span class="badge badge-unchanged">Aucun changement</span>
               <% } else { %>
                 <span class="badge badge-create">Create</span>
               <% } %>

@@ -1733,12 +1733,29 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       }
     });
 
-    if (!headerRowIdx || !headerMap.categorie || !headerMap.designation) {
+    if (!headerRowIdx || headerMap.categorie == null || headerMap.designation == null) {
       return res.status(400).send('Colonnes obligatoires introuvables (Catégorie, Désignation).');
     }
 
     const startRow = headerRowIdx + 1;
     const previewRows = [];
+    const norm = value =>
+      String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+    const normalizeNumber = value => (value == null || value === '' ? null : Number(value));
+    const areSameDates = (left, right) => {
+      if (!left && !right) return true;
+      if (!left || !right) return false;
+      const leftDate = toDateOrNull(left);
+      const rightDate = toDateOrNull(right);
+      if (!leftDate && !rightDate) return true;
+      if (!leftDate || !rightDate) return false;
+      return leftDate.getTime() === rightDate.getTime();
+    };
 
     for (let r = startRow; r <= worksheet.rowCount; r++) {
       const row = worksheet.getRow(r);
@@ -1778,13 +1795,35 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
 
       let operation = 'create';
       if (status !== 'error') {
-        const existingMat = await Materiel.findOne({ where: { nom: designationStr, categorie: categorieStr } });
+        const categorieLabel = categorieStr.trim();
+        const designationLabel = designationStr.trim();
+        const nomKey = norm(designationLabel);
+        const catKey = norm(categorieLabel);
+        const existingMat = await Materiel.findOne({ where: { nomKey, categorieKey: catKey } });
+        const qtePrevue1 = qteSlots[0].value ?? null;
+        const qtePrevue2 = qteSlots[1].value ?? null;
+        const qtePrevue3 = qteSlots[2].value ?? null;
+        const qtePrevue4 = qteSlots[3].value ?? null;
+        const datePrevue1 = toDateOrNull(dateSlots[0].value);
+        const datePrevue2 = toDateOrNull(dateSlots[1].value);
+        const datePrevue3 = toDateOrNull(dateSlots[2].value);
+        const datePrevue4 = toDateOrNull(dateSlots[3].value);
         if (existingMat) {
           const existingLink = await MaterielChantier.findOne({
             where: { chantierId, materielId: existingMat.id }
           });
           if (existingLink) {
-            operation = 'update';
+            const sameQuantities =
+              normalizeNumber(existingLink.quantitePrevue1) === normalizeNumber(qtePrevue1) &&
+              normalizeNumber(existingLink.quantitePrevue2) === normalizeNumber(qtePrevue2) &&
+              normalizeNumber(existingLink.quantitePrevue3) === normalizeNumber(qtePrevue3) &&
+              normalizeNumber(existingLink.quantitePrevue4) === normalizeNumber(qtePrevue4);
+            const sameDates =
+              areSameDates(existingLink.dateLivraisonPrevue1, datePrevue1) &&
+              areSameDates(existingLink.dateLivraisonPrevue2, datePrevue2) &&
+              areSameDates(existingLink.dateLivraisonPrevue3, datePrevue3) &&
+              areSameDates(existingLink.dateLivraisonPrevue4, datePrevue4);
+            operation = sameQuantities && sameDates ? 'unchanged' : 'update';
           }
         }
       }
@@ -1821,7 +1860,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       warn: previewRows.filter(r => r.status === 'warn').length,
       error: previewRows.filter(r => r.status === 'error').length,
       create: previewRows.filter(r => r.operation === 'create' && r.status !== 'error').length,
-      update: previewRows.filter(r => r.operation === 'update' && r.status !== 'error').length
+      update: previewRows.filter(r => r.operation === 'update' && r.status !== 'error').length,
+      unchanged: previewRows.filter(r => r.operation === 'unchanged' && r.status !== 'error').length
     };
 
     return res.render('chantier/importPreview', {
