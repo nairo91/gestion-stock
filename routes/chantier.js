@@ -1781,7 +1781,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       if (!target || target.operation === 'skipped') {
         return;
       }
-      target.status = 'error';
+      target.status = 'duplicate';
       target.operation = 'skipped';
       target.reason = reason;
     };
@@ -1865,12 +1865,12 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         const groupEntry = seenGroup.get(groupKey) || { noRefIndexes: [], firstWithRefRow: null };
 
         if (seenExactRow) {
-          status = 'error';
+          status = 'duplicate';
           operation = 'skipped';
           reasons.length = 0;
           reasons.push(`Doublon dans le fichier (déjà présent ligne Excel ${seenExactRow.excelRow})`);
         } else if (refLabel == null && groupEntry.firstWithRefRow) {
-          status = 'error';
+          status = 'duplicate';
           operation = 'skipped';
           reasons.length = 0;
           reasons.push(
@@ -1883,7 +1883,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
             if (!nextGroupEntry.firstWithRefRow) {
               nextGroupEntry.noRefIndexes = [...nextGroupEntry.noRefIndexes, previewRows.length];
             } else {
-              status = 'error';
+              status = 'duplicate';
               operation = 'skipped';
               reasons.length = 0;
               reasons.push(
@@ -1998,7 +1998,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       warn: previewRows.filter(r => r.status === 'warn').length,
       error: previewRows.filter(r => r.status === 'error').length,
       ignored: previewRows.filter(r => r.status === 'ignored').length,
-      duplicate: previewRows.filter(r => r.operation === 'skipped').length,
+      duplicate: previewRows.filter(r => r.status === 'duplicate' || r.operation === 'skipped').length,
       create: importable.filter(r => r.operation === 'create').length,
       update: importable.filter(r => r.operation === 'update').length,
       unchanged: importable.filter(r => r.operation === 'unchanged').length
@@ -2048,7 +2048,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
         .toUpperCase() || null;
 
     for (const r of preview.rows) {
-      if (r.status === 'error' || r.status === 'ignored' || r.operation === 'skipped') {
+      if (r.status === 'error' || r.status === 'ignored' || r.status === 'duplicate' || r.operation === 'skipped') {
         skipped += 1;
         continue;
       }
