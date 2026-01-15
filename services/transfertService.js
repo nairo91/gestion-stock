@@ -78,7 +78,8 @@ async function transferParNom({ action, context, current, targetChantierId, qty,
           dstPivot = await MaterielChantier.create({
             chantierId: Number(targetChantierId),
             materielId: Number(current.materielId),
-            quantite: 0
+            quantite: 0,
+            quantiteActuelle: 0
           }, { transaction: t });
         }
         dst = dstPivot;
@@ -97,7 +98,8 @@ async function transferParNom({ action, context, current, targetChantierId, qty,
           dstPivot = await MaterielChantier.create({
             chantierId: Number(currChantierId),
             materielId: Number(current.materielId),
-            quantite: 0
+            quantite: 0,
+            quantiteActuelle: 0
           }, { transaction: t });
         }
         dst = dstPivot;
@@ -112,7 +114,8 @@ async function transferParNom({ action, context, current, targetChantierId, qty,
           dstPivot = await MaterielChantier.create({
             chantierId: Number(targetChantierId),
             materielId: Number(current.materielId),
-            quantite: 0
+            quantite: 0,
+            quantiteActuelle: 0
           }, { transaction: t });
         }
         dst = dstPivot;
@@ -120,19 +123,35 @@ async function transferParNom({ action, context, current, targetChantierId, qty,
     }
 
     // Contrôle & mouvements
-    const srcQty = parseQty(src.quantite || 0);
+    const isSrcPivot = src instanceof MaterielChantier;
+    const isDstPivot = dst instanceof MaterielChantier;
+
+    const srcQty = isSrcPivot
+      ? parseQty((src.quantiteActuelle ?? src.quantite ?? 0))
+      : parseQty((src.quantite ?? 0));
     if (Q > srcQty) throw new Error(`Quantité demandée (${Q}) > stock source (${srcQty}).`);
 
-    src.quantite = sub(srcQty, Q);
+    if (isSrcPivot) {
+      src.quantiteActuelle = sub(srcQty, Q);
+    } else {
+      src.quantite = sub(srcQty, Q);
+    }
     await src.save({ transaction: t });
 
-    const dstQty = parseQty(dst.quantite || 0);
-    dst.quantite = add(dstQty, Q);
+    const dstQty = isDstPivot
+      ? parseQty((dst.quantiteActuelle ?? dst.quantite ?? 0))
+      : parseQty((dst.quantite ?? 0));
+
+    if (isDstPivot) {
+      dst.quantiteActuelle = add(dstQty, Q);
+    } else {
+      dst.quantite = add(dstQty, Q);
+    }
     await dst.save({ transaction: t });
 
     return {
-      from: { id: src.id, after: Number(src.quantite) },
-      to:   { id: dst.id, after: Number(dst.quantite) }
+      from: { id: src.id, after: Number(isSrcPivot ? src.quantiteActuelle : src.quantite) },
+      to:   { id: dst.id, after: Number(isDstPivot ? dst.quantiteActuelle : dst.quantite) }
     };
   });
 }
