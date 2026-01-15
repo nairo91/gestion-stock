@@ -24,6 +24,7 @@
       --warn:#f6c23e;
       --err:#e74a3b;
       --ignored:#858796;
+      --duplicate:#6c757d; /* gris distinct (peut être ajusté) */
       --create:#5c41c5; /* violet brand */
       --update:#36b9cc;
       --unchanged:#858796;
@@ -47,7 +48,7 @@
     .badge-warn{ background:var(--warn); color:#1b1b1b; }
     .badge-error{ background:var(--err); }
     .badge-ignored{ background:var(--ignored); }
-    .badge-duplicate{ background:var(--ignored); }
+    .badge-duplicate{ background:var(--duplicate); }
     .badge-create{ background:var(--create); }
     .badge-update{ background:var(--update); }
     .badge-unchanged{ background:var(--unchanged); }
@@ -174,9 +175,9 @@
         <option value="">Tous</option>
         <option value="OK">OK</option>
         <option value="Avert.">Avert.</option>
+        <option value="Doublon">Doublon</option>
         <option value="Erreur">Erreur</option>
         <option value="Ignorée">Ignorée</option>
-        <option value="Doublon">Doublon</option>
       </select>
     </div>
     <div class="" style="min-width:180px">
@@ -214,7 +215,8 @@
       </thead>
       <tbody>
         <% (rows || []).forEach(function(r){
-             const etatText = (r.status === 'duplicate' || r.operation === 'skipped')
+             const isDuplicate = (r.status === 'duplicate') || (r.operation === 'skipped');
+             const etatText = isDuplicate
                ? 'Doublon'
                : (r.status === 'ok')
                  ? 'OK'
@@ -234,12 +236,12 @@
           <tr data-etat="<%= etatText %>" data-op="<%= opText %>">
             <td><%= r.excelRow != null ? r.excelRow : '' %></td>
             <td>
-              <% if (r.status === 'ok') { %>
+              <% if (isDuplicate) { %>
+                <span class="badge badge-duplicate">Doublon</span>
+              <% } else if (r.status === 'ok') { %>
                 <span class="badge badge-ok">OK</span>
               <% } else if (r.status === 'warn') { %>
                 <span class="badge badge-warn">Avert.</span>
-              <% } else if (r.status === 'duplicate' || r.operation === 'skipped') { %>
-                <span class="badge badge-duplicate">Doublon</span>
               <% } else if (r.status === 'ignored') { %>
                 <span class="badge badge-ignored">Ignorée</span>
               <% } else { %>
