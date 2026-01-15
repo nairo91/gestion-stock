@@ -385,7 +385,7 @@
     }
 
     /* Alternance légère sur les lignes pour plus de contraste */
-    .table-stock tbody tr:nth-child(even) {
+    .table-stock tbody tr:nth-child(even):not(.table-danger):not(.stock-low-alert):not(.alert-low-monitoring) {
       background-color: rgba(255, 255, 255, 0.04);
     }
     .table-stock tbody tr:hover {
@@ -857,7 +857,15 @@
       box-shadow: inset 4px 0 0 var(--alert-critical);
     }
 
+    .table-stock tr.table-danger > * {
+      background-color: rgba(255, 77, 77, 0.2) !important;
+    }
+
     .table-stock tr.table-danger:hover {
+      background-color: rgba(255, 77, 77, 0.3) !important;
+    }
+
+    .table-stock tr.table-danger:hover > * {
       background-color: rgba(255, 77, 77, 0.3) !important;
     }
 
