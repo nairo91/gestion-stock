@@ -31,7 +31,7 @@ const sub = (a,b) => Number((a - b).toFixed(2));
 /**
  * @param {'ENTREE'|'SORTIE'} action
  * @param {{ type:'DEPOT'|'CHANTIER', chantierId?:number|null }} context
- * @param {{ materielId:number, materielName:string }} current
+ * @param {{ materielId:number, materielName?:string }} current
  * @param {number} targetChantierId
  * @param {number|string} qty
  * @param {number=} userId
@@ -41,7 +41,7 @@ async function transferParNom({ action, context, current, targetChantierId, qty,
   const currIsDepot = context.type === 'DEPOT';
   const currChantierId = context.chantierId ?? null;
 
-  if (!current?.materielId || !current?.materielName) throw new Error('Ligne matériau invalide');
+  if (!current?.materielId) throw new Error('Ligne matériau invalide');
   if (!targetChantierId) throw new Error('Chantier cible invalide');
 
   // garde-fou chantier -> même chantier
