@@ -853,20 +853,20 @@
 
     /* Renforcement visuel pour les lignes en stock faible (stock chantier) */
     .table-stock tr.table-danger {
-      background-color: rgba(255, 77, 77, 0.2) !important;
+      background-color: rgba(255, 77, 77, 0.18) !important;
       box-shadow: inset 4px 0 0 var(--alert-critical);
     }
 
     .table-stock tr.table-danger > * {
-      background-color: rgba(255, 77, 77, 0.2) !important;
+      background-color: rgba(255, 77, 77, 0.18) !important;
     }
 
     .table-stock tr.table-danger:hover {
-      background-color: rgba(255, 77, 77, 0.3) !important;
+      background-color: rgba(255, 77, 77, 0.28) !important;
     }
 
     .table-stock tr.table-danger:hover > * {
-      background-color: rgba(255, 77, 77, 0.3) !important;
+      background-color: rgba(255, 77, 77, 0.28) !important;
     }
 
     .table-stock tr.alert-low-monitoring {
@@ -883,28 +883,20 @@
       background-color: rgba(255, 214, 153, 0.5) !important;
     }
 
-    /* 🔴 Désactiver totalement le zébrage Bootstrap sur lignes en alerte critique */
-    .table-striped > tbody > tr.table-danger {
-      --bs-table-bg-type: transparent !important;
+    /* Désactive l'overlay Bootstrap (table-striped) sur les cellules des lignes d'alerte */
+    .table-striped > tbody > tr.table-danger > *,
+    .table-striped > tbody > tr.stock-low-alert > *,
+    .table-striped > tbody > tr.alert-low-monitoring > * {
       --bs-table-accent-bg: transparent !important;
+      --bs-table-bg-type: transparent !important;
+      box-shadow: none !important; /* important : Bootstrap stripe est souvent un inset shadow */
     }
 
-    /* 🔴 Forcer une couleur claire uniforme */
-    .table-stock tr.table-danger,
-    .table-stock tr.table-danger > * {
-      background-color: rgba(255, 77, 77, 0.18) !important;
-    }
-
-    /* 🔴 Hover uniforme */
-    .table-stock tr.table-danger:hover,
-    .table-stock tr.table-danger:hover > * {
-      background-color: rgba(255, 77, 77, 0.28) !important;
-    }
-
-    /* 🟠 Désactiver aussi le zébrage Bootstrap sur alerte surveillance */
+    /* (optionnel) si Bootstrap utilise aussi --bs-table-bg sur ta version */
+    .table-striped > tbody > tr.table-danger,
+    .table-striped > tbody > tr.stock-low-alert,
     .table-striped > tbody > tr.alert-low-monitoring {
-      --bs-table-bg-type: transparent !important;
-      --bs-table-accent-bg: transparent !important;
+      --bs-table-bg: transparent !important;
     }
 
     .table-stock tr.alert-low-resolved {
