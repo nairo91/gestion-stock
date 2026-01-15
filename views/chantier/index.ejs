@@ -792,22 +792,28 @@
     }
 
     .table-danger {
-      background-color: rgba(255, 77, 77, 0.08);
+      background: rgba(255, 235, 235, 0.95) !important;
+      color: #1a1a1a !important;
     }
 
     /* Alerte stock < 30% sur le tableau chantier */
+    .table-materiel tbody tr.stock-low-alert,
     .table-stock tr.stock-low-alert {
-      background-color: rgba(255, 77, 77, 0.18) !important;
+      background: rgba(255, 235, 235, 0.95) !important;
+      color: #1a1a1a !important;
       box-shadow: inset 4px 0 0 var(--alert-critical);
     }
 
+    .table-materiel tbody tr.stock-low-alert > *,
     .table-stock tr.stock-low-alert > * {
-      background-color: rgba(255, 77, 77, 0.18) !important;
+      background: rgba(255, 235, 235, 0.95) !important;
     }
 
+    .table-materiel tbody tr.stock-low-alert:hover,
+    .table-materiel tbody tr.stock-low-alert:hover > *,
     .table-stock tr.stock-low-alert:hover,
     .table-stock tr.stock-low-alert:hover > * {
-      background-color: rgba(255, 77, 77, 0.28) !important;
+      background: rgba(255, 225, 225, 0.98) !important;
     }
 
     .col-quantite-actuelle {
@@ -852,32 +858,52 @@
     }
 
     /* Renforcement visuel pour les lignes en stock faible (stock chantier) */
+    .table-materiel tbody tr.table-danger,
     .table-stock tr.table-danger {
-      background-color: rgba(255, 77, 77, 0.08) !important;
+      background: rgba(255, 235, 235, 0.95) !important;
+      color: #1a1a1a !important;
       box-shadow: inset 4px 0 0 var(--alert-critical);
     }
 
+    .table-materiel tbody tr.table-danger > *,
     .table-stock tr.table-danger > * {
-      background-color: rgba(255, 77, 77, 0.08) !important;
+      background: rgba(255, 235, 235, 0.95) !important;
     }
 
-    .table-stock tr.table-danger:hover {
-      background-color: rgba(255, 77, 77, 0.12) !important;
+    .table-materiel tbody tr.table-danger > *,
+    .table-stock tr.table-danger > *,
+    .table-materiel tbody tr.stock-low-alert > *,
+    .table-stock tr.stock-low-alert > * {
+      color: #1a1a1a !important;
     }
 
+    .table-materiel tbody tr.table-danger a,
+    .table-stock tr.table-danger a,
+    .table-materiel tbody tr.stock-low-alert a,
+    .table-stock tr.stock-low-alert a {
+      color: #0b5ed7 !important;
+    }
+
+    .table-materiel tbody tr.table-danger:hover,
+    .table-materiel tbody tr.table-danger:hover > *,
+    .table-stock tr.table-danger:hover,
     .table-stock tr.table-danger:hover > * {
-      background-color: rgba(255, 77, 77, 0.12) !important;
+      background: rgba(255, 225, 225, 0.98) !important;
     }
 
+    .table-materiel tbody tr.alert-low-monitoring,
     .table-stock tr.alert-low-monitoring {
       background-color: rgba(255, 214, 153, 0.4) !important;
       box-shadow: inset 4px 0 0 var(--alert-monitoring);
     }
 
+    .table-materiel tbody tr.alert-low-monitoring > *,
     .table-stock tr.alert-low-monitoring > * {
       background-color: rgba(255, 214, 153, 0.4) !important;
     }
 
+    .table-materiel tbody tr.alert-low-monitoring:hover,
+    .table-materiel tbody tr.alert-low-monitoring:hover > *,
     .table-stock tr.alert-low-monitoring:hover,
     .table-stock tr.alert-low-monitoring:hover > * {
       background-color: rgba(255, 214, 153, 0.5) !important;
