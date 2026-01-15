@@ -47,6 +47,7 @@
     .badge-warn{ background:var(--warn); color:#1b1b1b; }
     .badge-error{ background:var(--err); }
     .badge-ignored{ background:var(--ignored); }
+    .badge-duplicate{ background:var(--ignored); }
     .badge-create{ background:var(--create); }
     .badge-update{ background:var(--update); }
     .badge-unchanged{ background:var(--unchanged); }
@@ -138,7 +139,7 @@
       <span class="badge badge-warn">AVERT.: <%= stats.warn %></span>
       <span class="badge badge-error">ERREURS: <%= stats.error %></span>
       <span class="badge badge-ignored">IGNORÉES: <%= stats.ignored %></span>
-      <span class="badge badge-ignored">Doublons: <%= stats.duplicate %></span>
+      <span class="badge badge-duplicate">Doublons: <%= stats.duplicate %></span>
       <span class="badge badge-ok">Importables: <%= stats.importable %></span>
       <span class="badge badge-create">Créations: <%= stats.create %></span>
       <span class="badge badge-update">Mises à jour: <%= stats.update %></span>
@@ -175,6 +176,7 @@
         <option value="Avert.">Avert.</option>
         <option value="Erreur">Erreur</option>
         <option value="Ignorée">Ignorée</option>
+        <option value="Doublon">Doublon</option>
       </select>
     </div>
     <div class="" style="min-width:180px">
@@ -212,7 +214,15 @@
       </thead>
       <tbody>
         <% (rows || []).forEach(function(r){
-             const etatText = (r.status === 'ok') ? 'OK' : (r.status === 'warn' ? 'Avert.' : (r.status === 'ignored' ? 'Ignorée' : 'Erreur'));
+             const etatText = (r.status === 'duplicate' || r.operation === 'skipped')
+               ? 'Doublon'
+               : (r.status === 'ok')
+                 ? 'OK'
+                 : (r.status === 'warn')
+                   ? 'Avert.'
+                   : (r.status === 'ignored')
+                     ? 'Ignorée'
+                     : 'Erreur';
              const opText = (r.operation === 'update')
                ? 'Update'
                : (r.operation === 'unchanged')
@@ -228,6 +238,8 @@
                 <span class="badge badge-ok">OK</span>
               <% } else if (r.status === 'warn') { %>
                 <span class="badge badge-warn">Avert.</span>
+              <% } else if (r.status === 'duplicate' || r.operation === 'skipped') { %>
+                <span class="badge badge-duplicate">Doublon</span>
               <% } else if (r.status === 'ignored') { %>
                 <span class="badge badge-ignored">Ignorée</span>
               <% } else { %>
@@ -240,7 +252,7 @@
               <% } else if (r.operation === 'unchanged') { %>
                 <span class="badge badge-unchanged">Aucun changement</span>
               <% } else if (r.operation === 'skipped') { %>
-                <span class="badge badge-ignored">Ignorée (doublon)</span>
+                <span class="badge badge-duplicate">Ignorée (doublon)</span>
               <% } else { %>
                 <span class="badge badge-create">Create</span>
               <% } %>
