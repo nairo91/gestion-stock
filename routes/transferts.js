@@ -18,6 +18,18 @@ const sendFlash = (req, type, message) => {
   }
 };
 
+const resolveRedirectUrl = (req, fallback) => {
+  const returnTo = typeof req.body.returnTo === 'string' ? req.body.returnTo.trim() : '';
+  if (returnTo.startsWith('/')) {
+    return returnTo;
+  }
+  const referer = req.get('referer');
+  if (referer) {
+    return referer;
+  }
+  return fallback;
+};
+
 const ensureTransferAuthorization = (req, res, next) => {
   if (!req.user) {
     sendFlash(req, 'error', 'Vous devez être connecté pour réaliser un transfert.');
@@ -49,6 +61,8 @@ router.post('/:action(entree|sortie)', ensureAuthenticated, ensureTransferAuthor
   const normalizedContextType = contextType === 'CHANTIER' ? 'CHANTIER' : 'DEPOT';
   const normalizedChantierId = contextChantierId ? Number(contextChantierId) : null;
   const context = buildContext({ contextType: normalizedContextType, contextChantierId: normalizedChantierId });
+  const fallbackRedirect = normalizedContextType === 'CHANTIER' ? '/chantier' : '/materiel';
+  const redirectUrl = resolveRedirectUrl(req, fallbackRedirect);
 
   try {
     console.log('[TRANSFERT]', {
@@ -75,11 +89,11 @@ router.post('/:action(entree|sortie)', ensureAuthenticated, ensureTransferAuthor
 
     const message = `${action === 'entree' ? 'Entrée' : 'Sortie'} réalisée avec succès.`;
     sendFlash(req, 'success', message);
-    res.redirect(req.get('referer') || '/');
+    res.redirect(redirectUrl);
   } catch (error) {
     console.error(error);
     sendFlash(req, 'error', error.message || 'Une erreur est survenue lors du transfert.');
-    res.redirect(req.get('referer') || '/');
+    res.redirect(redirectUrl);
   }
 });
 
