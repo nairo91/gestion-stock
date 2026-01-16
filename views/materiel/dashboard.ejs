@@ -1049,6 +1049,7 @@
           <input type="hidden" name="contextChantierId" id="transferContextChantierId" value="">
           <input type="hidden" name="materielId" id="transferMaterielId" value="">
           <input type="hidden" name="materielName" id="transferMaterielName" value="">
+          <input type="hidden" name="returnTo" id="transferReturnTo" value="">
 
           <div class="mb-3">
             <label for="transferTargetChantierId" class="form-label">Chantier</label>
@@ -1201,6 +1202,7 @@
     const transferContextChantierInput = document.getElementById('transferContextChantierId');
     const transferMaterielIdInput = document.getElementById('transferMaterielId');
     const transferMaterielNameInput = document.getElementById('transferMaterielName');
+    const transferReturnToInput = document.getElementById('transferReturnTo');
     const transferTargetSelect = document.getElementById('transferTargetChantierId');
     const transferQuantityInput = document.getElementById('transferQuantite');
     let transferModalInstance = null;
@@ -1229,6 +1231,9 @@
         }
         if (transferMaterielNameInput) {
           transferMaterielNameInput.value = button.dataset.materielName || '';
+        }
+        if (transferReturnToInput) {
+          transferReturnToInput.value = `${window.location.pathname}${window.location.search}`;
         }
         if (transferMaterielLabel) {
           transferMaterielLabel.textContent = button.dataset.materielName || '';

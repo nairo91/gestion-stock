@@ -1904,6 +1904,7 @@
           <input type="hidden" name="contextChantierId" id="transferContextChantierId" value="<%= chantierCourant ? chantierCourant.id : '' %>">
           <input type="hidden" name="materielId" id="transferMaterielId" value="">
           <input type="hidden" name="materielName" id="transferMaterielName" value="">
+          <input type="hidden" name="returnTo" id="transferReturnTo" value="">
 
           <div class="mb-3">
             <label for="transferTargetChantierId" class="form-label">Chantier</label>
@@ -3373,6 +3374,7 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         setInputValue('[name="contextChantierId"]', triggerButton.dataset.contextChantierId || '');
         setInputValue('[name="materielId"]', triggerButton.dataset.materielId || '');
         setInputValue('[name="materielName"]', triggerButton.dataset.materielName || '');
+        setInputValue('[name="returnTo"]', `${window.location.pathname}${window.location.search}`);
 
         if (transferActionLabel) {
           transferActionLabel.textContent = action === 'entree' ? 'Entrée' : 'Sortie';
