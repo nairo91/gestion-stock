@@ -399,6 +399,16 @@
       object-fit: contain;
     }
 
+    .bdl-preview-fallback {
+      max-width: 360px;
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      border: 1px dashed rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.85rem;
+    }
+
     /* Alternance légère sur les lignes pour plus de contraste */
     .table-stock tbody tr:nth-child(even):not(.table-danger):not(.stock-low-alert):not(.alert-low-monitoring) {
       background-color: rgba(255, 255, 255, 0.04);
@@ -801,7 +811,7 @@
     }
 
     :root {
-      --alert-critical: #ff4d4d;
+      --alert-critical: #ff1a1a;
       --alert-monitoring: #ffe5b4;
       --alert-resolved: #baf4d6;
     }
@@ -3525,7 +3535,7 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         };
 
         async function uploadBdlFile(file) {
-          const resourceType = isPdfFile(file) ? 'raw' : 'auto';
+          const resourceType = isPdfFile(file) ? 'image' : 'auto';
           const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
           const fd = new FormData();
           fd.append('file', file);
@@ -3759,7 +3769,7 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       };
 
       async function uploadToCloudinary(file) {
-        const resourceType = isPdfFile(file) ? 'raw' : 'auto';
+        const resourceType = isPdfFile(file) ? 'image' : 'auto';
         const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
         const fd = new FormData();
         fd.append('file', file);
@@ -3840,10 +3850,7 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       var currentMcId = '';
       var isPdfUrl = function (url) {
         if (!url) return false;
-        return /\.pdf(\?|#|$)/i.test(url) || /\/raw\//i.test(url);
-      };
-      var canPreviewPdf = function (url) {
-        return isPdfUrl(url) && /\/raw\//i.test(url);
+        return /\.pdf(\?|#|$)/i.test(url);
       };
 
       bdlModal.addEventListener('show.bs.modal', function (event) {
@@ -3887,18 +3894,32 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           li.appendChild(a);
 
           var preview = null;
-          if (canPreviewPdf(u)) {
-            preview = document.createElement('embed');
+          if (isPdfUrl(u)) {
+            preview = document.createElement('iframe');
             preview.src = u;
-            preview.type = 'application/pdf';
             preview.className = 'bdl-preview';
+            preview.setAttribute('loading', 'lazy');
+            preview.title = 'Aperçu PDF bon de livraison ' + (idx + 1);
+
+            var fallback = document.createElement('div');
+            fallback.className = 'bdl-preview-fallback';
+            fallback.textContent = 'Aperçu PDF indisponible.';
+            fallback.style.display = 'none';
+
+            preview.addEventListener('error', function () {
+              preview.style.display = 'none';
+              fallback.style.display = 'block';
+            });
+
+            li.appendChild(preview);
+            li.appendChild(fallback);
           } else {
             preview = document.createElement('img');
             preview.src = u;
             preview.alt = 'Aperçu bon de livraison ' + (idx + 1);
             preview.className = 'bdl-preview bdl-preview-img';
+            li.appendChild(preview);
           }
-          li.appendChild(preview);
 
           var deleteBtn = document.createElement('button');
           deleteBtn.type = 'button';
