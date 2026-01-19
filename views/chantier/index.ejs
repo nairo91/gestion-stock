@@ -1379,7 +1379,8 @@
              const qp4 = Number(mc.quantitePrevue4) || 0;
              const totalPrev = qp1 + qp2 + qp3 + qp4;
              const seuil30 = totalPrev > 0 ? totalPrev * 0.3 : null;
-             const isLowClient = seuil30 !== null && qActuelle <= seuil30;
+             const hasBeenReceived = qRecue > 0 || mc.lastReceptionAt != null;
+             const isLowClient = hasBeenReceived && (seuil30 !== null && qActuelle <= seuil30);
              const alertStatus = mc.alertStatus || 'critique';
              const alertRowClass = isLowClient
                ? (alertStatus === 'regle'
@@ -2059,7 +2060,7 @@
             <input class="form-check-input" type="checkbox" id="deliverySelectAll">
             <label class="form-check-label" for="deliverySelectAll">Tout cocher</label>
           </div>
-          <button type="button" class="btn btn-outline-secondary" id="hideDeliveryModalToday">Masquer pour aujourd'hui</button>
+          <button type="button" class="btn btn-outline-secondary" id="hideDeliveryModalToday">Masquer pour 1h</button>
           <button type="button" class="btn btn-primary" id="confirmDeliveryDismiss">Valider</button>
         </div>
       </div>
@@ -2313,16 +2314,26 @@
 
       const userId = <%- JSON.stringify(user && user.id ? user.id : null) %>;
       const hideStorageKey = userId ? `hideDeliveryModalUntil_user_${userId}` : 'hideDeliveryModalUntil';
-      const getDateString = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+      const parseHideUntil = (value) => {
+        if (!value) {
+          return null;
+        }
+        if (/^\d+$/.test(value)) {
+          const parsed = new Date(Number(value));
+          return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+          return null;
+        }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          parsed.setHours(23, 59, 59, 999);
+        }
+        return parsed;
       };
 
-      const todayString = getDateString(new Date());
-      const hideUntil = localStorage.getItem(hideStorageKey);
-      if (hideUntil && hideUntil >= todayString) {
+      const hideUntil = parseHideUntil(localStorage.getItem(hideStorageKey));
+      if (hideUntil && hideUntil > new Date()) {
         return;
       }
 
@@ -2413,9 +2424,8 @@
       const hideTodayButton = document.getElementById('hideDeliveryModalToday');
       if (hideTodayButton) {
         hideTodayButton.addEventListener('click', () => {
-          const tomorrow = new Date();
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          localStorage.setItem(hideStorageKey, getDateString(tomorrow));
+          const hideUntil = new Date(Date.now() + 60 * 60 * 1000);
+          localStorage.setItem(hideStorageKey, hideUntil.toISOString());
           modalInstance.hide();
         });
       }
