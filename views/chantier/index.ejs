@@ -3534,10 +3534,13 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           return type === 'application/pdf' || /\.pdf$/i.test(name);
         };
 
-        async function uploadBdlFile(file) {
-          // IMPORTANT : PDF => resource_type raw, images => auto
+        const getCloudinaryUploadUrl = (file) => {
           const resourceType = isPdfFile(file) ? 'raw' : 'auto';
-          const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+          return `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+        };
+
+        async function uploadBdlFile(file) {
+          const url = getCloudinaryUploadUrl(file);
           const fd = new FormData();
           fd.append('file', file);
           fd.append('upload_preset', UPLOAD_PRESET);
@@ -3770,9 +3773,13 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         return type.startsWith('image/') || type === 'application/pdf';
       };
 
-      async function uploadToCloudinary(file) {
+      const getCloudinaryUploadUrl = (file) => {
         const resourceType = isPdfFile(file) ? 'raw' : 'auto';
-        const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+        return `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+      };
+
+      async function uploadToCloudinary(file) {
+        const url = getCloudinaryUploadUrl(file);
         const fd = new FormData();
         fd.append('file', file);
         fd.append('upload_preset', UPLOAD_PRESET);
@@ -3852,7 +3859,7 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       var currentMcId = '';
       var isPdfUrl = function (url) {
         if (!url) return false;
-        return /\.pdf(\?|#|$)/i.test(url);
+        return /\.pdf(\?|#|$)/i.test(url) || /\/raw\/upload\//i.test(url);
       };
 
       bdlModal.addEventListener('show.bs.modal', function (event) {
@@ -3895,16 +3902,13 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
 
           li.appendChild(a);
 
-          var preview = null;
-          // IMPORTANT:
-          // On ne prévisualise PAS les PDF (iframe/embed souvent bloqués).
           if (isPdfUrl(u)) {
             var fallback = document.createElement('div');
             fallback.className = 'bdl-preview-fallback';
-            fallback.textContent = 'Aperçu PDF indisponible ici. Utilise "Ouvrir le PDF".';
+            fallback.textContent = 'PDF : utilise le lien "Ouvrir le PDF" (pas de prévisualisation dans la modale).';
             li.appendChild(fallback);
           } else {
-            preview = document.createElement('img');
+            var preview = document.createElement('img');
             preview.src = u;
             preview.alt = 'Aperçu bon de livraison ' + (idx + 1);
             preview.className = 'bdl-preview bdl-preview-img';
