@@ -671,8 +671,14 @@ router.post('/materielChantier/miseAJourMasse', ensureAuthenticated, checkAdmin,
     await sequelize.transaction(async transaction => {
       for (const mc of materiels) {
         if (hasQuantite) {
+          const oldQuantiteRecue = mc.quantite != null ? mc.quantite : 0;
+          const baseQuantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : oldQuantiteRecue;
+          const deltaQuantite = quantiteNumber - oldQuantiteRecue;
           mc.quantite = quantiteNumber;
-          mc.quantiteActuelle = quantiteNumber;
+          mc.quantiteActuelle = Math.max(0, baseQuantiteActuelle + deltaQuantite);
+          if (deltaQuantite !== 0) {
+            mc.lastReceptionAt = new Date();
+          }
         }
 
         if (hasBdl) {
@@ -1360,9 +1366,29 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
 router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
       const {
-        quantite, quantitePrevue, dateLivraisonPrevue, nomMateriel, categorie, fournisseur, emplacementId,
-        rack, compartiment, niveau, reference, description, prix, remarque, marque, quantitePrevue1, quantitePrevue2,
-        quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3,
+        quantite,
+        quantiteRecue,
+        quantitePrevue,
+        dateLivraisonPrevue,
+        nomMateriel,
+        categorie,
+        fournisseur,
+        emplacementId,
+        rack,
+        compartiment,
+        niveau,
+        reference,
+        description,
+        prix,
+        remarque,
+        marque,
+        quantitePrevue1,
+        quantitePrevue2,
+        quantitePrevue3,
+        quantitePrevue4,
+        dateLivraisonPrevue1,
+        dateLivraisonPrevue2,
+        dateLivraisonPrevue3,
         dateLivraisonPrevue4
       } = req.body;
 
@@ -1374,12 +1400,23 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
     if (!mc) return res.send("Enregistrement non trouvé.");
 
+    const oldQuantiteRecue = mc.quantite != null ? mc.quantite : 0;
+    let newQuantiteRecue = oldQuantiteRecue;
+    if (quantiteRecue !== undefined && quantiteRecue !== null && String(quantiteRecue).trim() !== '') {
+      const parsed = parseInt(quantiteRecue, 10);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        return res.status(400).send('Quantité reçue invalide.');
+      }
+      newQuantiteRecue = parsed;
+    }
+    const deltaQuantiteRecue = newQuantiteRecue - oldQuantiteRecue;
+
     const deltaQuantite = (quantite === undefined || quantite === '')
       ? 0
       : parseInt(quantite, 10);
     const variationValide = Number.isNaN(deltaQuantite) ? 0 : deltaQuantite;
     const baseQuantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : (mc.quantite || 0);
-    const newQteActuelle = Math.max(0, baseQuantiteActuelle + variationValide);
+    const newQteActuelle = Math.max(0, baseQuantiteActuelle + variationValide + deltaQuantiteRecue);
     const newQtePrevue = (quantitePrevue === undefined || quantitePrevue === '')
       ? mc.quantitePrevue
       : parseInt(quantitePrevue, 10);
@@ -1462,6 +1499,9 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     });
     const newQtePrevueInitiale = oldQtePrevueInitiale ?? newTotalPrevu;
 
+    if (oldQuantiteRecue !== newQuantiteRecue) {
+      changementsDetail.push(`Quantité reçue: ${oldQuantiteRecue} ➔ ${newQuantiteRecue}`);
+    }
     if (oldQteActuelle !== newQteActuelle) {
       const variationTexte = variationValide ? ` (${variationValide > 0 ? '+' : ''}${variationValide})` : '';
       changementsDetail.push(`Quantité actuelle: ${oldQteActuelle} ➔ ${newQteActuelle}${variationTexte}`);
@@ -1497,7 +1537,11 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     }
 
     // Mise à jour
+    mc.quantite = newQuantiteRecue;
     mc.quantiteActuelle = newQteActuelle;
+    if (deltaQuantiteRecue !== 0) {
+      mc.lastReceptionAt = new Date();
+    }
     mc.quantitePrevue = newQtePrevue;
     mc.dateLivraisonPrevue = newDatePrevue;
     [1, 2, 3, 4].forEach((idx, i) => {
