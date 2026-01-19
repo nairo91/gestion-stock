@@ -384,6 +384,21 @@
       line-height: 1.35;
     }
 
+    .bdl-preview {
+      display: block;
+      width: 100%;
+      max-width: 360px;
+      height: 240px;
+      margin-top: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .bdl-preview-img {
+      object-fit: contain;
+    }
+
     /* Alternance légère sur les lignes pour plus de contraste */
     .table-stock tbody tr:nth-child(even):not(.table-danger):not(.stock-low-alert):not(.alert-low-monitoring) {
       background-color: rgba(255, 255, 255, 0.04);
@@ -3507,7 +3522,7 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           const fd = new FormData();
           fd.append('file', file);
           fd.append('upload_preset', UPLOAD_PRESET);
-          fd.append('folder', 'bdl');
+          fd.append('folder', 'gestion-stock/bdl');
 
           const resp = await fetch(url, {
             method: 'POST',
@@ -3521,6 +3536,12 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           const data = await resp.json();
           return data.secure_url || data.url;
         }
+
+        const isValidBdlFile = (file) => {
+          if (!file) return false;
+          const type = file.type || '';
+          return type.startsWith('image/') || type === 'application/pdf';
+        };
 
         const getSelectedIds = () => rowCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         const getSelectedAlertIds = () => rowCheckboxes
@@ -3594,6 +3615,10 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
             if (bdlFile) {
               if (!canUploadBdl) {
                 alert('Le téléversement de BDL n\'est pas configuré.');
+                return;
+              }
+              if (!isValidBdlFile(bdlFile)) {
+                alert('Format de BDL invalide. Merci de fournir une image ou un PDF.');
                 return;
               }
               try {
@@ -3713,13 +3738,18 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       const spinner = document.getElementById('pageSpinner');
       const showSpinner = () => spinner && spinner.classList.add('show');
       const hideSpinner = () => spinner && spinner.classList.remove('show');
+      const isValidBdlFile = (file) => {
+        if (!file) return false;
+        const type = file.type || '';
+        return type.startsWith('image/') || type === 'application/pdf';
+      };
 
       async function uploadToCloudinary(file) {
         const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
         const fd = new FormData();
         fd.append('file', file);
         fd.append('upload_preset', UPLOAD_PRESET);
-        fd.append('folder', 'bdl');
+        fd.append('folder', 'gestion-stock/bdl');
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -3757,6 +3787,11 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         input.addEventListener('change', async () => {
           const file = input.files[0];
           if (!file) return;
+          if (!isValidBdlFile(file)) {
+            alert('Format de BDL invalide. Merci de fournir une image ou un PDF.');
+            input.value = '';
+            return;
+          }
 
           try {
             showSpinner();
@@ -3788,6 +3823,10 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       var currentBtn = null;
       var currentUrls = [];
       var currentMcId = '';
+      var isPdfUrl = function (url) {
+        if (!url) return false;
+        return /\.pdf(\?|#|$)/i.test(url) || /\/raw\//i.test(url);
+      };
 
       bdlModal.addEventListener('show.bs.modal', function (event) {
         var btn = event.relatedTarget;
@@ -3828,6 +3867,20 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           a.textContent = 'Bon de livraison ' + (idx + 1);
 
           li.appendChild(a);
+
+          var preview = null;
+          if (isPdfUrl(u)) {
+            preview = document.createElement('embed');
+            preview.src = u;
+            preview.type = 'application/pdf';
+            preview.className = 'bdl-preview';
+          } else {
+            preview = document.createElement('img');
+            preview.src = u;
+            preview.alt = 'Aperçu bon de livraison ' + (idx + 1);
+            preview.className = 'bdl-preview bdl-preview-img';
+          }
+          li.appendChild(preview);
 
           var deleteBtn = document.createElement('button');
           deleteBtn.type = 'button';

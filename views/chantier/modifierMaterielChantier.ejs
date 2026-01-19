@@ -255,7 +255,16 @@
 
       <% const qteActuelleBase = mc.quantiteActuelle != null ? mc.quantiteActuelle : mc.quantite; %>
       <div class="mb-3">
-        <label for="quantite" class="form-label">Qté reçue totale : <strong><%= mc.quantite %></strong></label>
+        <label for="quantiteRecue" class="form-label">Qté reçue totale</label>
+        <input
+          type="number"
+          name="quantiteRecue"
+          id="quantiteRecue"
+          class="form-control"
+          min="0"
+          step="1"
+          value="<%= mc.quantite != null ? mc.quantite : 0 %>"
+        >
         <div class="form-text">Qté actuelle utilisée pour les ajustements : <strong><%= qteActuelleBase %></strong></div>
       </div>
 
@@ -438,6 +447,16 @@
 
  <script>
   const quantiteActuelle = <%= qteActuelleBase %>;
+  const quantiteRecueInitiale = <%= mc.quantite != null ? mc.quantite : 0 %>;
+
+  function getQuantiteRecueValue() {
+    const input = document.getElementById('quantiteRecue');
+    if (!input) return quantiteRecueInitiale;
+    const raw = input.value.trim();
+    if (raw === '') return quantiteRecueInitiale;
+    const parsed = parseInt(raw, 10);
+    return Number.isNaN(parsed) ? quantiteRecueInitiale : parsed;
+  }
 
   function mettreAJourResultat() {
     const input = document.getElementById('quantite');
@@ -446,7 +465,9 @@
 
     const delta = parseInt(input.value, 10);
     const variation = Number.isNaN(delta) ? 0 : delta;
-    const nouvelleValeur = Math.max(0, quantiteActuelle + variation);
+    const nouvelleQuantiteRecue = getQuantiteRecueValue();
+    const deltaRecue = nouvelleQuantiteRecue - quantiteRecueInitiale;
+    const nouvelleValeur = Math.max(0, quantiteActuelle + variation + deltaRecue);
 
     affichageResultat.textContent = nouvelleValeur;
   }
@@ -466,6 +487,7 @@
     const dateInput = document.getElementById('dateLivraisonPrevue');
     const datePickerButton = document.getElementById('datePickerButton');
     const quantiteInput = document.getElementById('quantite');
+    const quantiteRecueInput = document.getElementById('quantiteRecue');
 
     if (inputPhoto) {
       inputPhoto.addEventListener('change', function () {
@@ -504,6 +526,9 @@
     if (quantiteInput) {
       quantiteInput.addEventListener('input', mettreAJourResultat);
       mettreAJourResultat();
+    }
+    if (quantiteRecueInput) {
+      quantiteRecueInput.addEventListener('input', mettreAJourResultat);
     }
   });
  </script>
