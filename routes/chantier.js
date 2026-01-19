@@ -31,6 +31,7 @@ const CHANTIER_FILTER_KEYS = [
   'triNom',
   'triAjout',
   'triModification',
+  'triReception',
   'recherche',
   'limit'
 ];
@@ -110,6 +111,7 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
     triNom,
     triAjout,
     triModification,
+    triReception,
     recherche,
     limit
   } = query;
@@ -144,6 +146,9 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
   }
   if (triModification === 'asc' || triModification === 'desc') {
     order.push([{ model: Materiel, as: 'materiel' }, 'updatedAt', triModification.toUpperCase()]);
+  }
+  if (triReception === 'asc' || triReception === 'desc') {
+    order.push([sequelize.literal('"MaterielChantier"."lastReceptionAt"'), `${triReception.toUpperCase()} NULLS LAST`]);
   }
 
   const emplacementInclude = {
@@ -329,7 +334,8 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       const totalPrevu = computeTotalPrevu(mc);
       const seuil = totalPrevu * 0.30;
       const qteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : (mc.quantite || 0);
-      const isLowStock = qteActuelle <= seuil;
+      const hasBeenReceived = mc.quantite != null && Number(mc.quantite) > 0;
+      const isLowStock = hasBeenReceived && qteActuelle <= seuil;
       mc.setDataValue('totalPrevu', totalPrevu);
       mc.setDataValue('isLowStock', isLowStock);
       mc.setDataValue('quantiteActuelle', qteActuelle);
@@ -535,7 +541,7 @@ router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, asy
         continue;
       }
 
-      const snoozeUntil = dayjs().endOf('day').toDate();
+      const snoozeUntil = dayjs().add(1, 'hour').toDate();
       mc[fieldName] = snoozeUntil;
       await mc.save();
     }
@@ -727,8 +733,9 @@ router.post('/materielChantier/alerteStatut', ensureAuthenticated, checkAdmin, a
       .filter(mc => {
         const totalPrevu = computeTotalPrevu(mc);
         const quantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : mc.quantite || 0;
+        const hasBeenReceived = mc.quantite != null && Number(mc.quantite) > 0;
         if (!totalPrevu || totalPrevu <= 0) return false;
-        return Number(quantiteActuelle) <= Number(totalPrevu * 0.30);
+        return hasBeenReceived && Number(quantiteActuelle) <= Number(totalPrevu * 0.30);
       })
       .map(mc => mc.id);
 
@@ -785,6 +792,7 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
 
     mc.quantite = newQuantiteRecue;
     mc.quantiteActuelle = newQuantiteActuelle;
+    mc.lastReceptionAt = new Date();
     await mc.save();
 
     await Historique.create({

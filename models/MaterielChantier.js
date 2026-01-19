@@ -197,6 +197,11 @@ const MaterielChantier = sequelize.define(
       allowNull: true,
     },
 
+    lastReceptionAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
     bonLivraisonUrls: {
       type: DataTypes.JSONB,
       allowNull: false,
