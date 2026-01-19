@@ -1027,6 +1027,7 @@
     pushParam('triNom', triNom);
     pushParam('triAjout', triAjout);
     pushParam('triModification', triModification);
+    pushParam('triReception', triReception);
     pushParam('recherche', recherche);
     const exportQuery = exportParams.length ? `?${exportParams.join('&')}` : '';
   %>
@@ -1108,6 +1109,15 @@
     <option value="asc" <%= triAjout === 'asc' ? 'selected' : '' %>>Plus ancien d'abord</option>
   </select>
 </div>
+
+ <div class="col-md-3">
+  <label for="triReception" class="form-label">Tri par réception</label>
+  <select class="form-select" name="triReception" id="triReception">
+    <option value="">-- Aucun tri --</option>
+    <option value="desc" <%= triReception === 'desc' ? 'selected' : '' %>>Plus récent → plus ancien</option>
+    <option value="asc" <%= triReception === 'asc' ? 'selected' : '' %>>Plus ancien → plus récent</option>
+  </select>
+ </div>
 
  <div class="col-md-3">
    <label for="limit" class="form-label">Nombre de lignes à afficher</label>
