@@ -334,7 +334,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       const totalPrevu = computeTotalPrevu(mc);
       const seuil = totalPrevu * 0.30;
       const qteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : (mc.quantite || 0);
-      const hasBeenReceived = mc.quantite != null && Number(mc.quantite) > 0;
+      const hasBeenReceived = (mc.quantite != null && Number(mc.quantite) > 0) || mc.lastReceptionAt != null;
       const isLowStock = hasBeenReceived && qteActuelle <= seuil;
       mc.setDataValue('totalPrevu', totalPrevu);
       mc.setDataValue('isLowStock', isLowStock);
@@ -733,7 +733,7 @@ router.post('/materielChantier/alerteStatut', ensureAuthenticated, checkAdmin, a
       .filter(mc => {
         const totalPrevu = computeTotalPrevu(mc);
         const quantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : mc.quantite || 0;
-        const hasBeenReceived = mc.quantite != null && Number(mc.quantite) > 0;
+        const hasBeenReceived = (mc.quantite != null && Number(mc.quantite) > 0) || mc.lastReceptionAt != null;
         if (!totalPrevu || totalPrevu <= 0) return false;
         return hasBeenReceived && Number(quantiteActuelle) <= Number(totalPrevu * 0.30);
       })
