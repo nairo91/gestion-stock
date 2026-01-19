@@ -3534,13 +3534,20 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           return type === 'application/pdf' || /\.pdf$/i.test(name);
         };
 
+        // Cloudinary: on laisse "auto" décider du resource_type (image/raw),
+        // et on force l'access_mode public pour éviter des URLs non consultables.
+        const getCloudinaryUploadUrl = () => {
+          return `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+        };
+
         async function uploadBdlFile(file) {
-          const resourceType = isPdfFile(file) ? 'image' : 'auto';
-          const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+          const url = getCloudinaryUploadUrl();
           const fd = new FormData();
           fd.append('file', file);
           fd.append('upload_preset', UPLOAD_PRESET);
           fd.append('folder', 'gestion-stock/bdl');
+          fd.append('access_mode', 'public');
+          fd.append('type', 'upload');
 
           const resp = await fetch(url, {
             method: 'POST',
@@ -3762,6 +3769,11 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         const name = file.name || '';
         return type === 'application/pdf' || /\.pdf$/i.test(name);
       };
+
+      // Idem: upload auto + accès public
+      const getCloudinaryUploadUrl = () => {
+        return `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
+      };
       const isValidBdlFile = (file) => {
         if (!file) return false;
         const type = file.type || '';
@@ -3769,12 +3781,13 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       };
 
       async function uploadToCloudinary(file) {
-        const resourceType = isPdfFile(file) ? 'image' : 'auto';
-        const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+        const url = getCloudinaryUploadUrl();
         const fd = new FormData();
         fd.append('file', file);
         fd.append('upload_preset', UPLOAD_PRESET);
         fd.append('folder', 'gestion-stock/bdl');
+        fd.append('access_mode', 'public');
+        fd.append('type', 'upload');
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -3894,24 +3907,13 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           li.appendChild(a);
 
           var preview = null;
+          // IMPORTANT:
+          // Les PDF Cloudinary sont souvent bloqués en iframe/embed (X-Frame-Options/CSP),
+          // donc on n'essaie PAS de les prévisualiser. On laisse juste le lien.
           if (isPdfUrl(u)) {
-            preview = document.createElement('iframe');
-            preview.src = u;
-            preview.className = 'bdl-preview';
-            preview.setAttribute('loading', 'lazy');
-            preview.title = 'Aperçu PDF bon de livraison ' + (idx + 1);
-
             var fallback = document.createElement('div');
             fallback.className = 'bdl-preview-fallback';
-            fallback.textContent = 'Aperçu PDF indisponible.';
-            fallback.style.display = 'none';
-
-            preview.addEventListener('error', function () {
-              preview.style.display = 'none';
-              fallback.style.display = 'block';
-            });
-
-            li.appendChild(preview);
+            fallback.textContent = 'Aperçu PDF indisponible ici. Utilise "Ouvrir le PDF".';
             li.appendChild(fallback);
           } else {
             preview = document.createElement('img');
