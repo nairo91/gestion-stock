@@ -1609,7 +1609,15 @@
                 <% } %>
               </td>
 
-              <td class="actions col-actions" data-label="Actions">
+                <td class="actions col-actions" data-label="Actions">
+                  <!-- Bouton unique "FAIRE ACTION" : au clic, affiche la modale des actions -->
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary btn-sm open-actions-modal"
+                    data-btn-wrap-id="btn-wrap-<%= mc.id %>"
+                  >
+                    FAIRE ACTION
+                  </button>
                 <%
                   // Trouve la "ligne source" côté chantier courant (pas d'optional chaining ici)
                   var chantierCourantId = (chantierCourant && chantierCourant.id) || null;
@@ -1634,7 +1642,12 @@
                     || (typeof mc !== 'undefined' && mc && mc.nom)
                     || '';
                 %>
-                <div class="btn-wrap">
+                <!--
+                  Les boutons existants restent dans le DOM pour conserver leurs écouteurs.
+                  On ajoute la classe d-none pour les masquer dans le tableau.
+                  Le même élément sera déplacé dans la modale lors de l'ouverture de "FAIRE ACTION".
+                -->
+                <div class="btn-wrap d-none" id="btn-wrap-<%= mc.id %>">
                   <button
                     type="button"
                     class="btn btn-outline-success btn-sm transfer-btn"
@@ -1829,6 +1842,45 @@
         cell.classList.remove('hidden-column');
       });
     })();
+  </script>
+
+  <!-- Script pour la modale des actions -->
+  <script nonce="<%= nonce %>">
+    document.addEventListener('DOMContentLoaded', function () {
+      let currentWrap = null;
+      let originalParent = null;
+      let originalNextSibling = null;
+      // Écouteur sur les boutons « FAIRE ACTION »
+      document.querySelectorAll('.open-actions-modal').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const wrapId = this.dataset.btnWrapId;
+          const wrap = document.getElementById(wrapId);
+          if (!wrap) return;
+          currentWrap = wrap;
+          originalParent = wrap.parentNode;
+          originalNextSibling = wrap.nextSibling;
+          // afficher le conteneur dans la modale
+          wrap.classList.remove('d-none');
+          const modalEl = document.getElementById('actionsModal');
+          const modalBody = modalEl.querySelector('.modal-body');
+          modalBody.appendChild(wrap);
+          const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+          modalInstance.show();
+        });
+      });
+      // Lors de la fermeture de la modale, replacer les boutons dans la ligne
+      const actionsModalEl = document.getElementById('actionsModal');
+      actionsModalEl.addEventListener('hidden.bs.modal', function () {
+        if (currentWrap && originalParent) {
+          currentWrap.classList.add('d-none');
+          if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
+            originalParent.insertBefore(currentWrap, originalNextSibling);
+          } else {
+            originalParent.appendChild(currentWrap);
+          }
+        }
+      });
+    });
   </script>
 
   <!-- Modales globales -->
@@ -2131,6 +2183,21 @@
             class="btn btn-secondary"
             data-bs-dismiss="modal"
           >Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale Actions : affichée lorsqu'on clique sur "FAIRE ACTION" -->
+  <div class="modal fade" id="actionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Actions</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Le contenu (btn-wrap) sera inséré dynamiquement -->
         </div>
       </div>
     </div>
