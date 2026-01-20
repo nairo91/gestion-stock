@@ -474,16 +474,6 @@
       gap: 0.35rem;
     }
 
-    .action-modal-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 0.6rem;
-    }
-
-    .action-modal-grid .btn {
-      width: 100%;
-    }
-
     .table-stock .cell-photo img {
       display: block;
       max-width: 90px;
@@ -1644,102 +1634,91 @@
                     || (typeof mc !== 'undefined' && mc && mc.nom)
                     || '';
                 %>
-                <button
-                  type="button"
-                  class="btn btn-primary btn-sm btn-open-actions"
-                  data-bs-toggle="modal"
-                  data-bs-target="#rowActionsModal"
-                  data-mc-id="<%= mc.id %>"
-                >
-                  FAIRE ACTION
-                </button>
-                <div class="action-template d-none" data-actions-template>
-                  <div class="btn-wrap" data-actions-container>
+                <div class="btn-wrap">
+                  <button
+                    type="button"
+                    class="btn btn-outline-success btn-sm transfer-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#transferModal"
+                    data-action="entree"
+                    data-context-type="CHANTIER"
+                    data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
+                    data-materiel-id="<%= sourceMatId %>"
+                    data-materiel-name="<%= sourceMatNom %>"
+                    <%= sourceMat ? '' : 'disabled' %>
+                  >
+                    Entrée
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm transfer-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#transferModal"
+                    data-action="sortie"
+                    data-context-type="CHANTIER"
+                    data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
+                    data-materiel-id="<%= sourceMatId %>"
+                    data-materiel-name="<%= sourceMatNom %>"
+                    <%= sourceMat ? '' : 'disabled' %>
+                  >
+                    Sortie
+                  </button>
+                  <% if (!sourceMat) { %>
+                    <span class="badge bg-danger">Source ID manquant</span>
+                  <% } %>
+                  <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
+                  <a
+                    href="/chantier/dashboard?chantierId=<%= mc.chantierId %>"
+                    class="btn btn-primary btn-sm"
+                  >
+                    Dashboard
+                  </a>
+                  <% if (user && user.role === 'admin') { %>
                     <button
                       type="button"
-                      class="btn btn-outline-success btn-sm transfer-btn"
+                      class="btn btn-success btn-sm"
                       data-bs-toggle="modal"
-                      data-bs-target="#transferModal"
-                      data-action="entree"
-                      data-context-type="CHANTIER"
-                      data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
-                      data-materiel-id="<%= sourceMatId %>"
-                      data-materiel-name="<%= sourceMatNom %>"
-                      <%= sourceMat ? '' : 'disabled' %>
-                    >
-                      Entrée
-                    </button>
+                    data-bs-target="#globalReceptionModal"
+                    data-mc-id="<%= mc.id %>"
+                    data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
+                    data-chantier-name="<%= mc.chantier ? mc.chantier.nom : '' %>"
+                    data-quantite-prevue1="<%= mc.quantitePrevue1 || '' %>"
+                    data-quantite-prevue2="<%= mc.quantitePrevue2 || '' %>"
+                    data-quantite-prevue3="<%= mc.quantitePrevue3 || '' %>"
+                    data-quantite-prevue4="<%= mc.quantitePrevue4 || '' %>"
+                    data-date-prevue1="<%= mc.dateLivraisonPrevue1 ? mc.dateLivraisonPrevue1.toISOString() : '' %>"
+                    data-date-prevue2="<%= mc.dateLivraisonPrevue2 ? mc.dateLivraisonPrevue2.toISOString() : '' %>"
+                    data-date-prevue3="<%= mc.dateLivraisonPrevue3 ? mc.dateLivraisonPrevue3.toISOString() : '' %>"
+                    data-date-prevue4="<%= mc.dateLivraisonPrevue4 ? mc.dateLivraisonPrevue4.toISOString() : '' %>"
+                  >
+                    Réceptionner
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm mb-1 btn-add-bdl"
+                    data-mc-id="<%= mc.id %>"
+                  >
+                    Ajouter BDL
+                  </button>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    class="d-none bdl-file-input"
+                    data-mc-id="<%= mc.id %>"
+                  >
+                    <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
                     <button
                       type="button"
-                      class="btn btn-outline-danger btn-sm transfer-btn"
+                      class="btn btn-danger btn-sm"
                       data-bs-toggle="modal"
-                      data-bs-target="#transferModal"
-                      data-action="sortie"
-                      data-context-type="CHANTIER"
-                      data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
-                      data-materiel-id="<%= sourceMatId %>"
-                      data-materiel-name="<%= sourceMatNom %>"
-                      <%= sourceMat ? '' : 'disabled' %>
+                      data-bs-target="#globalDeleteModal"
+                      data-delete-action="/chantier/materielChantier/supprimer/<%= mc.id %>"
+                      data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
                     >
-                      Sortie
+                      Supprimer
                     </button>
-                    <% if (!sourceMat) { %>
-                      <span class="badge bg-danger">Source ID manquant</span>
-                    <% } %>
-                    <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
-                    <a
-                      href="/chantier/dashboard?chantierId=<%= mc.chantierId %>"
-                      class="btn btn-primary btn-sm"
-                    >
-                      Dashboard
-                    </a>
-                    <% if (user && user.role === 'admin') { %>
-                      <button
-                        type="button"
-                        class="btn btn-success btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#globalReceptionModal"
-                        data-mc-id="<%= mc.id %>"
-                        data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
-                        data-chantier-name="<%= mc.chantier ? mc.chantier.nom : '' %>"
-                        data-quantite-prevue1="<%= mc.quantitePrevue1 || '' %>"
-                        data-quantite-prevue2="<%= mc.quantitePrevue2 || '' %>"
-                        data-quantite-prevue3="<%= mc.quantitePrevue3 || '' %>"
-                        data-quantite-prevue4="<%= mc.quantitePrevue4 || '' %>"
-                        data-date-prevue1="<%= mc.dateLivraisonPrevue1 ? mc.dateLivraisonPrevue1.toISOString() : '' %>"
-                        data-date-prevue2="<%= mc.dateLivraisonPrevue2 ? mc.dateLivraisonPrevue2.toISOString() : '' %>"
-                        data-date-prevue3="<%= mc.dateLivraisonPrevue3 ? mc.dateLivraisonPrevue3.toISOString() : '' %>"
-                        data-date-prevue4="<%= mc.dateLivraisonPrevue4 ? mc.dateLivraisonPrevue4.toISOString() : '' %>"
-                      >
-                        Réceptionner
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm mb-1 btn-add-bdl"
-                        data-mc-id="<%= mc.id %>"
-                      >
-                        Ajouter BDL
-                      </button>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        class="d-none bdl-file-input"
-                        data-mc-id="<%= mc.id %>"
-                      >
-                      <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
-                      <button
-                        type="button"
-                        class="btn btn-danger btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#globalDeleteModal"
-                        data-delete-action="/chantier/materielChantier/supprimer/<%= mc.id %>"
-                        data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
-                      >
-                        Supprimer
-                      </button>
-                      <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
-                    <% } %>
-                  </div>
+                    <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
+                  <% } %>
                 </div>
               </td>
             </tr>
@@ -1851,23 +1830,6 @@
       });
     })();
   </script>
-
-  <div class="modal fade" id="rowActionsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="rowActionsTitle">Actions matériel</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-        </div>
-        <div class="modal-body">
-          <div id="rowActionsBody" class="action-modal-grid"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Modales globales -->
   <div class="modal fade" id="globalPhotoModal" tabindex="-1" aria-hidden="true">
@@ -2632,7 +2594,7 @@
   <!-- 2) Déplacer les modales SOUS <body> une fois le DOM prêt -->
   <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
-      ['rowActionsModal','globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','deliveryReminderModal','fournisseurContactModal']
+      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','deliveryReminderModal','fournisseurContactModal']
         .forEach(function (id) {
           var el = document.getElementById(id);
           if (el && el.parentNode !== document.body) {
@@ -3255,70 +3217,6 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
   </script>
 
   <script nonce="<%= nonce %>">
-    (function () {
-      const modalEl = document.getElementById('rowActionsModal');
-      if (!modalEl) return;
-
-      const bodyEl = document.getElementById('rowActionsBody');
-      const titleEl = document.getElementById('rowActionsTitle');
-
-      modalEl.addEventListener('show.bs.modal', (event) => {
-        const trigger = event.relatedTarget;
-        const row = trigger ? trigger.closest('tr') : null;
-        const template = row ? row.querySelector('[data-actions-template]') : null;
-
-        if (bodyEl) {
-          bodyEl.innerHTML = '';
-        }
-
-        if (!bodyEl || !template) {
-          if (bodyEl) {
-            bodyEl.textContent = 'Aucune action disponible.';
-          }
-          return;
-        }
-
-        const clone = template.firstElementChild
-          ? template.firstElementChild.cloneNode(true)
-          : template.cloneNode(true);
-        const container = clone.matches('[data-actions-container]')
-          ? clone
-          : clone.querySelector('[data-actions-container]');
-
-        if (container) {
-          container.classList.add('action-modal-grid');
-          bodyEl.appendChild(container);
-        } else {
-          clone.classList.add('action-modal-grid');
-          bodyEl.appendChild(clone);
-        }
-
-        bodyEl.querySelectorAll('[data-bs-toggle="modal"]').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const instance = bootstrap.Modal.getInstance(modalEl);
-            if (instance) instance.hide();
-          });
-        });
-
-        if (typeof window.bindBdlControls === 'function') {
-          window.bindBdlControls(bodyEl);
-        }
-
-        if (titleEl) {
-          const mcId = trigger?.dataset.mcId;
-          titleEl.textContent = mcId ? `Actions matériel #${mcId}` : 'Actions matériel';
-        }
-      });
-
-      modalEl.addEventListener('hidden.bs.modal', () => {
-        if (bodyEl) {
-          bodyEl.innerHTML = '';
-        }
-      });
-    })();
-  </script>
-
-  <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
       const modalEl = document.getElementById('fournisseurContactModal');
       if (!modalEl) return;
@@ -3856,7 +3754,6 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
 
       if (!CLOUD_NAME || !UPLOAD_PRESET) {
         console.warn('Cloudinary BDL non configuré (CLOUD_NAME ou PRESET manquant).');
-        window.bindBdlControls = () => {};
         return;
       }
 
@@ -3914,50 +3811,36 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         }
       }
 
-      const bindBdlControls = (root = document) => {
-        root.querySelectorAll('.btn-add-bdl').forEach((btn) => {
-          if (btn.dataset.bdlBound === '1') {
+      document.querySelectorAll('.btn-add-bdl').forEach((btn) => {
+        const mcId = btn.dataset.mcId;
+        const input = document.querySelector(`.bdl-file-input[data-mc-id="${mcId}"]`);
+        if (!input) return;
+
+        btn.addEventListener('click', () => input.click());
+
+        input.addEventListener('change', async () => {
+          const file = input.files[0];
+          if (!file) return;
+          if (!isValidBdlFile(file)) {
+            alert('Format de BDL invalide. Merci de fournir une image ou un PDF.');
+            input.value = '';
             return;
           }
-          btn.dataset.bdlBound = '1';
-          const mcId = btn.dataset.mcId;
-          const container = btn.closest('[data-actions-container]') || root;
-          const input = container.querySelector(`.bdl-file-input[data-mc-id="${mcId}"]`);
-          if (!input) return;
 
-          btn.addEventListener('click', () => input.click());
-
-          if (input.dataset.bdlBound === '1') {
-            return;
+          try {
+            showSpinner();
+            const cloudUrl = await uploadToCloudinary(file);
+            await enregistrerBdl(mcId, cloudUrl);
+            window.location.reload();
+          } catch (err) {
+            console.error('Erreur BDL Cloudinary :', err);
+            alert("Erreur lors de l'upload du bon de livraison.");
+          } finally {
+            hideSpinner();
+            input.value = '';
           }
-          input.dataset.bdlBound = '1';
-          input.addEventListener('change', async () => {
-            const file = input.files[0];
-            if (!file) return;
-            if (!isValidBdlFile(file)) {
-              alert('Format de BDL invalide. Merci de fournir une image ou un PDF.');
-              input.value = '';
-              return;
-            }
-
-            try {
-              showSpinner();
-              const cloudUrl = await uploadToCloudinary(file);
-              await enregistrerBdl(mcId, cloudUrl);
-              window.location.reload();
-            } catch (err) {
-              console.error('Erreur BDL Cloudinary :', err);
-              alert("Erreur lors de l'upload du bon de livraison.");
-            } finally {
-              hideSpinner();
-              input.value = '';
-            }
-          });
         });
-      };
-
-      window.bindBdlControls = bindBdlControls;
-      bindBdlControls(document);
+      });
     })();
   </script>
 
