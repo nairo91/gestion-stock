@@ -1847,51 +1847,40 @@
   <!-- Script pour la modale des actions -->
   <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
-      let currentWrap = null;
-      let originalParent = null;
-      let originalNextSibling = null;
       const actionsModalEl = document.getElementById('actionsModal');
-
+      if (!actionsModalEl) return;
+      const modalBody = actionsModalEl.querySelector('.modal-body');
       // Écouteur sur les boutons « FAIRE ACTION »
       document.querySelectorAll('.open-actions-modal').forEach(function (btn) {
         btn.addEventListener('click', function () {
           const wrapId = this.dataset.btnWrapId;
           const wrap = document.getElementById(wrapId);
           if (!wrap) return;
-          currentWrap = wrap;
-          originalParent = wrap.parentNode;
-          originalNextSibling = wrap.nextSibling;
-          // Déplace le conteneur dans la modale et l'affiche
-          wrap.classList.remove('d-none');
-          const modalEl = document.getElementById('actionsModal');
-          const modalBody = modalEl.querySelector('.modal-body');
-          modalBody.appendChild(wrap);
-          // Ajoute data-bs-dismiss="modal" aux boutons qui ouvrent une nouvelle modale
-          wrap.querySelectorAll('[data-bs-toggle="modal"]').forEach(function (actionBtn) {
-            const targetAttr = actionBtn.getAttribute('data-bs-target') || '';
-            if (targetAttr && targetAttr !== '#actionsModal') {
-              actionBtn.setAttribute('data-bs-dismiss', 'modal');
-            }
+          // Nettoyer le contenu actuel de la modale
+          modalBody.innerHTML = '';
+          // Pour chaque bouton ou lien de la zone d’actions cachée, créer un clone
+          wrap.querySelectorAll('button, a').forEach(function (orig) {
+            const clone = orig.cloneNode(true);
+            // Supprimer l'attribut id sur les clones pour éviter les doublons
+            if (clone.id) clone.removeAttribute('id');
+            // Au clic sur le clone : fermer la modale des actions puis déclencher l’original
+            clone.addEventListener('click', function (event) {
+              event.preventDefault();
+              const modalInstance = bootstrap.Modal.getInstance(actionsModalEl);
+              if (modalInstance) {
+                modalInstance.hide();
+              }
+              // Donner un bref délai pour que la modale se ferme avant d'exécuter l'action
+              setTimeout(function () {
+                orig.click();
+              }, 100);
+            });
+            modalBody.appendChild(clone);
           });
-          const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
-          modalInstance.show();
+          // Afficher la modale Actions
+          bootstrap.Modal.getOrCreateInstance(actionsModalEl).show();
         });
       });
-
-      if (actionsModalEl) {
-        // Lors de la fermeture de la modale, replacer les boutons uniquement si le conteneur est encore dans la modale
-        actionsModalEl.addEventListener('hidden.bs.modal', function () {
-          const modalBody = actionsModalEl.querySelector('.modal-body');
-          if (currentWrap && originalParent && currentWrap.parentNode === modalBody) {
-            currentWrap.classList.add('d-none');
-            if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
-              originalParent.insertBefore(currentWrap, originalNextSibling);
-            } else {
-              originalParent.appendChild(currentWrap);
-            }
-          }
-        });
-      }
     });
   </script>
 
