@@ -1852,25 +1852,6 @@
       let originalNextSibling = null;
       const actionsModalEl = document.getElementById('actionsModal');
 
-      // Fonction utilitaire pour replacer le conteneur et fermer la modale
-      function closeActionsModal() {
-        if (currentWrap && originalParent) {
-          // Remet le conteneur dans la table et le masque
-          currentWrap.classList.add('d-none');
-          if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
-            originalParent.insertBefore(currentWrap, originalNextSibling);
-          } else {
-            originalParent.appendChild(currentWrap);
-          }
-        }
-        if (actionsModalEl) {
-          const instance = bootstrap.Modal.getInstance(actionsModalEl);
-          if (instance) {
-            instance.hide();
-          }
-        }
-      }
-
       // Écouteur sur les boutons « FAIRE ACTION »
       document.querySelectorAll('.open-actions-modal').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -1885,6 +1866,13 @@
           const modalEl = document.getElementById('actionsModal');
           const modalBody = modalEl.querySelector('.modal-body');
           modalBody.appendChild(wrap);
+          // Ajoute data-bs-dismiss="modal" aux boutons qui ouvrent une nouvelle modale
+          wrap.querySelectorAll('[data-bs-toggle="modal"]').forEach(function (actionBtn) {
+            const targetAttr = actionBtn.getAttribute('data-bs-target') || '';
+            if (targetAttr && targetAttr !== '#actionsModal') {
+              actionBtn.setAttribute('data-bs-dismiss', 'modal');
+            }
+          });
           const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
           modalInstance.show();
         });
@@ -1900,16 +1888,6 @@
               originalParent.insertBefore(currentWrap, originalNextSibling);
             } else {
               originalParent.appendChild(currentWrap);
-            }
-          }
-        });
-        // Ferme la modale des actions et remets les boutons en place lorsqu'on déclenche une autre modale
-        actionsModalEl.addEventListener('click', function (event) {
-          const toggleBtn = event.target.closest('[data-bs-toggle="modal"]');
-          if (toggleBtn) {
-            const targetAttr = toggleBtn.getAttribute('data-bs-target') || '';
-            if (targetAttr && targetAttr !== '#actionsModal') {
-              closeActionsModal();
             }
           }
         });
