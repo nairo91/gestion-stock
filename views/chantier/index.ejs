@@ -1864,16 +1864,6 @@
           const modalEl = document.getElementById('actionsModal');
           const modalBody = modalEl.querySelector('.modal-body');
           modalBody.appendChild(wrap);
-          // Ferme la modale des actions lorsque l’utilisateur clique sur un bouton
-          // qui ouvre une autre modale (par ex. Entrée, Sortie, Réceptionner).
-          wrap.querySelectorAll('[data-bs-toggle="modal"]').forEach(function (actionBtn) {
-            actionBtn.addEventListener('click', function () {
-              const instance = bootstrap.Modal.getInstance(modalEl);
-              if (instance) {
-                instance.hide();
-              }
-            }, { once: true });
-          });
           const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
           modalInstance.show();
         });
@@ -1887,6 +1877,20 @@
             originalParent.insertBefore(currentWrap, originalNextSibling);
           } else {
             originalParent.appendChild(currentWrap);
+          }
+        }
+      });
+
+      // Ferme la modale des actions lorsque l’on clique sur un élément déclenchant une autre modale
+      actionsModalEl.addEventListener('click', function (event) {
+        const toggleBtn = event.target.closest('[data-bs-toggle="modal"]');
+        if (toggleBtn) {
+          const targetAttr = toggleBtn.getAttribute('data-bs-target') || '';
+          if (targetAttr && targetAttr !== '#actionsModal') {
+            const instance = bootstrap.Modal.getInstance(actionsModalEl);
+            if (instance) {
+              instance.hide();
+            }
           }
         }
       });
