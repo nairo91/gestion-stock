@@ -1864,6 +1864,16 @@
           const modalEl = document.getElementById('actionsModal');
           const modalBody = modalEl.querySelector('.modal-body');
           modalBody.appendChild(wrap);
+          // Ferme la modale des actions lorsque l’utilisateur clique sur un bouton
+          // qui ouvre une autre modale (par ex. Entrée, Sortie, Réceptionner).
+          wrap.querySelectorAll('[data-bs-toggle="modal"]').forEach(function (actionBtn) {
+            actionBtn.addEventListener('click', function () {
+              const instance = bootstrap.Modal.getInstance(modalEl);
+              if (instance) {
+                instance.hide();
+              }
+            }, { once: true });
+          });
           const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
           modalInstance.show();
         });
@@ -2661,7 +2671,7 @@
   <!-- 2) Déplacer les modales SOUS <body> une fois le DOM prêt -->
   <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
-      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','deliveryReminderModal','fournisseurContactModal']
+      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','actionsModal','deliveryReminderModal','fournisseurContactModal']
         .forEach(function (id) {
           var el = document.getElementById(id);
           if (el && el.parentNode !== document.body) {
