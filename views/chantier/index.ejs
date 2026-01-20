@@ -1850,7 +1850,28 @@
       let currentWrap = null;
       let originalParent = null;
       let originalNextSibling = null;
-      // Écouteur sur les boutons « FAIRE ACTION »
+      const actionsModalEl = document.getElementById('actionsModal');
+
+      // Fonction utilitaire pour replacer le conteneur et fermer la modale
+      function closeActionsModal() {
+        if (currentWrap && originalParent) {
+          // Remet le conteneur dans la table et le masque
+          currentWrap.classList.add('d-none');
+          if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
+            originalParent.insertBefore(currentWrap, originalNextSibling);
+          } else {
+            originalParent.appendChild(currentWrap);
+          }
+        }
+        if (actionsModalEl) {
+          const instance = bootstrap.Modal.getInstance(actionsModalEl);
+          if (instance) {
+            instance.hide();
+          }
+        }
+      }
+
+      // Écouteur sur les boutons « FAIRE ACTION »
       document.querySelectorAll('.open-actions-modal').forEach(function (btn) {
         btn.addEventListener('click', function () {
           const wrapId = this.dataset.btnWrapId;
@@ -1859,7 +1880,7 @@
           currentWrap = wrap;
           originalParent = wrap.parentNode;
           originalNextSibling = wrap.nextSibling;
-          // afficher le conteneur dans la modale
+          // Déplace le conteneur dans la modale et l'affiche
           wrap.classList.remove('d-none');
           const modalEl = document.getElementById('actionsModal');
           const modalBody = modalEl.querySelector('.modal-body');
@@ -1868,32 +1889,31 @@
           modalInstance.show();
         });
       });
-      // Lors de la fermeture de la modale, replacer les boutons dans la ligne
-      const actionsModalEl = document.getElementById('actionsModal');
-      actionsModalEl.addEventListener('hidden.bs.modal', function () {
-        if (currentWrap && originalParent) {
-          currentWrap.classList.add('d-none');
-          if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
-            originalParent.insertBefore(currentWrap, originalNextSibling);
-          } else {
-            originalParent.appendChild(currentWrap);
-          }
-        }
-      });
 
-      // Ferme la modale des actions lorsque l’on clique sur un élément déclenchant une autre modale
-      actionsModalEl.addEventListener('click', function (event) {
-        const toggleBtn = event.target.closest('[data-bs-toggle="modal"]');
-        if (toggleBtn) {
-          const targetAttr = toggleBtn.getAttribute('data-bs-target') || '';
-          if (targetAttr && targetAttr !== '#actionsModal') {
-            const instance = bootstrap.Modal.getInstance(actionsModalEl);
-            if (instance) {
-              instance.hide();
+      if (actionsModalEl) {
+        // Lors de la fermeture de la modale, replacer les boutons uniquement si le conteneur est encore dans la modale
+        actionsModalEl.addEventListener('hidden.bs.modal', function () {
+          const modalBody = actionsModalEl.querySelector('.modal-body');
+          if (currentWrap && originalParent && currentWrap.parentNode === modalBody) {
+            currentWrap.classList.add('d-none');
+            if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
+              originalParent.insertBefore(currentWrap, originalNextSibling);
+            } else {
+              originalParent.appendChild(currentWrap);
             }
           }
-        }
-      });
+        });
+        // Ferme la modale des actions et remets les boutons en place lorsqu'on déclenche une autre modale
+        actionsModalEl.addEventListener('click', function (event) {
+          const toggleBtn = event.target.closest('[data-bs-toggle="modal"]');
+          if (toggleBtn) {
+            const targetAttr = toggleBtn.getAttribute('data-bs-target') || '';
+            if (targetAttr && targetAttr !== '#actionsModal') {
+              closeActionsModal();
+            }
+          }
+        });
+      }
     });
   </script>
 
