@@ -15,11 +15,9 @@ const transporter = nodemailer.createTransport({
 });
 
 const DEFAULT_RECIPIENTS = [
-  'athari.keivan@batirenov.info',
   'blot.valentin@batirenov.info',
   'launay.jeremy@batirenov.info',
-  'mirona.orian@batirenov.info',
-  'rouault.christophe@batirenov.info'
+  'mirona.orian@batirenov.info'
 ];
 
 async function sendLowStockNotification(materiel) {
