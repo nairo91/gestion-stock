@@ -203,6 +203,59 @@
     </div>
   </div>
 
+  <div class="toolbar d-flex flex-wrap align-items-center">
+    <div class="me-3">
+      <div class="form-label mb-2">Colonnes visibles</div>
+      <div class="d-flex flex-wrap gap-3">
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="3">
+          Détails
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="6" checked>
+          Fournisseur
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="7" checked>
+          Qte 1
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="8">
+          Date 1
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="9" checked>
+          Qte 2
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="10">
+          Date 2
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="11" checked>
+          Qte 3
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="12">
+          Date 3
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="13" checked>
+          Qte 4
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="14">
+          Date 4
+        </label>
+        <label class="form-check-label d-flex align-items-center gap-2">
+          <input class="form-check-input toggle-col" type="checkbox" data-col="15" checked>
+          Raison
+        </label>
+      </div>
+    </div>
+    <button type="button" class="btn btn-outline-light ms-auto" id="cols-reset">Réinitialiser colonnes</button>
+  </div>
+
   <div class="table-responsive">
     <table id="previewTable" class="table table-bordered table-sm table-sticky">
       <thead>
@@ -338,12 +391,67 @@
         dom: 'lrtip'
       });
 
-      // --- 3) Recherche globale
+      // --- 3) Colonnes visibles (persistées par chantier)
+      const chantierIdOuNom = <%- JSON.stringify(chantier && (chantier.id || chantier.nom) ? (chantier.id || chantier.nom) : 'unknown') %>;
+      const STORAGE_KEY = `importPreviewCols::chantier=${chantierIdOuNom}`;
+      const $toggleCols = $('.toggle-col');
+
+      function saveColumnsState() {
+        const state = {};
+        $toggleCols.each(function () {
+          const colIndex = Number(this.dataset.col);
+          state[colIndex] = $(this).is(':checked');
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function applyColumnsState() {
+        let state = null;
+        try {
+          state = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        } catch (error) {
+          state = null;
+        }
+        $toggleCols.each(function () {
+          const $checkbox = $(this);
+          const colIndex = Number(this.dataset.col);
+          const defaultChecked = this.defaultChecked;
+          const shouldShow = state && Object.prototype.hasOwnProperty.call(state, colIndex)
+            ? state[colIndex]
+            : defaultChecked;
+          $checkbox.prop('checked', shouldShow);
+          table.column(colIndex).visible(shouldShow, false);
+        });
+        table.columns.adjust().draw(false);
+      }
+
+      $toggleCols.on('change', function () {
+        const colIndex = Number(this.dataset.col);
+        const shouldShow = $(this).is(':checked');
+        table.column(colIndex).visible(shouldShow);
+        table.columns.adjust().draw(false);
+        saveColumnsState();
+      });
+
+      $('#cols-reset').on('click', function () {
+        localStorage.removeItem(STORAGE_KEY);
+        $toggleCols.each(function () {
+          const colIndex = Number(this.dataset.col);
+          const shouldShow = this.defaultChecked;
+          $(this).prop('checked', shouldShow);
+          table.column(colIndex).visible(shouldShow, false);
+        });
+        table.columns.adjust().draw(false);
+      });
+
+      applyColumnsState();
+
+      // --- 4) Recherche globale
       $('#global-search').on('input', function () {
         table.search(this.value).draw();
       });
 
-      // --- 4) Filtres État / Opération via le filtre custom
+      // --- 5) Filtres État / Opération via le filtre custom
       $('#filtre-etat').on('change', function () {
         table.draw();
       });
