@@ -140,7 +140,10 @@
       <span class="badge badge-warn">AVERT.: <%= stats.warn %></span>
       <span class="badge badge-error">ERREURS: <%= stats.error %></span>
       <span class="badge badge-ignored">IGNORÉES: <%= stats.ignored %></span>
-      <span class="badge badge-duplicate">Doublons: <%= stats.duplicate %></span>
+      <span class="badge badge-duplicate">Doublons fichier: <%= stats.doublonsFichier %></span>
+      <span class="badge badge-unchanged">Existants chantier: <%= stats.existantsDb %></span>
+      <span class="badge badge-unchanged">Existants inchangés: <%= stats.existantsInchanges %></span>
+      <span class="badge badge-update">Existants en update: <%= stats.existantsUpdates %></span>
       <span class="badge badge-ok">Importables: <%= stats.importable %></span>
       <span class="badge badge-create">Créations: <%= stats.create %></span>
       <span class="badge badge-update">Mises à jour: <%= stats.update %></span>
@@ -190,6 +193,14 @@
         <option value="Ignorée (doublon)">Ignorée (doublon)</option>
       </select>
     </div>
+    <div class="" style="min-width:180px">
+      <label for="filtre-exists" class="form-label">Existant chantier</label>
+      <select id="filtre-exists" class="form-select">
+        <option value="">Tous</option>
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+      </select>
+    </div>
   </div>
 
   <div class="table-responsive">
@@ -199,6 +210,7 @@
           <th style="width:90px">Ligne Excel</th>
           <th style="width:100px">État</th>
           <th style="width:100px">Opération</th>
+          <th>Détails (avant → après)</th>
           <th>Catégorie</th>
           <th>Désignation</th>
           <th>Fournisseur</th>
@@ -233,7 +245,7 @@
                    ? 'Ignorée (doublon)'
                    : 'Create';
         %>
-          <tr data-etat="<%= etatText %>" data-op="<%= opText %>">
+          <tr data-etat="<%= etatText %>" data-op="<%= opText %>" data-exists="<%= r.existsInDb ? 'Oui' : 'Non' %>">
             <td><%= r.excelRow != null ? r.excelRow : '' %></td>
             <td>
               <% if (isDuplicate) { %>
@@ -259,6 +271,7 @@
                 <span class="badge badge-create">Create</span>
               <% } %>
             </td>
+            <td><%= r.diffDetails || '' %></td>
             <td><%= r.categorie %></td>
             <td><%= r.designation %></td>
             <td><%= r.fournisseur || '' %></td>
@@ -270,7 +283,12 @@
             <td><%= r.datePrevue3 ? new Date(r.datePrevue3).toLocaleDateString('fr-FR') : '' %></td>
             <td><%= (r.qtePrevue4 != null) ? r.qtePrevue4 : '' %></td>
             <td><%= r.datePrevue4 ? new Date(r.datePrevue4).toLocaleDateString('fr-FR') : '' %></td>
-            <td><%= r.reason || '' %></td>
+            <td>
+              <% if (r.existsInDb) { %>
+                <span class="badge badge-unchanged">Existant chantier</span>
+              <% } %>
+              <%= r.reason || '' %>
+            </td>
           </tr>
         <% }); %>
       </tbody>
@@ -294,10 +312,13 @@
         const opRow   = normalize($tr.find('td:eq(2)').text());
         const etatSel = normalize($('#filtre-etat').val());
         const opSel   = normalize($('#filtre-op').val());
+        const existSel = normalize($('#filtre-exists').val());
+        const existRow = normalize($tr.data('exists'));
         // "contains" au lieu d'égalité stricte -> plus tolérant aux espaces/retours/labels
         const etatOK = !etatSel || etatRow.indexOf(etatSel) !== -1;
         const opOK   = !opSel   || opRow.indexOf(opSel)   !== -1;
-        return etatOK && opOK;
+        const existOK = !existSel || existRow === existSel;
+        return etatOK && opOK && existOK;
       };
       // Évite les doublons si on re-rend la page
       if (window.__previewFilter) {
@@ -312,7 +333,7 @@
         paging: true,
         pageLength: 25,
         lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'Tous']],
-        order: [[2, 'asc'], [3, 'asc']], // Opération, puis LOT
+        order: [[2, 'asc'], [4, 'asc']], // Opération, puis LOT
         // Pas de langue distante pour respecter la CSP (optionnel)
         dom: 'lrtip'
       });
@@ -327,6 +348,9 @@
         table.draw();
       });
       $('#filtre-op').on('change', function () {
+        table.draw();
+      });
+      $('#filtre-exists').on('change', function () {
         table.draw();
       });
       // Applique l'état initial (utile si un filtre est pré-sélectionné)

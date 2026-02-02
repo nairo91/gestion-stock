@@ -69,8 +69,8 @@ function normalizeHeaderLabel(label) {
     .toUpperCase();
 }
 
-function parsePlannedQuantity(cell) {
-  const raw = getCellString(cell).trim();
+function parseQuantityValue(rawValue) {
+  const raw = rawValue == null ? '' : String(rawValue).trim();
   if (!raw) {
     return { value: null, invalid: false };
   }
@@ -80,6 +80,10 @@ function parsePlannedQuantity(cell) {
   }
   const parsed = Math.round(parseFloat(cleaned.replace(',', '.')));
   return Number.isNaN(parsed) ? { value: null, invalid: true } : { value: parsed, invalid: false };
+}
+
+function parsePlannedQuantity(cell) {
+  return parseQuantityValue(getCellString(cell));
 }
 
 function parsePlannedDate(cell) {
@@ -250,6 +254,27 @@ const toDateOrNull = value => {
   }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+};
+
+// Normalise les quantités pour comparaison (null/'' -> 0, arrondi comme l'import).
+const normalizeQty = value => {
+  const parsed = parseQuantityValue(value);
+  return parsed.value == null ? 0 : parsed.value;
+};
+
+// Normalise les dates en YYYY-MM-DD (UTC) pour éviter les décalages timezone.
+const normalizeDateOnly = value => {
+  if (!value) {
+    return '';
+  }
+  const date = value instanceof Date ? value : toDateOrNull(value);
+  if (!date) {
+    return '';
+  }
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const computeTotalPrevu = mc => {
@@ -1841,19 +1866,6 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         .replace(/\s+/g, ' ')
         .trim()
         .toUpperCase() || null;
-    const normalizeNumber = value => (value == null || value === '' ? null : Number(value));
-    const dateKey = value => {
-      const date = toDateOrNull(value);
-      if (!date) {
-        return null;
-      }
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-    const areSameDates = (left, right) => dateKey(left) === dateKey(right);
-
     const markSkipped = (rowIndex, reason) => {
       const target = previewRows[rowIndex];
       if (!target || target.operation === 'skipped') {
@@ -1915,7 +1927,9 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           datePrevue4: null,
           status: 'ignored',
           reason: 'Ligne vide',
-          operation: 'unchanged'
+          operation: 'unchanged',
+          diffDetails: '',
+          existsInDb: false
         });
         continue;
       }
@@ -1992,6 +2006,35 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         }
       }
 
+      if (status === 'duplicate' || operation === 'skipped') {
+        previewRows.push({
+          excelRow: r,
+          categorie: categorieStr,
+          designation: designationStr,
+          fournisseur: fournisseurStr || null,
+          referenceFournisseur: referenceFournisseurStr || null,
+          referenceFournisseurKey: refKey(referenceFournisseurStr),
+          refFabricant: refFabricantStr || null,
+          qtePrevue: null,
+          qtePrevue1: qteSlots[0].value,
+          qtePrevue2: qteSlots[1].value,
+          qtePrevue3: qteSlots[2].value,
+          qtePrevue4: qteSlots[3].value,
+          datePrevue1: dateSlots[0].value,
+          datePrevue2: dateSlots[1].value,
+          datePrevue3: dateSlots[2].value,
+          datePrevue4: dateSlots[3].value,
+          status,
+          reason: reasons.join(' / '),
+          operation,
+          diffDetails: '',
+          existsInDb: false
+        });
+        continue;
+      }
+
+      let existsInDb = false;
+      let diffDetails = '';
       if (status !== 'error') {
         let existingMat = null;
         if (refLabel) {
@@ -2027,17 +2070,48 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
             where: { chantierId, materielId: existingMat.id }
           });
           if (existingLink) {
+            existsInDb = true;
             const sameQuantities =
-              normalizeNumber(existingLink.quantitePrevue1) === normalizeNumber(qtePrevue1) &&
-              normalizeNumber(existingLink.quantitePrevue2) === normalizeNumber(qtePrevue2) &&
-              normalizeNumber(existingLink.quantitePrevue3) === normalizeNumber(qtePrevue3) &&
-              normalizeNumber(existingLink.quantitePrevue4) === normalizeNumber(qtePrevue4);
+              normalizeQty(existingLink.quantitePrevue1) === normalizeQty(qtePrevue1) &&
+              normalizeQty(existingLink.quantitePrevue2) === normalizeQty(qtePrevue2) &&
+              normalizeQty(existingLink.quantitePrevue3) === normalizeQty(qtePrevue3) &&
+              normalizeQty(existingLink.quantitePrevue4) === normalizeQty(qtePrevue4);
             const sameDates =
-              areSameDates(existingLink.dateLivraisonPrevue1, datePrevue1) &&
-              areSameDates(existingLink.dateLivraisonPrevue2, datePrevue2) &&
-              areSameDates(existingLink.dateLivraisonPrevue3, datePrevue3) &&
-              areSameDates(existingLink.dateLivraisonPrevue4, datePrevue4);
+              normalizeDateOnly(existingLink.dateLivraisonPrevue1) === normalizeDateOnly(datePrevue1) &&
+              normalizeDateOnly(existingLink.dateLivraisonPrevue2) === normalizeDateOnly(datePrevue2) &&
+              normalizeDateOnly(existingLink.dateLivraisonPrevue3) === normalizeDateOnly(datePrevue3) &&
+              normalizeDateOnly(existingLink.dateLivraisonPrevue4) === normalizeDateOnly(datePrevue4);
             operation = sameQuantities && sameDates ? 'unchanged' : 'update';
+            if (operation === 'update') {
+              const diffParts = [];
+              const qtyPairs = [
+                { label: 'Qte 1', before: existingLink.quantitePrevue1, after: qtePrevue1 },
+                { label: 'Qte 2', before: existingLink.quantitePrevue2, after: qtePrevue2 },
+                { label: 'Qte 3', before: existingLink.quantitePrevue3, after: qtePrevue3 },
+                { label: 'Qte 4', before: existingLink.quantitePrevue4, after: qtePrevue4 }
+              ];
+              qtyPairs.forEach(item => {
+                const before = normalizeQty(item.before);
+                const after = normalizeQty(item.after);
+                if (before !== after) {
+                  diffParts.push(`${item.label}: ${before} → ${after}`);
+                }
+              });
+              const datePairs = [
+                { label: 'Date 1', before: existingLink.dateLivraisonPrevue1, after: datePrevue1 },
+                { label: 'Date 2', before: existingLink.dateLivraisonPrevue2, after: datePrevue2 },
+                { label: 'Date 3', before: existingLink.dateLivraisonPrevue3, after: datePrevue3 },
+                { label: 'Date 4', before: existingLink.dateLivraisonPrevue4, after: datePrevue4 }
+              ];
+              datePairs.forEach(item => {
+                const before = normalizeDateOnly(item.before);
+                const after = normalizeDateOnly(item.after);
+                if (before !== after) {
+                  diffParts.push(`${item.label}: ${before || '—'} → ${after || '—'}`);
+                }
+              });
+              diffDetails = diffParts.join(' | ');
+            }
           }
         }
       }
@@ -2061,7 +2135,9 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         datePrevue4: dateSlots[3].value,
         status,
         reason: reasons.join(' / '),
-        operation
+        operation,
+        diffDetails,
+        existsInDb
       });
     }
 
@@ -2073,7 +2149,11 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
     };
 
     const importable = previewRows.filter(
-      row => row.status !== 'error' && row.status !== 'ignored' && row.operation !== 'skipped'
+      row =>
+        row.status !== 'error' &&
+        row.status !== 'ignored' &&
+        row.status !== 'duplicate' &&
+        row.operation !== 'skipped'
     );
 
     const stats = {
@@ -2083,7 +2163,10 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       warn: previewRows.filter(r => r.status === 'warn').length,
       error: previewRows.filter(r => r.status === 'error').length,
       ignored: previewRows.filter(r => r.status === 'ignored').length,
-      duplicate: previewRows.filter(r => r.status === 'duplicate' || r.operation === 'skipped').length,
+      doublonsFichier: previewRows.filter(r => r.status === 'duplicate' || r.operation === 'skipped').length,
+      existantsDb: previewRows.filter(r => r.existsInDb).length,
+      existantsInchanges: previewRows.filter(r => r.existsInDb && r.operation === 'unchanged').length,
+      existantsUpdates: previewRows.filter(r => r.existsInDb && r.operation === 'update').length,
       create: importable.filter(r => r.operation === 'create').length,
       update: importable.filter(r => r.operation === 'update').length,
       unchanged: importable.filter(r => r.operation === 'unchanged').length
@@ -2135,6 +2218,9 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
     for (const r of preview.rows) {
       if (r.status === 'error' || r.status === 'ignored' || r.status === 'duplicate' || r.operation === 'skipped') {
         skipped += 1;
+        continue;
+      }
+      if (r.operation === 'unchanged') {
         continue;
       }
 
@@ -2223,10 +2309,14 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           const datePrevue2 = toDateOrNull(r.datePrevue2);
           const datePrevue3 = toDateOrNull(r.datePrevue3);
           const datePrevue4 = toDateOrNull(r.datePrevue4);
-          const initial1 = r.qtePrevue1 ?? null;
-          const initial2 = r.qtePrevue2 ?? null;
-          const initial3 = r.qtePrevue3 ?? null;
-          const initial4 = r.qtePrevue4 ?? null;
+          const qtePrevue1 = parseQuantityValue(r.qtePrevue1).value;
+          const qtePrevue2 = parseQuantityValue(r.qtePrevue2).value;
+          const qtePrevue3 = parseQuantityValue(r.qtePrevue3).value;
+          const qtePrevue4 = parseQuantityValue(r.qtePrevue4).value;
+          const initial1 = qtePrevue1 ?? null;
+          const initial2 = qtePrevue2 ?? null;
+          const initial3 = qtePrevue3 ?? null;
+          const initial4 = qtePrevue4 ?? null;
 
           await MaterielChantier.upsert(
             {
@@ -2235,10 +2325,10 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
               quantite: 0,
               quantitePrevue: null,
               quantitePrevueInitiale: null,
-              quantitePrevue1: r.qtePrevue1,
-              quantitePrevue2: r.qtePrevue2,
-              quantitePrevue3: r.qtePrevue3,
-              quantitePrevue4: r.qtePrevue4,
+              quantitePrevue1: qtePrevue1,
+              quantitePrevue2: qtePrevue2,
+              quantitePrevue3: qtePrevue3,
+              quantitePrevue4: qtePrevue4,
               quantitePrevueInitiale1: initial1,
               quantitePrevueInitiale2: initial2,
               quantitePrevueInitiale3: initial3,
@@ -2255,7 +2345,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
 
           if (r.operation === 'update') {
             updated += 1;
-          } else {
+          } else if (r.operation === 'create') {
             created += 1;
           }
 
