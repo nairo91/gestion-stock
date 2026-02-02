@@ -1096,13 +1096,6 @@
 
   <% } %> <!-- fin du bloc admin -->
 
-  <% if (chantierCourant) { %>
-    <a href="/chantier/dashboard?chantierId=<%= chantierCourant.id %>" class="btn btn-info mb-3">
-      📊 Dashboard chantier
-    </a>
-  <% } %>
-
-
   <a href="/materiel" class="btn btn-secondary">Retour</a>
 </div>
 
@@ -1678,12 +1671,6 @@
                     <span class="badge bg-danger">Source ID manquant</span>
                   <% } %>
                   <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
-                  <a
-                    href="/chantier/dashboard?chantierId=<%= mc.chantierId %>"
-                    class="btn btn-primary btn-sm"
-                  >
-                    Dashboard
-                  </a>
                   <% if (user && user.role === 'admin') { %>
                     <button
                       type="button"
