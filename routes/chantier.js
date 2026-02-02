@@ -101,6 +101,17 @@ function parsePlannedDate(cell) {
   return { value: parsed, invalid: parsed === null };
 }
 
+function excelColumnName(index) {
+  let result = '';
+  let current = index;
+  while (current > 0) {
+    const remainder = (current - 1) % 26;
+    result = String.fromCharCode(65 + remainder) + result;
+    current = Math.floor((current - 1) / 26);
+  }
+  return result;
+}
+
 async function fetchMaterielChantiersWithFilters(query, { includePhotos = true } = {}) {
   const {
     chantierId,
@@ -1026,7 +1037,8 @@ router.post('/supprimer-designation', ensureAuthenticated, checkAdmin, async (re
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, marque, chantierId, emplacementId, rack, compartiment, niveau, remarque, quantitePrevue1, quantitePrevue2, quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3, dateLivraisonPrevue4 } = req.body;
+    const { nom, reference, refFournisseur, refFabricant, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, marque, chantierId, emplacementId, rack, compartiment, niveau, remarque, quantitePrevue1, quantitePrevue2, quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3, dateLivraisonPrevue4 } = req.body;
+    const refFournisseurValue = refFournisseur ?? reference ?? null;
     const prixNumber = prix ? parseFloat(prix) : null;
     const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
     const datePrevue = dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null;
@@ -1059,7 +1071,8 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
     // 1) Créer le matériel avec quantite=0 dans la table Materiel
     const nouveauMateriel = await Materiel.create({
       nom,
-      reference,
+      reference: refFournisseurValue,
+      refFabricant: refFabricant || null,
       quantite: 0,
       description,
       prix: prixNumber,
@@ -1378,6 +1391,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
         compartiment,
         niveau,
         reference,
+        refFournisseur,
+        refFabricant,
         description,
         prix,
         remarque,
@@ -1446,6 +1461,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     }
 
     const changementsDetail = [];
+    const refFournisseurValue = refFournisseur ?? reference ?? null;
 
     const oldQteActuelle = baseQuantiteActuelle;
     const oldNom = mc.materiel.nom;
@@ -1457,6 +1473,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldMarque = mc.materiel.marque;
     const oldNiveau = mc.materiel.niveau;
     const oldReference = mc.materiel.reference;
+    const oldRefFabricant = mc.materiel.refFabricant;
     const oldDescription = mc.materiel.description;
       const oldPrix = mc.materiel.prix;
       const oldRemarque = mc.remarque;
@@ -1477,7 +1494,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newFournisseur = fournisseur;
     const newMarque = marque;
     const newNiveau = niveau ? parseInt(niveau) : null;
-    const newReference = reference;
+    const newReference = refFournisseurValue;
+    const newRefFabricant = refFabricant || null;
     const newDescription = description;
       const newPrix = prix ? parseFloat(prix) : null;
     const newRemarque = remarque && remarque.trim() ? remarque.trim() : null;
@@ -1514,7 +1532,8 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldMarque !== newMarque) changementsDetail.push(`Marque: ${oldMarque || '-'} ➔ ${newMarque || '-'}`);
     if (oldCompartiment !== newCompartiment) changementsDetail.push(`Compartiment: ${oldCompartiment || '-'} ➔ ${newCompartiment || '-'}`);
     if (oldNiveau !== newNiveau) changementsDetail.push(`Niveau: ${oldNiveau || '-'} ➔ ${newNiveau || '-'}`);
-    if (oldReference !== newReference) changementsDetail.push(`Référence: ${oldReference || '-'} ➔ ${newReference || '-'}`);
+    if (oldReference !== newReference) changementsDetail.push(`Ref Fournisseur: ${oldReference || '-'} ➔ ${newReference || '-'}`);
+    if (oldRefFabricant !== newRefFabricant) changementsDetail.push(`Ref Fabricant: ${oldRefFabricant || '-'} ➔ ${newRefFabricant || '-'}`);
     if (oldDescription !== newDescription) changementsDetail.push(`Description: ${oldDescription || '-'} ➔ ${newDescription || '-'}`);
       if (oldPrix !== newPrix) changementsDetail.push(`Prix: ${oldPrix || '-'} ➔ ${newPrix || '-'}`);
       if (oldRemarque !== newRemarque) changementsDetail.push(`Remarque: ${oldRemarque || '-'} ➔ ${newRemarque || '-'}`);
@@ -1562,6 +1581,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     mc.materiel.compartiment = newCompartiment;
     mc.materiel.niveau = newNiveau;
     mc.materiel.reference = newReference;
+    mc.materiel.refFabricant = newRefFabricant;
     mc.materiel.description = newDescription;
       mc.materiel.prix = newPrix;
       mc.remarque = newRemarque;
@@ -1649,7 +1669,8 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
 
 router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
-      const { nom, reference, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, marque, chantierId, emplacementId, remarque } = req.body;
+      const { nom, reference, refFournisseur, refFabricant, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, marque, chantierId, emplacementId, remarque } = req.body;
+      const refFournisseurValue = refFournisseur ?? reference ?? null;
     const prixNumber = prix ? parseFloat(prix) : null;
     const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
     const datePrevue = dateLivraisonPrevue ? new Date(dateLivraisonPrevue) : null;
@@ -1659,7 +1680,8 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
     // Créer le matériel
     const nouveauMateriel = await Materiel.create({
       nom,
-      reference,
+      reference: refFournisseurValue,
+      refFabricant: refFabricant || null,
       description,
       prix: prixNumber,
       categorie,
@@ -1762,6 +1784,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
     const headerMap = {};
     let referencePreferredIdx = null;
     let referenceFallbackIdx = null;
+    let refFabricantIdx = null;
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       const labels = row.values.map((v, idx) => (idx === 0 ? '' : getCellString(row.getCell(idx)).trim()));
       const upper = labels.map(l => normalizeHeaderLabel(l));
@@ -1778,6 +1801,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
             referencePreferredIdx = idx;
           } else if (val === 'REF' || val === 'REFERENCE') {
             referenceFallbackIdx = idx;
+          } else if (val === 'REF FABRICANT' || val === 'REF_FABRICANT') {
+            refFabricantIdx = idx;
           }
           const qteMatch = val.match(/^QTE\s*(\d)(?:ER|ERE|E|EME)?\s*LIVRAISON$/);
           if (qteMatch) {
@@ -1789,6 +1814,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           }
         });
         headerMap.referenceFournisseur = referencePreferredIdx ?? referenceFallbackIdx;
+        headerMap.refFabricant = refFabricantIdx;
         return false;
       }
     });
@@ -1847,6 +1873,10 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         headerMap.referenceFournisseur != null
           ? getCellString(row.getCell(headerMap.referenceFournisseur)).trim()
           : '';
+      const refFabricantStr =
+        headerMap.refFabricant != null
+          ? getCellString(row.getCell(headerMap.refFabricant)).trim()
+          : '';
       const qteSlots = [1, 2, 3, 4].map(idx => {
         const cell = headerMap[`qte${idx}`] ? row.getCell(headerMap[`qte${idx}`]) : null;
         return parsePlannedQuantity(cell);
@@ -1863,6 +1893,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         !designationStr &&
         !fournisseurStr &&
         !referenceFournisseurStr &&
+        !refFabricantStr &&
         !hasAnyQte &&
         !hasAnyDate
       ) {
@@ -1872,6 +1903,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           designation: '',
           fournisseur: null,
           referenceFournisseur: null,
+          refFabricant: null,
           qtePrevue: null,
           qtePrevue1: null,
           qtePrevue2: null,
@@ -1926,7 +1958,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           operation = 'skipped';
           reasons.length = 0;
           reasons.push(
-            `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Réf (ligne Excel ${groupEntry.firstWithRefRow})`
+            `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Ref Fournisseur (ligne Excel ${groupEntry.firstWithRefRow})`
           );
         } else {
           seenExact.set(exactKey, { excelRow: r, index: previewRows.length });
@@ -1939,7 +1971,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
               operation = 'skipped';
               reasons.length = 0;
               reasons.push(
-                `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Réf (ligne Excel ${nextGroupEntry.firstWithRefRow})`
+                `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Ref Fournisseur (ligne Excel ${nextGroupEntry.firstWithRefRow})`
               );
             }
           } else {
@@ -1947,7 +1979,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
               nextGroupEntry.noRefIndexes.forEach(index =>
                 markSkipped(
                   index,
-                  `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Réf (ligne Excel ${r})`
+                  `Doublon/ambigu: même Désignation+Catégorie qu’une ligne avec Ref Fournisseur (ligne Excel ${r})`
                 )
               );
               nextGroupEntry.noRefIndexes = [];
@@ -2017,6 +2049,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         fournisseur: fournisseurStr || null,
         referenceFournisseur: referenceFournisseurStr || null,
         referenceFournisseurKey: refKey(referenceFournisseurStr),
+        refFabricant: refFabricantStr || null,
         qtePrevue: null,
         qtePrevue1: qteSlots[0].value,
         qtePrevue2: qteSlots[1].value,
@@ -2113,6 +2146,8 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           const nomKey = norm(designationLabel);
           const catKey = norm(categorieLabel);
           const refLabel = refKey(r.referenceFournisseur);
+          const refFabricantLabel =
+            typeof r.refFabricant === 'string' ? r.refFabricant.trim() : r.refFabricant;
 
           const [categorie] = await Categorie.findOrCreate({
             where: { nom: categorieLabel },
@@ -2160,6 +2195,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
                 nom: designationLabel,
                 categorie: categorieLabel,
                 reference: refLabel,
+                refFabricant: refFabricantLabel || null,
                 nomKey,
                 categorieKey: catKey,
                 quantite: 0,
@@ -2176,6 +2212,10 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           }
           if (!materiel.reference && refLabel) {
             materiel.reference = refLabel;
+            await materiel.save({ transaction });
+          }
+          if (refFabricantLabel && materiel.refFabricant !== refFabricantLabel) {
+            materiel.refFabricant = refFabricantLabel;
             await materiel.save({ transaction });
           }
 
@@ -2324,6 +2364,9 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
     // Recherche de la ligne d'en-tête contenant les libellés
     let headerRowIdx = null;
     let headerMap = {};
+    let referencePreferredIdx = null;
+    let referenceFallbackIdx = null;
+    let refFabricantIdx = null;
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       // On convertit les cellules en chaînes pour comparaison
       const labels = row.values.map((v, idx) => (idx === 0 ? '' : getCellString(row.getCell(idx)).trim()));
@@ -2335,6 +2378,13 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
           if (val === 'CATEGORIE' || val === 'LOT') headerMap.categorie = idx;
           if (val === 'DESIGNATION') headerMap.designation = idx;
           if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
+          if (val === 'REF FOURNISSEUR' || val === 'REF_FOURNISSEUR') {
+            referencePreferredIdx = idx;
+          } else if (val === 'REF' || val === 'REFERENCE') {
+            referenceFallbackIdx = idx;
+          } else if (val === 'REF FABRICANT' || val === 'REF_FABRICANT') {
+            refFabricantIdx = idx;
+          }
           const qteMatch = val.match(/^QTE\s*(\d)(?:ER|ERE|E|EME)?\s*LIVRAISON$/);
           if (qteMatch) {
             headerMap[`qte${qteMatch[1]}`] = idx;
@@ -2344,6 +2394,8 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
             headerMap[`date${dateMatch[1]}`] = idx;
           }
         });
+        headerMap.referenceFournisseur = referencePreferredIdx ?? referenceFallbackIdx;
+        headerMap.refFabricant = refFabricantIdx;
         return false; // sortir de la boucle eachRow
       }
     });
@@ -2365,6 +2417,12 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
       const designationStr = getCellString(row.getCell(headerMap.designation)).trim();
       const fournisseurStr = headerMap.fournisseur
         ? getCellString(row.getCell(headerMap.fournisseur)).trim()
+        : '';
+      const referenceFournisseurStr = headerMap.referenceFournisseur != null
+        ? getCellString(row.getCell(headerMap.referenceFournisseur)).trim()
+        : '';
+      const refFabricantStr = headerMap.refFabricant != null
+        ? getCellString(row.getCell(headerMap.refFabricant)).trim()
         : '';
       // On ne retient que les lignes avec une catégorie et une désignation
       if (!categorieStr || !designationStr) {
@@ -2392,7 +2450,8 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
       // Création du matériel (stock chantier commence à 0)
       const nouveauMateriel = await Materiel.create({
         nom: designationStr,
-        reference: null,
+        reference: referenceFournisseurStr || null,
+        refFabricant: refFabricantStr || null,
         quantite: 0,
         description: null,
         prix: null,
@@ -2502,7 +2561,8 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
     worksheet.columns = [
       { header: 'Chantier', key: 'chantier', width: 30 },
       { header: 'Matériel', key: 'materiel', width: 28 },
-      { header: 'Référence', key: 'reference', width: 18 },
+      { header: 'Ref Fournisseur', key: 'refFournisseur', width: 18 },
+      { header: 'Ref Fabricant', key: 'refFabricant', width: 18 },
       { header: 'Catégorie', key: 'categorie', width: 18 },
       { header: 'Description', key: 'description', width: 40 },
       { header: 'Emplacement', key: 'emplacement', width: 30 },
@@ -2560,7 +2620,8 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
       worksheet.addRow({
         chantier: chantier ? `${chantier.nom}${chantier.localisation ? ' - ' + chantier.localisation : ''}` : 'N/A',
         materiel: mat.nom || 'N/A',
-        reference: mat.reference || '-',
+        refFournisseur: mat.reference || '-',
+        refFabricant: mat.refFabricant || '-',
         categorie: mat.categorie || '-',
         description: mat.description || '-',
         emplacement: emplacement ? construireCheminEmplacement(emplacement) : '-',
@@ -2585,9 +2646,10 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
       });
     });
 
+    const lastColumn = excelColumnName(worksheet.columns.length);
     worksheet.autoFilter = {
       from: 'A1',
-      to: 'M1'
+      to: `${lastColumn}1`
     };
 
     worksheet.columns.forEach(column => {
@@ -2698,7 +2760,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
     doc.moveDown(1.5);
 
     const availableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-    const columnRatios = [0.15, 0.15, 0.1, 0.1, 0.2, 0.12, 0.05, 0.05, 0.04, 0.04];
+    const columnRatios = [0.14, 0.14, 0.08, 0.08, 0.1, 0.18, 0.09, 0.05, 0.05, 0.04, 0.05];
     const colWidths = [];
     let usedWidth = 0;
     columnRatios.forEach((ratio, index) => {
@@ -2712,7 +2774,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
     });
 
     const headers = [
-      'Chantier', 'Matériel', 'Référence', 'Catégorie',
+      'Chantier', 'Matériel', 'Ref Fournisseur', 'Ref Fabricant', 'Catégorie',
       'Description', 'Emplacement', 'Rack', 'Compartiment', 'Niveau', 'Quantité'
     ];
 
@@ -2814,6 +2876,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         chantier?.nom || 'N/A',
         mat?.nom || 'N/A',
         mat?.reference || '-',
+        mat?.refFabricant || '-',
         mat?.categorie || '-',
         mat?.description || '-',
         chemin.join(' > ') || '-',

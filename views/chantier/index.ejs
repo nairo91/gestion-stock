@@ -369,6 +369,7 @@
     /* Autoriser les retours à la ligne sur les colonnes textuelles pour éviter l'ellipsis */
     .table-stock .col-designation,
     .table-stock .col-reference,
+    .table-stock .col-ref-fabricant,
     .table-stock .col-marque,
     .table-stock .col-categorie,
     .table-stock .col-description,
@@ -577,6 +578,7 @@
 
     body.compact-mobile .table-stock .col-designation,
     body.compact-mobile .table-stock .col-reference,
+    body.compact-mobile .table-stock .col-ref-fabricant,
     body.compact-mobile .table-stock .col-marque,
     body.compact-mobile .table-stock .col-categorie,
     body.compact-mobile .table-stock .col-description,
@@ -1240,7 +1242,11 @@
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-reference" data-column-class="col-reference" checked>
-        <label class="form-check-label" for="toggle-col-reference">Référence</label>
+        <label class="form-check-label" for="toggle-col-reference">Ref Fournisseur</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-ref-fabricant" data-column-class="col-ref-fabricant" checked>
+        <label class="form-check-label" for="toggle-col-ref-fabricant">Ref Fabricant</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-categorie" data-column-class="col-categorie" checked>
@@ -1366,7 +1372,8 @@
         <% } %>
           <th class="col-designation">Désignation</th>
           <th class="col-photo">Photo</th>
-          <th class="col-reference">Référence</th>
+          <th class="col-reference">Ref Fournisseur</th>
+          <th class="col-ref-fabricant">Ref Fabricant</th>
           <th class="col-marque">Marque</th>
           <th class="col-categorie">Categorie</th>
           <th class="col-description">Description</th>
@@ -1462,8 +1469,12 @@
                 <% } %>
               </td>
 
-              <td class="col-reference" data-label="Référence">
+              <td class="col-reference" data-label="Ref Fournisseur">
                 <%= mc.materiel ? (mc.materiel.reference || '-') : '-' %>
+              </td>
+
+              <td class="col-ref-fabricant" data-label="Ref Fabricant">
+                <%= mc.materiel ? (mc.materiel.refFabricant || '-') : '-' %>
               </td>
 
               <td class="col-marque" data-label="Marque">

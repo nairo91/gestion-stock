@@ -8,6 +8,7 @@ const Materiel = sequelize.define(
     nom: { type: DataTypes.TEXT, allowNull: false },
     nomKey: { type: DataTypes.STRING, allowNull: true },
     reference: { type: DataTypes.STRING },
+    refFabricant: { type: DataTypes.STRING, allowNull: true },
     barcode: { type: DataTypes.STRING, allowNull: true },
     qr_code_value: { type: DataTypes.STRING, allowNull: true, unique: true },
     quantite: {

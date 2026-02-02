@@ -14,8 +14,12 @@
         <input type="text" name="nom" id="nom" class="form-control" value="<%= mc.materiel.nom %>" required>
       </div>
       <div class="mb-3">
-        <label for="reference" class="form-label">Référence</label>
-        <input type="text" name="reference" id="reference" class="form-control" value="<%= mc.materiel.reference || '' %>">
+        <label for="refFournisseur" class="form-label">Ref Fournisseur</label>
+        <input type="text" name="refFournisseur" id="refFournisseur" class="form-control" value="<%= mc.materiel.reference || '' %>">
+      </div>
+      <div class="mb-3">
+        <label for="refFabricant" class="form-label">Ref Fabricant</label>
+        <input type="text" name="refFabricant" id="refFabricant" class="form-control" value="<%= mc.materiel.refFabricant || '' %>">
       </div>
       <div class="mb-3">
         <label for="quantite" class="form-label">Quantité</label>
