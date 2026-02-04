@@ -1866,6 +1866,16 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         .replace(/\s+/g, ' ')
         .trim()
         .toUpperCase() || null;
+    const duplicateDbReason = 'Ambigu: plusieurs matériels en base avec la même Catégorie + Désignation';
+    const applyDuplicateFlags = row => {
+      const duplicateFile = row.status === 'duplicate' || row.operation === 'skipped';
+      const duplicateDbAmbigu =
+        row.status === 'duplicate' && typeof row.reason === 'string' && row.reason.includes(duplicateDbReason);
+      row.duplicateFile = duplicateFile;
+      row.duplicateDbAmbigu = duplicateDbAmbigu;
+      row.hasDuplicate = duplicateFile || duplicateDbAmbigu;
+      return row;
+    };
     const markSkipped = (rowIndex, reason) => {
       const target = previewRows[rowIndex];
       if (!target || target.operation === 'skipped') {
@@ -1874,6 +1884,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       target.status = 'duplicate';
       target.operation = 'skipped';
       target.reason = reason;
+      applyDuplicateFlags(target);
     };
 
     for (let r = startRow; r <= worksheet.actualRowCount; r++) {
@@ -1909,7 +1920,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         !hasAnyQte &&
         !hasAnyDate
       ) {
-        previewRows.push({
+        previewRows.push(
+          applyDuplicateFlags({
           excelRow: r,
           categorie: '',
           designation: '',
@@ -1930,7 +1942,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           operation: 'unchanged',
           diffDetails: '',
           existsInDb: false
-        });
+          })
+        );
         continue;
       }
 
@@ -2007,7 +2020,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       }
 
       if (status === 'duplicate' || operation === 'skipped') {
-        previewRows.push({
+        previewRows.push(
+          applyDuplicateFlags({
           excelRow: r,
           categorie: categorieStr,
           designation: designationStr,
@@ -2029,7 +2043,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           operation,
           diffDetails: '',
           existsInDb: false
-        });
+          })
+        );
         continue;
       }
 
@@ -2044,8 +2059,9 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           status = 'duplicate';
           operation = 'skipped';
           reasons.length = 0;
-          reasons.push('Ambigu: plusieurs matériels en base avec la même Catégorie + Désignation');
-          previewRows.push({
+          reasons.push(duplicateDbReason);
+          previewRows.push(
+            applyDuplicateFlags({
             excelRow: r,
             categorie: categorieStr,
             designation: designationStr,
@@ -2067,7 +2083,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
             operation,
             diffDetails: '',
             existsInDb: false
-          });
+            })
+          );
           continue;
         } else if (matchingMaterials.length === 1) {
           existingMat = matchingMaterials[0];
@@ -2131,7 +2148,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         }
       }
 
-      previewRows.push({
+      previewRows.push(
+        applyDuplicateFlags({
         excelRow: r,
         categorie: categorieStr,
         designation: designationStr,
@@ -2153,7 +2171,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         operation,
         diffDetails,
         existsInDb
-      });
+        })
+      );
     }
 
     req.session.importPreview = {

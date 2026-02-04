@@ -201,6 +201,15 @@
         <option value="Non">Non</option>
       </select>
     </div>
+    <div class="" style="min-width:200px">
+      <label for="filtre-doublon" class="form-label">Tri par doublon</label>
+      <select id="filtre-doublon" class="form-select">
+        <option value="">Tous</option>
+        <option value="ALL">Tous les doublons</option>
+        <option value="FILE">Doublons fichier</option>
+        <option value="DB">Doublons base (ambigu)</option>
+      </select>
+    </div>
   </div>
 
   <div class="toolbar d-flex flex-wrap align-items-center">
@@ -297,8 +306,11 @@
                  : (r.operation === 'skipped')
                    ? 'Ignorée (doublon)'
                    : 'Create';
+             const doublonLabel = r.duplicateDbAmbigu
+               ? 'Base'
+               : (r.duplicateFile ? 'Fichier' : '');
         %>
-          <tr data-etat="<%= etatText %>" data-op="<%= opText %>" data-exists="<%= r.existsInDb ? 'Oui' : 'Non' %>">
+          <tr data-etat="<%= etatText %>" data-op="<%= opText %>" data-exists="<%= r.existsInDb ? 'Oui' : 'Non' %>" data-doublon="<%= doublonLabel %>">
             <td><%= r.excelRow != null ? r.excelRow : '' %></td>
             <td>
               <% if (isDuplicate) { %>
@@ -366,12 +378,18 @@
         const etatSel = normalize($('#filtre-etat').val());
         const opSel   = normalize($('#filtre-op').val());
         const existSel = normalize($('#filtre-exists').val());
+        const doublonSel = normalize($('#filtre-doublon').val());
         const existRow = normalize($tr.data('exists'));
+        const doublonRow = normalize($tr.data('doublon'));
         // "contains" au lieu d'égalité stricte -> plus tolérant aux espaces/retours/labels
         const etatOK = !etatSel || etatRow.indexOf(etatSel) !== -1;
         const opOK   = !opSel   || opRow.indexOf(opSel)   !== -1;
         const existOK = !existSel || existRow === existSel;
-        return etatOK && opOK && existOK;
+        const doublonOK = !doublonSel ||
+          (doublonSel === 'ALL' && !!doublonRow) ||
+          (doublonSel === 'FILE' && doublonRow === 'Fichier') ||
+          (doublonSel === 'DB' && doublonRow === 'Base');
+        return etatOK && opOK && existOK && doublonOK;
       };
       // Évite les doublons si on re-rend la page
       if (window.__previewFilter) {
@@ -459,6 +477,9 @@
         table.draw();
       });
       $('#filtre-exists').on('change', function () {
+        table.draw();
+      });
+      $('#filtre-doublon').on('change', function () {
         table.draw();
       });
       // Applique l'état initial (utile si un filtre est pré-sélectionné)
