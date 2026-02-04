@@ -2037,25 +2037,40 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       let diffDetails = '';
       if (status !== 'error') {
         let existingMat = null;
-        if (refLabel) {
-          existingMat = await Materiel.findOne({
-            where: { nomKey, categorieKey: catKey, reference: refLabel }
+        const matchingMaterials = await Materiel.findAll({
+          where: { nomKey, categorieKey: catKey }
+        });
+        if (matchingMaterials.length > 1) {
+          status = 'duplicate';
+          operation = 'skipped';
+          reasons.length = 0;
+          reasons.push('Ambigu: plusieurs matériels en base avec la même Catégorie + Désignation');
+          previewRows.push({
+            excelRow: r,
+            categorie: categorieStr,
+            designation: designationStr,
+            fournisseur: fournisseurStr || null,
+            referenceFournisseur: referenceFournisseurStr || null,
+            referenceFournisseurKey: refKey(referenceFournisseurStr),
+            refFabricant: refFabricantStr || null,
+            qtePrevue: null,
+            qtePrevue1: qteSlots[0].value,
+            qtePrevue2: qteSlots[1].value,
+            qtePrevue3: qteSlots[2].value,
+            qtePrevue4: qteSlots[3].value,
+            datePrevue1: dateSlots[0].value,
+            datePrevue2: dateSlots[1].value,
+            datePrevue3: dateSlots[2].value,
+            datePrevue4: dateSlots[3].value,
+            status,
+            reason: reasons.join(' / '),
+            operation,
+            diffDetails: '',
+            existsInDb: false
           });
-          if (!existingMat) {
-            const fallbackCandidates = await Materiel.findAll({
-              where: { nomKey, categorieKey: catKey }
-            });
-            const emptyRefCandidates = fallbackCandidates.filter(
-              candidate => !refKey(candidate.reference)
-            );
-            if (emptyRefCandidates.length === 1) {
-              existingMat = emptyRefCandidates[0];
-            }
-          }
-        } else {
-          existingMat = await Materiel.findOne({
-            where: { nomKey, categorieKey: catKey }
-          });
+          continue;
+        } else if (matchingMaterials.length === 1) {
+          existingMat = matchingMaterials[0];
         }
         const qtePrevue1 = qteSlots[0].value ?? null;
         const qtePrevue2 = qteSlots[1].value ?? null;
@@ -2164,6 +2179,12 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       error: previewRows.filter(r => r.status === 'error').length,
       ignored: previewRows.filter(r => r.status === 'ignored').length,
       doublonsFichier: previewRows.filter(r => r.status === 'duplicate' || r.operation === 'skipped').length,
+      doublonsDbAmbigus: previewRows.filter(
+        r =>
+          r.status === 'duplicate' &&
+          typeof r.reason === 'string' &&
+          r.reason.includes('Ambigu: plusieurs matériels en base')
+      ).length,
       existantsDb: previewRows.filter(r => r.existsInDb).length,
       existantsInchanges: previewRows.filter(r => r.existsInDb && r.operation === 'unchanged').length,
       existantsUpdates: previewRows.filter(r => r.existsInDb && r.operation === 'update').length,
@@ -2235,6 +2256,18 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           const refFabricantLabel =
             typeof r.refFabricant === 'string' ? r.refFabricant.trim() : r.refFabricant;
 
+          let materiel = null;
+          const matchingMaterials = await Materiel.findAll({
+            where: { nomKey, categorieKey: catKey },
+            transaction
+          });
+          if (matchingMaterials.length > 1) {
+            throw new Error('Ambigu: plusieurs matériels en base avec la même Catégorie + Désignation');
+          }
+          if (matchingMaterials.length === 1) {
+            materiel = matchingMaterials[0];
+          }
+
           const [categorie] = await Categorie.findOrCreate({
             where: { nom: categorieLabel },
             transaction
@@ -2243,34 +2276,6 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
             await Designation.findOrCreate({
               where: { nom: designationLabel, categorieId: categorie.id },
               defaults: { nom: designationLabel, categorieId: categorie.id },
-              transaction
-            });
-          }
-
-          let materiel = null;
-          if (refLabel) {
-            materiel = await Materiel.findOne({
-              where: { nomKey, categorieKey: catKey, reference: refLabel },
-              transaction
-            });
-            if (!materiel) {
-              const fallbackCandidates = await Materiel.findAll({
-                where: { nomKey, categorieKey: catKey },
-                transaction
-              });
-              const emptyRefCandidates = fallbackCandidates.filter(
-                candidate => !refKey(candidate.reference)
-              );
-              if (emptyRefCandidates.length === 1) {
-                const fallbackMat = emptyRefCandidates[0];
-                fallbackMat.reference = refLabel;
-                await fallbackMat.save({ transaction });
-                materiel = fallbackMat;
-              }
-            }
-          } else {
-            materiel = await Materiel.findOne({
-              where: { nomKey, categorieKey: catKey },
               transaction
             });
           }
