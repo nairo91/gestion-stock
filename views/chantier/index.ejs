@@ -1201,6 +1201,14 @@
   </select>
 </div>
 
+<div class="col-md-3">
+  <label for="filtre-doublons" class="form-label">Tri par doublons</label>
+  <select class="form-select" name="doublons" id="filtre-doublons">
+    <option value="">Tous</option>
+    <option value="1" <%= doublons === '1' ? 'selected' : '' %>>Doublons (Catégorie + Désignation)</option>
+  </select>
+</div>
+
 
 
 
