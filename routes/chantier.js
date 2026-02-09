@@ -2372,30 +2372,51 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           const initial3 = qtePrevue3 ?? null;
           const initial4 = qtePrevue4 ?? null;
 
-          await MaterielChantier.upsert(
-            {
-              chantierId: preview.chantierId,
-              materielId: materiel.id,
-              quantite: 0,
-              quantitePrevue: null,
-              quantitePrevueInitiale: null,
-              quantitePrevue1: qtePrevue1,
-              quantitePrevue2: qtePrevue2,
-              quantitePrevue3: qtePrevue3,
-              quantitePrevue4: qtePrevue4,
-              quantitePrevueInitiale1: initial1,
-              quantitePrevueInitiale2: initial2,
-              quantitePrevueInitiale3: initial3,
-              quantitePrevueInitiale4: initial4,
-              dateLivraisonPrevue: null,
-              dateLivraisonPrevue1: datePrevue1,
-              dateLivraisonPrevue2: datePrevue2,
-              dateLivraisonPrevue3: datePrevue3,
-              dateLivraisonPrevue4: datePrevue4,
-              remarque: null
-            },
-            { transaction }
-          );
+          const existingMaterielChantier = await MaterielChantier.findOne({
+            where: { chantierId: preview.chantierId, materielId: materiel.id },
+            transaction
+          });
+          const materielChantierPayload = {
+            chantierId: preview.chantierId,
+            materielId: materiel.id,
+            quantite: 0,
+            quantitePrevue: null,
+            quantitePrevueInitiale: null,
+            quantitePrevue1: qtePrevue1,
+            quantitePrevue2: qtePrevue2,
+            quantitePrevue3: qtePrevue3,
+            quantitePrevue4: qtePrevue4,
+            quantitePrevueInitiale1: initial1,
+            quantitePrevueInitiale2: initial2,
+            quantitePrevueInitiale3: initial3,
+            quantitePrevueInitiale4: initial4,
+            dateLivraisonPrevue: null,
+            dateLivraisonPrevue1: datePrevue1,
+            dateLivraisonPrevue2: datePrevue2,
+            dateLivraisonPrevue3: datePrevue3,
+            dateLivraisonPrevue4: datePrevue4,
+            remarque: null
+          };
+          if (existingMaterielChantier) {
+            materielChantierPayload.alertStatus = existingMaterielChantier.alertStatus;
+            materielChantierPayload.deliveryPopupDismissed = existingMaterielChantier.deliveryPopupDismissed;
+            materielChantierPayload.deliveryPopupDismissed1 = existingMaterielChantier.deliveryPopupDismissed1;
+            materielChantierPayload.deliveryPopupDismissed2 = existingMaterielChantier.deliveryPopupDismissed2;
+            materielChantierPayload.deliveryPopupDismissed3 = existingMaterielChantier.deliveryPopupDismissed3;
+            materielChantierPayload.deliveryPopupDismissed4 = existingMaterielChantier.deliveryPopupDismissed4;
+            materielChantierPayload.deliveryPopupSnoozeUntil = existingMaterielChantier.deliveryPopupSnoozeUntil;
+            materielChantierPayload.deliveryPopupSnoozeUntil1 = existingMaterielChantier.deliveryPopupSnoozeUntil1;
+            materielChantierPayload.deliveryPopupSnoozeUntil2 = existingMaterielChantier.deliveryPopupSnoozeUntil2;
+            materielChantierPayload.deliveryPopupSnoozeUntil3 = existingMaterielChantier.deliveryPopupSnoozeUntil3;
+            materielChantierPayload.deliveryPopupSnoozeUntil4 = existingMaterielChantier.deliveryPopupSnoozeUntil4;
+            materielChantierPayload.deliveryReminderSentAt = existingMaterielChantier.deliveryReminderSentAt;
+            materielChantierPayload.deliveryReminderFollowUpSentAt =
+              existingMaterielChantier.deliveryReminderFollowUpSentAt;
+            materielChantierPayload.lastReceptionAt = existingMaterielChantier.lastReceptionAt;
+            materielChantierPayload.bonLivraisonUrls = existingMaterielChantier.bonLivraisonUrls;
+          }
+
+          await MaterielChantier.upsert(materielChantierPayload, { transaction });
 
           if (r.operation === 'update') {
             updated += 1;
