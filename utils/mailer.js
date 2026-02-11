@@ -16,6 +16,7 @@ const transporter = nodemailer.createTransport({
 
 const DEFAULT_RECIPIENTS = [
   'blot.valentin@batirenov.info',
+  'heidsieck.louisiane@batirenov.info',
   'launay.jeremy@batirenov.info',
   'mirona.orian@batirenov.info'
 ];
