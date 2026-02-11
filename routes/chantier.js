@@ -594,6 +594,8 @@ router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, asy
       4: 'dateLivraisonPrevue4'
     };
 
+    let processedItems = 0;
+
     for (const item of items) {
       const id = parseInt(item && item.id, 10);
       const slotIndex = parseInt(item && item.slotIndex, 10);
@@ -610,11 +612,61 @@ router.post('/materielChantier/dismiss-delivery-popup', ensureAuthenticated, asy
       const snoozeUntil = dayjs().add(1, 'hour').toDate();
       mc[fieldName] = snoozeUntil;
       await mc.save();
+      processedItems += 1;
+    }
+
+    if (processedItems === 0) {
+      return res.status(400).json({ success: false, message: 'No valid items' });
     }
 
     return res.json({ success: true });
   } catch (err) {
     console.error('Erreur dismissal popup livraison :', err);
+    return res.status(500).json({ success: false });
+  }
+});
+
+router.post('/materielChantier/validate-delivery-popup', ensureAuthenticated, async (req, res) => {
+  try {
+    const items = Array.isArray(req.body && req.body.items) ? req.body.items : null;
+    if (!items) {
+      console.error('Payload validation popup livraison invalide :', req.body);
+      return res.status(400).json({ success: false, message: 'Invalid items' });
+    }
+    if (items.length === 0) {
+      return res.status(400).json({ success: false, message: 'No items' });
+    }
+
+    const allowedSlots = new Set([0, 1, 2, 3, 4]);
+    let processedItems = 0;
+
+    for (const item of items) {
+      const id = parseInt(item && item.id, 10);
+      const slotIndex = parseInt(item && item.slotIndex, 10);
+      if (!Number.isInteger(id) || !allowedSlots.has(slotIndex)) {
+        continue;
+      }
+
+      const dismissedFieldName = slotIndex === 0 ? 'deliveryPopupDismissed' : `deliveryPopupDismissed${slotIndex}`;
+      const snoozeFieldName = slotIndex === 0 ? 'deliveryPopupSnoozeUntil' : `deliveryPopupSnoozeUntil${slotIndex}`;
+      const mc = await MaterielChantier.findByPk(id);
+      if (!mc) {
+        continue;
+      }
+
+      mc[dismissedFieldName] = true;
+      mc[snoozeFieldName] = null;
+      await mc.save();
+      processedItems += 1;
+    }
+
+    if (processedItems === 0) {
+      return res.status(400).json({ success: false, message: 'No valid items' });
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erreur validation popup livraison :', err);
     return res.status(500).json({ success: false });
   }
 });

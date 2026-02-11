@@ -2452,54 +2452,85 @@
       });
       updateSelectAllState();
 
+      const getCheckedDeliveryItems = () => {
+        const checkedBoxes = getVisibleCheckboxes().filter((checkbox) => checkbox.checked);
+        if (!checkedBoxes.length) {
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.warn('[delivery-dismiss] Aucun item sélectionné pour la requête.');
+          }
+          return [];
+        }
+
+        return checkedBoxes.map((checkbox) => {
+          const raw = checkbox.value || '';
+          const [id, slotIndex] = raw.split('-');
+          return { id: Number(id), slotIndex: Number(slotIndex) };
+        });
+      };
+
+      const removeCheckedRowsFromUi = () => {
+        getVisibleCheckboxes()
+          .filter((checkbox) => checkbox.checked)
+          .forEach((checkbox) => {
+            const row = checkbox.closest('tr');
+            if (row) {
+              row.remove();
+            }
+          });
+        updateSubtitleCounts();
+        updateSelectAllState();
+      };
+
+      const postDeliveryAction = async (url, errorMessage) => {
+        const items = getCheckedDeliveryItems();
+        if (!items.length) {
+          modalInstance.hide();
+          return;
+        }
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ items })
+        });
+
+        if (!resp.ok) {
+          throw new Error(errorMessage);
+        }
+
+        const data = await resp.json();
+        if (!data || !data.success) {
+          throw new Error('Réponse invalide');
+        }
+
+        removeCheckedRowsFromUi();
+        modalInstance.hide();
+      };
+
       const hideTodayButton = document.getElementById('hideDeliveryModalToday');
       if (hideTodayButton) {
-        hideTodayButton.addEventListener('click', () => {
-          const hideUntil = new Date(Date.now() + 60 * 60 * 1000);
-          localStorage.setItem(hideStorageKey, hideUntil.toISOString());
-          modalInstance.hide();
+        hideTodayButton.addEventListener('click', async () => {
+          try {
+            await postDeliveryAction('/chantier/materielChantier/dismiss-delivery-popup', 'Erreur serveur');
+            const hideUntil = new Date(Date.now() + 60 * 60 * 1000);
+            localStorage.setItem(hideStorageKey, hideUntil.toISOString());
+          } catch (err) {
+            console.error('Erreur lors du snooze du rappel :', err);
+            alert('Impossible de masquer les rappels pendant 1h.');
+          }
         });
       }
 
       const confirmButton = document.getElementById('confirmDeliveryDismiss');
       if (confirmButton) {
         confirmButton.addEventListener('click', async () => {
-          const checkedBoxes = getVisibleCheckboxes().filter((checkbox) => checkbox.checked);
-          if (!checkedBoxes.length) {
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-              console.warn('[delivery-dismiss] Aucun item sélectionné pour la requête.');
-            }
-            modalInstance.hide();
-            return;
-          }
-
-          const items = checkedBoxes.map((checkbox) => {
-            const raw = checkbox.value || '';
-            const [id, slotIndex] = raw.split('-');
-            return { id: Number(id), slotIndex: Number(slotIndex) };
-          });
-
           try {
-            const resp = await fetch('/chantier/materielChantier/dismiss-delivery-popup', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ items })
-            });
-
-            if (!resp.ok) {
-              throw new Error('Erreur serveur');
-            }
-
-            const data = await resp.json();
-            if (!data || !data.success) {
-              throw new Error('Réponse invalide');
-            }
-            window.location.reload();
+            await postDeliveryAction('/chantier/materielChantier/validate-delivery-popup', 'Erreur serveur');
           } catch (err) {
-            console.error('Erreur lors de la désactivation du rappel :', err);
-            alert('Impossible de mettre à jour les rappels.');
+            console.error('Erreur lors de la validation du rappel :', err);
+            alert('Impossible de valider les rappels.');
           }
         });
       }
