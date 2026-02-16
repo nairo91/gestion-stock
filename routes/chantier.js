@@ -117,7 +117,7 @@ function excelColumnName(index) {
   return result;
 }
 
-async function fetchMaterielChantiersWithFilters(query, { includePhotos = true } = {}) {
+async function fetchMaterielChantiersWithFilters(query, { includePhotos = true, disablePagination = false } = {}) {
   const {
     chantierId,
     categorie,
@@ -130,11 +130,14 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
     triModification,
     triReception,
     recherche,
-    limit
+    limit,
+    page
   } = query;
 
   const parsedLimit = Number.parseInt(limit, 10);
-  const safeLimit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : null;
+  const safeLimit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : 100;
+  const parsedPage = Number.parseInt(page, 10);
+  const safePage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
   let chantierIdInt = null;
   if (chantierId !== undefined && chantierId !== null && chantierId !== '') {
@@ -211,12 +214,12 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
     as: 'materiel',
     where: whereMateriel,
     include: [
-      ...(includePhotos ? [{ model: Photo, as: 'photos' }] : []),
+      ...(includePhotos ? [{ model: Photo, as: 'photos', separate: true }] : []),
       emplacementInclude
     ]
   };
 
-  let materielChantiers = await MaterielChantier.findAll({
+  const baseFindOptions = {
     where: {
       ...whereChantier,
       ...(andConditions.length > 0 ? { [Op.and]: andConditions } : {})
@@ -240,21 +243,80 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true }
       materielInclude
     ],
     order: order.length > 0 ? order : undefined
-  });
+  };
+
+  if (disablePagination) {
+    let rows = await MaterielChantier.findAll(baseFindOptions);
+    if (recherche) {
+      const terme = recherche.toLowerCase();
+      rows = rows.filter(mc => {
+        const contenu = JSON.stringify(mc.get({ plain: true })).toLowerCase();
+        return contenu.includes(terme);
+      });
+    }
+    return {
+      rows,
+      count: rows.length,
+      totalPages: 1,
+      currentPage: 1,
+      pageSize: rows.length || safeLimit
+    };
+  }
 
   if (recherche) {
+    let searchedRows = await MaterielChantier.findAll(baseFindOptions);
     const terme = recherche.toLowerCase();
-    materielChantiers = materielChantiers.filter(mc => {
+    searchedRows = searchedRows.filter(mc => {
       const contenu = JSON.stringify(mc.get({ plain: true })).toLowerCase();
       return contenu.includes(terme);
     });
+
+    const count = searchedRows.length;
+    const totalPages = Math.max(1, Math.ceil(count / safeLimit));
+    const currentPage = Math.min(safePage, totalPages);
+    const offset = (currentPage - 1) * safeLimit;
+
+    return {
+      rows: searchedRows.slice(offset, offset + safeLimit),
+      count,
+      totalPages,
+      currentPage,
+      pageSize: safeLimit
+    };
   }
 
-  if (safeLimit) {
-    materielChantiers = materielChantiers.slice(0, safeLimit);
+  let currentPage = safePage;
+  let offset = (currentPage - 1) * safeLimit;
+  let paginatedResult = await MaterielChantier.findAndCountAll({
+    ...baseFindOptions,
+    distinct: true,
+    col: 'id',
+    limit: safeLimit,
+    offset
+  });
+
+  const count = typeof paginatedResult.count === 'number' ? paginatedResult.count : paginatedResult.count.length;
+  const totalPages = Math.max(1, Math.ceil(count / safeLimit));
+
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+    offset = (currentPage - 1) * safeLimit;
+    paginatedResult = await MaterielChantier.findAndCountAll({
+      ...baseFindOptions,
+      distinct: true,
+      col: 'id',
+      limit: safeLimit,
+      offset
+    });
   }
 
-  return materielChantiers;
+  return {
+    rows: paginatedResult.rows,
+    count,
+    totalPages,
+    currentPage,
+    pageSize: safeLimit
+  };
 }
 
 async function loadCategories() {
@@ -423,12 +485,17 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       return res.redirect('/chantier');
     }
 
+    const requestedPage = Number.parseInt(req.query.page, 10);
+    const safeRequestedPage = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
     const hasQueryFilterKeys = CHANTIER_FILTER_KEYS.some(key => key in req.query);
     const sanitizeValue = value => (typeof value === 'string' ? value.trim() : value);
 
     let activeFilters;
+    let currentPageRequest = safeRequestedPage;
 
     if (hasQueryFilterKeys) {
+      // Si l'utilisateur touche aux filtres/tri, on repart de la page 1
+      currentPageRequest = 1;
       activeFilters = CHANTIER_FILTER_KEYS.reduce((acc, key) => {
         const value = req.query[key];
         acc[key] = value !== undefined && value !== null ? sanitizeValue(value) : '';
@@ -454,7 +521,18 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       }, {});
     }
 
-    let materielChantiers = await fetchMaterielChantiersWithFilters(activeFilters, { includePhotos: true });
+    const {
+      rows: pagedMaterielChantiers,
+      count: totalItems,
+      totalPages,
+      currentPage,
+      pageSize
+    } = await fetchMaterielChantiersWithFilters(
+      { ...activeFilters, page: currentPageRequest },
+      { includePhotos: true }
+    );
+
+    let materielChantiers = pagedMaterielChantiers;
 
     materielChantiers = materielChantiers.map(mc => {
       const totalPrevu = computeTotalPrevu(mc);
@@ -614,6 +692,16 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       new Set(marquesRaw.map(item => item.marque).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
     const categories = await loadCategories();
+
+    const paginationQuery = CHANTIER_FILTER_KEYS.reduce((acc, key) => {
+      if (key === 'page') return acc;
+      const value = activeFilters[key];
+      if (value !== undefined && value !== null && String(value).trim() !== '') {
+        acc[key] = String(value);
+      }
+      return acc;
+    }, {});
+
     res.render('chantier/index', {
       materielChantiers,
       chantiers,
@@ -626,6 +714,17 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       // pour l'upload BDL direct depuis le navigateur vers Cloudinary
       cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
       cloudinaryUploadPresetBdl: process.env.CLOUDINARY_UPLOAD_PRESET_BDL || '',
+      pagination: {
+        totalItems,
+        pageSize,
+        currentPage,
+        totalPages,
+        hasPrev: currentPage > 1,
+        hasNext: currentPage < totalPages,
+        prevPage: currentPage > 1 ? currentPage - 1 : 1,
+        nextPage: currentPage < totalPages ? currentPage + 1 : totalPages
+      },
+      paginationQuery,
       ...activeFilters
     });
 
@@ -2854,7 +2953,10 @@ function construireCheminEmplacement(emplacement) {
 
 router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
-    const materielChantiers = await fetchMaterielChantiersWithFilters(req.query, { includePhotos: false });
+    const { rows: materielChantiers } = await fetchMaterielChantiersWithFilters(req.query, {
+      includePhotos: false,
+      disablePagination: true
+    });
 
     const workbook = new ExcelJS.Workbook();
     workbook.created = new Date();
