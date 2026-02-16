@@ -1837,6 +1837,30 @@
       </div>
     </div>
 
+    <% const pager = pagination || { currentPage: 1, totalPages: 1, hasPrev: false, hasNext: false, prevPage: 1, nextPage: 1 }; %>
+    <% const pagerBaseQuery = new URLSearchParams(paginationQuery || {}); %>
+    <% const makePageHref = function(pageNumber) {
+         const params = new URLSearchParams(pagerBaseQuery.toString());
+         params.set('page', String(pageNumber));
+         return `/chantier?${params.toString()}`;
+       }; %>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+      <div class="text-muted">Page <strong><%= pager.currentPage %></strong> / <strong><%= pager.totalPages %></strong></div>
+      <div class="btn-group" role="group" aria-label="Pagination chantier">
+        <% if (pager.hasPrev) { %>
+          <a class="btn btn-outline-light btn-sm" href="<%= makePageHref(pager.prevPage) %>">Prev</a>
+        <% } else { %>
+          <span class="btn btn-outline-light btn-sm disabled" aria-disabled="true">Prev</span>
+        <% } %>
+
+        <% if (pager.hasNext) { %>
+          <a class="btn btn-outline-light btn-sm" href="<%= makePageHref(pager.nextPage) %>">Next</a>
+        <% } else { %>
+          <span class="btn btn-outline-light btn-sm disabled" aria-disabled="true">Next</span>
+        <% } %>
+      </div>
+    </div>
+
   </div>
 
   <script nonce="<%= nonce %>">
