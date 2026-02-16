@@ -349,7 +349,21 @@
     /* --- STOCK TABLE: force one-row, enable horizontal scroll --- */
     .stock-table-wrap {
       overflow-x: auto;
+      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      /* le tableau devient sa propre zone scrollable (verticale) */
+      max-height: calc(100vh - var(--navbar-h) - 260px);
+      /* évite l'effet "scroll page + scroll tableau" trop agressif sur certains navigateurs */
+      overscroll-behavior: contain;
+      /* nécessaire pour un sticky propre dans certains cas */
+      position: relative;
+    }
+
+    /* Sur petits écrans, on laisse plus de place aux filtres au-dessus */
+    @media (max-width: 992px) {
+      .stock-table-wrap {
+        max-height: calc(100vh - var(--navbar-h) - 320px);
+      }
     }
 
     .table-stock {
