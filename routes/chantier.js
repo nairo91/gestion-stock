@@ -355,7 +355,7 @@ const computeInitialSlots = ({
   };
 };
 
-const buildRefererRedirectUrl = ({ req, chantierId, toast, highlight, categorie }) => {
+const buildRefererRedirectUrl = ({ req, chantierId, toast, highlight, categorie, toastMsg }) => {
   const referer = req.get('referer');
   const safeToast = toast || 'info';
 
@@ -373,6 +373,12 @@ const buildRefererRedirectUrl = ({ req, chantierId, toast, highlight, categorie 
           refererUrl.searchParams.delete('highlight');
         }
 
+        if (toastMsg) {
+          refererUrl.searchParams.set('toastMsg', String(toastMsg));
+        } else {
+          refererUrl.searchParams.delete('toastMsg');
+        }
+
         return `${refererUrl.pathname}${refererUrl.search}`;
       }
     } catch (_) {
@@ -385,6 +391,7 @@ const buildRefererRedirectUrl = ({ req, chantierId, toast, highlight, categorie 
   if (categorie && categorie !== 'ALL') params.set('categorie', String(categorie));
   params.set('toast', safeToast);
   if (highlight) params.set('highlight', String(highlight));
+  if (toastMsg) params.set('toastMsg', String(toastMsg));
   return `/chantier?${params.toString()}`;
 };
 
@@ -1012,6 +1019,7 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       chantierId: chantierIdForRedirect,
       toast: 'success',
       highlight: mc.id,
+      toastMsg: `✅ +${receptionQty} reçu`,
       categorie: categorieForRedirect
     }));
   } catch (error) {
@@ -1797,6 +1805,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       chantierId: chantierIdForRedirect,
       toast: 'success',
       highlight: mc.id,
+      toastMsg: '✏️ Modifications enregistrées',
       categorie: categorieForRedirect
     }));
   } catch (err) {
