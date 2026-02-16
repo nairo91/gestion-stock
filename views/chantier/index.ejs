@@ -418,6 +418,12 @@
       background-color: rgba(123, 62, 243, 0.15) !important;
     }
 
+    .table-stock tbody tr.row-selected > * {
+      box-shadow: inset 0 0 0 2px rgba(169, 120, 255, 0.9);
+      position: relative;
+      z-index: 1;
+    }
+
     /* Bandeau des entêtes plus marqué */
     .table-stock thead th {
       background: linear-gradient(135deg, #4f32ff, #7f56ff);
@@ -1755,9 +1761,10 @@
                   <% } %>
                   <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
                   <% if (user && user.role === 'admin') { %>
-                    <button
-                      type="button"
-                      class="btn btn-success btn-sm"
+                  <button
+                    type="button"
+                    class="btn btn-success btn-sm"
+                    data-action="reception"
                       data-bs-toggle="modal"
                     data-bs-target="#globalReceptionModal"
                     data-mc-id="<%= mc.id %>"
@@ -1787,7 +1794,7 @@
                     class="d-none bdl-file-input"
                     data-mc-id="<%= mc.id %>"
                   >
-                    <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm">Modifier</a>
+                    <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm" data-action="edit">Modifier</a>
                     <button
                       type="button"
                       class="btn btn-danger btn-sm"
@@ -2363,6 +2370,188 @@
         }
       }
     });
+  </script>
+
+  <script nonce="<%= nonce %>">
+    (function () {
+      const isEditableElement = (element) => {
+        if (!element) {
+          return false;
+        }
+
+        if (element.isContentEditable) {
+          return true;
+        }
+
+        const editableParent = element.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""], [contenteditable]');
+        return Boolean(editableParent);
+      };
+
+      const normalizeText = (value) => String(value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      const rows = Array.from(document.querySelectorAll('tr[data-mc-id]'));
+      if (!rows.length) {
+        return;
+      }
+
+      const isVisible = (row) => Boolean(row && row.getClientRects().length && row.offsetParent !== null);
+      const getVisibleRows = () => rows.filter(isVisible);
+
+      let selectedIndex = -1;
+
+      const applySelection = (nextIndex, options) => {
+        const opts = options || {};
+        const visibleRows = getVisibleRows();
+        if (!visibleRows.length) {
+          rows.forEach((row) => row.classList.remove('row-selected'));
+          selectedIndex = -1;
+          return null;
+        }
+
+        const boundedIndex = Math.max(0, Math.min(nextIndex, visibleRows.length - 1));
+        selectedIndex = boundedIndex;
+
+        rows.forEach((row) => row.classList.remove('row-selected'));
+        const selectedRow = visibleRows[boundedIndex];
+        selectedRow.classList.add('row-selected');
+
+        if (opts.scroll !== false) {
+          selectedRow.scrollIntoView({ block: 'nearest' });
+        }
+
+        return selectedRow;
+      };
+
+      const syncSelection = () => {
+        const visibleRows = getVisibleRows();
+        if (!visibleRows.length) {
+          selectedIndex = -1;
+          rows.forEach((row) => row.classList.remove('row-selected'));
+          return;
+        }
+
+        const currentSelected = document.querySelector('tr[data-mc-id].row-selected');
+        if (currentSelected) {
+          const visibleIndex = visibleRows.indexOf(currentSelected);
+          if (visibleIndex >= 0) {
+            selectedIndex = visibleIndex;
+            return;
+          }
+        }
+
+        applySelection(0, { scroll: false });
+      };
+
+      const triggerAction = (action) => {
+        syncSelection();
+        const visibleRows = getVisibleRows();
+        if (selectedIndex < 0 || selectedIndex >= visibleRows.length) {
+          return;
+        }
+
+        const selectedRow = visibleRows[selectedIndex];
+        const preferredSelector = action === 'reception' ? '[data-action="reception"]' : '[data-action="edit"]';
+        let target = selectedRow.querySelector(preferredSelector);
+
+        if (!target) {
+          const candidates = Array.from(selectedRow.querySelectorAll('a, button'));
+          const expectedTerms = action === 'reception'
+            ? ['reception', 'receptionner']
+            : ['modifier', 'editer'];
+
+          target = candidates.find((candidate) => {
+            const text = normalizeText(candidate.textContent);
+            return expectedTerms.some((term) => text.includes(term));
+          }) || null;
+        }
+
+        if (target) {
+          target.click();
+        }
+      };
+
+      const closeOpenModal = () => {
+        const openModal = document.querySelector('.modal.show');
+        if (!openModal) {
+          return false;
+        }
+
+        if (window.bootstrap && bootstrap.Modal) {
+          bootstrap.Modal.getOrCreateInstance(openModal).hide();
+          return true;
+        }
+
+        const dismissButton = openModal.querySelector('[data-bs-dismiss="modal"]');
+        if (dismissButton) {
+          dismissButton.click();
+          return true;
+        }
+
+        return false;
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      const highlightId = params.get('highlight');
+      const safeHighlightId = highlightId && window.CSS && CSS.escape ? CSS.escape(highlightId) : highlightId;
+
+      if (safeHighlightId) {
+        const highlightedRow = document.querySelector(`tr[data-mc-id="${safeHighlightId}"]`);
+        const visibleRows = getVisibleRows();
+        const highlightIndex = highlightedRow ? visibleRows.indexOf(highlightedRow) : -1;
+        if (highlightIndex >= 0) {
+          applySelection(highlightIndex, { scroll: false });
+        } else {
+          applySelection(0, { scroll: false });
+        }
+      } else {
+        applySelection(0, { scroll: false });
+      }
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          if (closeOpenModal()) {
+            event.preventDefault();
+          }
+          return;
+        }
+
+        if (isEditableElement(document.activeElement)) {
+          return;
+        }
+
+        if (event.key === '/') {
+          const searchInput = document.querySelector('#recherche, input[name="recherche"]');
+          if (searchInput) {
+            event.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+          }
+          return;
+        }
+
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          syncSelection();
+          const delta = event.key === 'ArrowDown' ? 1 : -1;
+          applySelection(selectedIndex + delta);
+          return;
+        }
+
+        if (event.key === 'r' || event.key === 'R') {
+          event.preventDefault();
+          triggerAction('reception');
+          return;
+        }
+
+        if (event.key === 'm' || event.key === 'M' || event.key === 'e' || event.key === 'E') {
+          event.preventDefault();
+          triggerAction('edit');
+        }
+      });
+    })();
   </script>
 
   <script nonce="<%= nonce %>">
