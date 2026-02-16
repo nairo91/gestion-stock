@@ -495,14 +495,6 @@
       gap: 0.35rem;
     }
 
-    .table-stock td.col-actions .dropdown-menu {
-      z-index: 2000;
-    }
-
-    .table-stock td.col-actions .dropdown-item {
-      white-space: nowrap;
-    }
-
     .table-stock .cell-photo img {
       display: block;
       max-width: 90px;
@@ -1765,135 +1757,87 @@
                     || (typeof mc !== 'undefined' && mc && mc.nom)
                     || '';
                 %>
-                <div class="dropdown">
+                <div class="btn-wrap">
                   <button
-                    class="btn btn-outline-light btn-sm dropdown-toggle"
                     type="button"
-                    data-bs-toggle="dropdown"
-                    data-bs-auto-close="outside"
-                    aria-expanded="false"
+                    class="btn btn-outline-success btn-sm transfer-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#transferModal"
+                    data-action="entree"
+                    data-context-type="CHANTIER"
+                    data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
+                    data-materiel-id="<%= sourceMatId %>"
+                    data-materiel-name="<%= sourceMatNom %>"
+                    <%= sourceMat ? '' : 'disabled' %>
                   >
-                    Actions
+                    Entrée
                   </button>
-
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <button
-                        type="button"
-                        class="dropdown-item transfer-btn"
-                        data-bs-toggle="modal"
-                        data-bs-target="#transferModal"
-                        data-action="entree"
-                        data-context-type="CHANTIER"
-                        data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
-                        data-materiel-id="<%= sourceMatId %>"
-                        data-materiel-name="<%= sourceMatNom %>"
-                        <%= sourceMat ? '' : 'disabled' %>
-                      >
-                        Entrée
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        type="button"
-                        class="dropdown-item transfer-btn"
-                        data-bs-toggle="modal"
-                        data-bs-target="#transferModal"
-                        data-action="sortie"
-                        data-context-type="CHANTIER"
-                        data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
-                        data-materiel-id="<%= sourceMatId %>"
-                        data-materiel-name="<%= sourceMatNom %>"
-                        <%= sourceMat ? '' : 'disabled' %>
-                      >
-                        Sortie
-                      </button>
-                    </li>
-
-                    <li><hr class="dropdown-divider"></li>
-
-                    <li>
-                      <a class="dropdown-item" href="/chantier/materielChantier/info/<%= mc.id %>">Info</a>
-                    </li>
-
-                    <% if (user && user.role === 'admin') { %>
-                      <li>
-                        <button
-                          type="button"
-                          class="dropdown-item btn-receptionner"
-                          data-action="reception"
-                          data-bs-toggle="modal"
-                          data-bs-target="#globalReceptionModal"
-                          data-mc-id="<%= mc.id %>"
-                          data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
-                          data-chantier-name="<%= mc.chantier ? mc.chantier.nom : '' %>"
-                          data-quantite-prevue1="<%= mc.quantitePrevue1 || '' %>"
-                          data-quantite-prevue2="<%= mc.quantitePrevue2 || '' %>"
-                          data-quantite-prevue3="<%= mc.quantitePrevue3 || '' %>"
-                          data-quantite-prevue4="<%= mc.quantitePrevue4 || '' %>"
-                          data-date-prevue1="<%= mc.dateLivraisonPrevue1 ? mc.dateLivraisonPrevue1.toISOString() : '' %>"
-                          data-date-prevue2="<%= mc.dateLivraisonPrevue2 ? mc.dateLivraisonPrevue2.toISOString() : '' %>"
-                          data-date-prevue3="<%= mc.dateLivraisonPrevue3 ? mc.dateLivraisonPrevue3.toISOString() : '' %>"
-                          data-date-prevue4="<%= mc.dateLivraisonPrevue4 ? mc.dateLivraisonPrevue4.toISOString() : '' %>"
-                        >
-                          Réceptionner
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          type="button"
-                          class="dropdown-item btn-add-bdl"
-                          data-mc-id="<%= mc.id %>"
-                        >
-                          Ajouter BDL
-                        </button>
-                      </li>
-
-                      <li><hr class="dropdown-divider"></li>
-
-                      <li>
-                        <a
-                          href="/chantier/materielChantier/modifier/<%= mc.id %>"
-                          class="dropdown-item"
-                          data-action="edit"
-                        >
-                          Modifier
-                        </a>
-                      </li>
-                      <li>
-                        <a
-                          href="/chantier/materielChantier/dupliquer/<%= mc.id %>"
-                          class="dropdown-item btn-dupliquer"
-                        >
-                          Dupliquer
-                        </a>
-                      </li>
-                      <li>
-                        <button
-                          type="button"
-                          class="dropdown-item text-danger"
-                          data-bs-toggle="modal"
-                          data-bs-target="#globalDeleteModal"
-                          data-delete-action="/chantier/materielChantier/supprimer/<%= mc.id %>"
-                          data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
-                        >
-                          Supprimer
-                        </button>
-                      </li>
-                    <% } %>
-                  </ul>
-
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm transfer-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#transferModal"
+                    data-action="sortie"
+                    data-context-type="CHANTIER"
+                    data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
+                    data-materiel-id="<%= sourceMatId %>"
+                    data-materiel-name="<%= sourceMatNom %>"
+                    <%= sourceMat ? '' : 'disabled' %>
+                  >
+                    Sortie
+                  </button>
+                  <% if (!sourceMat) { %>
+                    <span class="badge bg-danger">Source ID manquant</span>
+                  <% } %>
+                  <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
+                  <% if (user && user.role === 'admin') { %>
+                  <button
+                    type="button"
+                    class="btn btn-success btn-sm"
+                    data-action="reception"
+                      data-bs-toggle="modal"
+                    data-bs-target="#globalReceptionModal"
+                    data-mc-id="<%= mc.id %>"
+                    data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
+                    data-chantier-name="<%= mc.chantier ? mc.chantier.nom : '' %>"
+                    data-quantite-prevue1="<%= mc.quantitePrevue1 || '' %>"
+                    data-quantite-prevue2="<%= mc.quantitePrevue2 || '' %>"
+                    data-quantite-prevue3="<%= mc.quantitePrevue3 || '' %>"
+                    data-quantite-prevue4="<%= mc.quantitePrevue4 || '' %>"
+                    data-date-prevue1="<%= mc.dateLivraisonPrevue1 ? mc.dateLivraisonPrevue1.toISOString() : '' %>"
+                    data-date-prevue2="<%= mc.dateLivraisonPrevue2 ? mc.dateLivraisonPrevue2.toISOString() : '' %>"
+                    data-date-prevue3="<%= mc.dateLivraisonPrevue3 ? mc.dateLivraisonPrevue3.toISOString() : '' %>"
+                    data-date-prevue4="<%= mc.dateLivraisonPrevue4 ? mc.dateLivraisonPrevue4.toISOString() : '' %>"
+                  >
+                    Réceptionner
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm mb-1 btn-add-bdl"
+                    data-mc-id="<%= mc.id %>"
+                  >
+                    Ajouter BDL
+                  </button>
                   <input
                     type="file"
                     accept="image/*,application/pdf"
                     class="d-none bdl-file-input"
                     data-mc-id="<%= mc.id %>"
                   >
+                    <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm" data-action="edit">Modifier</a>
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      data-bs-toggle="modal"
+                      data-bs-target="#globalDeleteModal"
+                      data-delete-action="/chantier/materielChantier/supprimer/<%= mc.id %>"
+                      data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
+                    >
+                      Supprimer
+                    </button>
+                    <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
+                  <% } %>
                 </div>
-
-                <% if (!sourceMat) { %>
-                  <span class="badge bg-danger mt-2">Source ID manquant</span>
-                <% } %>
               </td>
             </tr>
           <% }); %>
