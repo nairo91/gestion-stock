@@ -987,9 +987,84 @@
       background-color: rgba(186, 244, 214, 0.9);
       color: #064023;
     }
+
+
+    .toast-container {
+      position: fixed;
+      top: calc(var(--navbar-h) + 0.9rem);
+      right: 1rem;
+      z-index: 1300;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      min-width: 260px;
+      max-width: 380px;
+      padding: 0.65rem 0.85rem;
+      border-radius: 0.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 14px 28px rgba(8, 2, 22, 0.45);
+      color: #f9fafb;
+      background: linear-gradient(135deg, #3b0a6a, #7b3ef3);
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 0.88rem;
+      opacity: 0;
+      transform: translateY(-6px);
+      animation: toast-in 0.2s ease-out forwards;
+      pointer-events: auto;
+    }
+
+    .toast-item.toast-success {
+      background: linear-gradient(135deg, #0d7a6c, #00a38f);
+    }
+
+    .toast-item.toast-error {
+      background: linear-gradient(135deg, #7f1d1d, #c53030);
+    }
+
+    .toast-item.toast-info {
+      background: linear-gradient(135deg, #2f2f91, #6b46c1);
+    }
+
+    .toast-icon {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .row-flash-success {
+      animation: row-flash-success 1.2s ease-out;
+    }
+
+    .row-flash-error {
+      animation: row-flash-error 1.2s ease-out;
+    }
+
+    @keyframes toast-in {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes row-flash-success {
+      0% { background-color: rgba(16, 185, 129, 0.3); }
+      100% { background-color: transparent; }
+    }
+
+    @keyframes row-flash-error {
+      0% { background-color: rgba(239, 68, 68, 0.3); }
+      100% { background-color: transparent; }
+    }
+
   </style>
 </head>
 <body>
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
   <div id="pageSpinner" class="page-spinner" aria-hidden="true">
     <div class="dot"></div>
     <div class="dot"></div>
@@ -1423,7 +1498,7 @@
                      : 'table-danger stock-low-alert'))
                : '';
         %>
-          <tr class="<%= alertRowClass %>">
+          <tr class="<%= alertRowClass %>" data-mc-id="<%= mc.id %>">
               <td class="d-none" data-label="ID"><%= mc.id %></td>
               <td class="d-none" data-label="Chantier">
                 <%= mc.chantier ? `${mc.chantier.nom} - ${mc.chantier.localisation || ''}` : '' %>
@@ -2229,6 +2304,66 @@
 
   <!-- 1) Bootstrap d'abord -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+  <script nonce="<%= nonce %>">
+    function showToast(type, message) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const normalizedType = ['success', 'error', 'info'].includes(type) ? type : 'info';
+      const iconByType = {
+        success: '✅',
+        error: '⚠️',
+        info: 'ℹ️'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `toast-item toast-${normalizedType}`;
+
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'toast-icon';
+      iconSpan.textContent = iconByType[normalizedType];
+
+      const messageSpan = document.createElement('span');
+      messageSpan.textContent = message;
+
+      toast.appendChild(iconSpan);
+      toast.appendChild(messageSpan);
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const params = new URLSearchParams(window.location.search);
+      const toastType = params.get('toast');
+      const toastMsg = params.get('toastMsg');
+      const defaultMessages = {
+        success: 'Mise à jour enregistrée avec succès.',
+        error: 'Une erreur est survenue pendant la mise à jour.',
+        info: 'Information mise à jour.'
+      };
+
+      if (toastType && ['success', 'error', 'info'].includes(toastType)) {
+        showToast(toastType, toastMsg || defaultMessages[toastType] || defaultMessages.info);
+      }
+
+      const highlightId = params.get('highlight');
+      if (highlightId) {
+        const safeId = (window.CSS && CSS.escape) ? CSS.escape(highlightId) : highlightId;
+        const row = document.querySelector(`tr[data-mc-id="${safeId}"]`);
+        if (row) {
+          row.classList.add('row-flash-success');
+          setTimeout(() => {
+            row.classList.remove('row-flash-success');
+          }, 1200);
+        }
+      }
+    });
+  </script>
 
   <script nonce="<%= nonce %>">
     (function () {
