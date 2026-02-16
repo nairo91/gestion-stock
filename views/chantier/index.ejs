@@ -315,7 +315,7 @@
       border-radius: 20px;
       border: 1px solid rgba(169, 120, 255, 0.18);
       box-shadow: 0 22px 50px rgba(5, 0, 16, 0.65);
-      overflow: visible;
+      overflow: hidden;
     }
 
     /* Étendre la zone tableau sur mobile/tablette pour profiter de toute la largeur utile */
@@ -349,9 +349,7 @@
     /* --- STOCK TABLE: force one-row, enable horizontal scroll --- */
     .stock-table-wrap {
       overflow-x: auto;
-      overflow-y: visible;
       -webkit-overflow-scrolling: touch;
-      border-radius: inherit;
     }
 
     .table-stock {
@@ -432,27 +430,6 @@
       color: #fff;
       text-transform: uppercase;
       letter-spacing: 0.05rem;
-    }
-
-    .table-sticky thead th {
-      position: sticky;
-      top: calc(var(--navbar-h, 64px) + 0.5rem);
-      z-index: 10;
-      background: linear-gradient(135deg, #4f32ff, #7f56ff);
-    }
-
-    .table-sticky th.col-designation,
-    .table-sticky td.col-designation {
-      position: sticky;
-      left: 0;
-      z-index: 4;
-      background: rgba(22, 18, 37, 0.96);
-      box-shadow: 1px 0 0 rgba(169, 120, 255, 0.2);
-    }
-
-    .table-sticky thead th.col-designation {
-      z-index: 12;
-      background: linear-gradient(135deg, #4f32ff, #7f56ff);
     }
 
     .table-stock th:nth-child(3),
@@ -688,6 +665,9 @@
     }
 
     .table-materiel thead th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
       background: linear-gradient(135deg, rgba(79, 50, 255, 0.95), rgba(123, 62, 243, 0.85));
       border-bottom: none;
       color: #fff;
@@ -1474,7 +1454,7 @@
 
     <div class="table-wrapper">
       <div class="stock-table-wrap">
-        <table class="table table-bordered table-striped table-materiel align-middle table-stock table-sticky">
+        <table class="table table-bordered table-striped table-materiel align-middle table-stock">
       <thead>
         <tr>
           <th class="d-none">ID</th>
