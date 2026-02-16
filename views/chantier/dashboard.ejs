@@ -186,9 +186,74 @@
       background: var(--brh-magenta);
       border-color: var(--brh-magenta);
     }
+
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+      pointer-events: none;
+    }
+    .toast-item {
+      min-width: 240px;
+      max-width: 360px;
+      padding: .65rem .8rem;
+      border-radius: .7rem;
+      border: 1px solid rgba(255, 255, 255, .18);
+      box-shadow: 0 12px 26px rgba(15, 23, 42, .22);
+      color: #f9fafb;
+      background: linear-gradient(135deg, #4b1454, #7b1e7a);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .85rem;
+      pointer-events: auto;
+      opacity: 0;
+      transform: translateY(-6px);
+      animation: toast-in .2s ease-out forwards;
+    }
+    .toast-item.toast-success {
+      background: linear-gradient(135deg, #0f766e, #0ea5a4);
+    }
+    .toast-item.toast-error {
+      background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+    }
+    .toast-item.toast-info {
+      background: linear-gradient(135deg, #4338ca, #7b1e7a);
+    }
+    .toast-icon {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .row-flash-success {
+      animation: row-flash-success 1.2s ease-out;
+    }
+    .row-flash-error {
+      animation: row-flash-error 1.2s ease-out;
+    }
+
+    @keyframes toast-in {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes row-flash-success {
+      0% { background-color: rgba(16, 185, 129, .32); }
+      100% { background-color: transparent; }
+    }
+    @keyframes row-flash-error {
+      0% { background-color: rgba(239, 68, 68, .3); }
+      100% { background-color: transparent; }
+    }
   </style>
 </head>
 <body class="chantier-dashboard-page">
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
   <div class="chantier-dashboard-shell">
     <header class="cd-header">
       <div class="cd-header-left">
@@ -278,7 +343,7 @@
               </thead>
               <tbody>
                 <% alertesCritiques.forEach(mc => { %>
-                  <tr>
+                  <tr data-mc-id="<%= mc.id %>">
                     <td><%= mc.materiel ? mc.materiel.nom : '–' %></td>
                     <td><%= mc.quantite %></td>
                   <td>
@@ -324,7 +389,7 @@
                     if (percent < 0) percent = 0;
                   }
                 %>
-                  <tr>
+                  <tr data-mc-id="<%= mc.id %>">
                     <td><%= mc.materiel ? mc.materiel.nom : '–' %></td>
                     <td><%= mc.quantite %></td>
                     <td>
@@ -399,7 +464,65 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script>
+  <script nonce="<%= nonce %>">
+    function showToast(type, message) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const normalizedType = ['success', 'error', 'info'].includes(type) ? type : 'info';
+      const iconByType = {
+        success: '✅',
+        error: '⚠️',
+        info: 'ℹ️'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `toast-item toast-${normalizedType}`;
+
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'toast-icon';
+      iconSpan.textContent = iconByType[normalizedType];
+
+      const messageSpan = document.createElement('span');
+      messageSpan.textContent = message;
+
+      toast.appendChild(iconSpan);
+      toast.appendChild(messageSpan);
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const toastType = params.get('toast');
+      const toastMsg = params.get('toastMsg');
+      const defaultMessages = {
+        success: 'Mise à jour enregistrée avec succès.',
+        error: 'Une erreur est survenue pendant la mise à jour.',
+        info: 'Information mise à jour.'
+      };
+
+      if (toastType && ['success', 'error', 'info'].includes(toastType)) {
+        showToast(toastType, toastMsg || defaultMessages[toastType] || defaultMessages.info);
+      }
+
+      const highlightId = params.get('highlight');
+      if (highlightId) {
+        const safeId = (window.CSS && CSS.escape) ? CSS.escape(highlightId) : highlightId;
+        const row = document.querySelector(`tr[data-mc-id="${safeId}"]`);
+        if (row) {
+          row.classList.add('row-flash-success');
+          setTimeout(() => {
+            row.classList.remove('row-flash-success');
+          }, 1200);
+        }
+      }
+    });
+  </script>
+  <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function() {
       const selectChantier = document.getElementById('chantierId');
       if (!selectChantier) return;
@@ -418,7 +541,7 @@
       });
     });
   </script>
-  <script>
+  <script nonce="<%= nonce %>">
     (function() {
       const data = <%- JSON.stringify(histogramData || { labels: [], quantite: [], quantitePrevue: [] }) %>;
       const ctx = document.getElementById('chantierHistogram');

@@ -355,6 +355,59 @@ const computeInitialSlots = ({
   };
 };
 
+const buildRefererRedirectUrl = ({ req, chantierId, toast, highlight, categorie }) => {
+  const referer = req.get('referer');
+  const safeToast = toast || 'info';
+
+  if (referer) {
+    try {
+      const baseOrigin = `${req.protocol}://${req.get('host')}`;
+      const refererUrl = new URL(referer, baseOrigin);
+
+      if (refererUrl.host === req.get('host')) {
+        refererUrl.searchParams.set('toast', safeToast);
+
+        if (highlight) {
+          refererUrl.searchParams.set('highlight', String(highlight));
+        } else {
+          refererUrl.searchParams.delete('highlight');
+        }
+
+        return `${refererUrl.pathname}${refererUrl.search}`;
+      }
+    } catch (_) {
+      // fallback handled below
+    }
+  }
+
+  const params = new URLSearchParams();
+  if (chantierId) params.set('chantierId', String(chantierId));
+  if (categorie && categorie !== 'ALL') params.set('categorie', String(categorie));
+  params.set('toast', safeToast);
+  if (highlight) params.set('highlight', String(highlight));
+  return `/chantier?${params.toString()}`;
+};
+
+const getCategorieForDashboardRedirect = req => {
+  const categorieBody = req.body && typeof req.body.categorie === 'string' ? req.body.categorie.trim() : '';
+  if (categorieBody) return categorieBody;
+
+  const categorieQuery = req.query && typeof req.query.categorie === 'string' ? req.query.categorie.trim() : '';
+  if (categorieQuery) return categorieQuery;
+
+  const referer = req.get('referer');
+  if (!referer) return '';
+
+  try {
+    const baseOrigin = `${req.protocol}://${req.get('host')}`;
+    const refererUrl = new URL(referer, baseOrigin);
+    const categorieReferer = (refererUrl.searchParams.get('categorie') || '').trim();
+    return categorieReferer;
+  } catch (_) {
+    return '';
+  }
+};
+
 /* ===== INVENTAIRE CUMULÉ CHANTIER ===== */
 router.get('/', ensureAuthenticated, async (req, res) => {
   try {
@@ -878,6 +931,8 @@ router.post('/materielChantier/alerteStatut', ensureAuthenticated, checkAdmin, a
 
 
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
+  let chantierIdForRedirect = req.body && req.body.chantierId ? req.body.chantierId : null;
+  const categorieForRedirect = getCategorieForDashboardRedirect(req);
   try {
     const { quantiteReceptionnee, livraisonIndex } = req.body;
     const receptionQty = parseInt(quantiteReceptionnee, 10);
@@ -897,6 +952,8 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
     if (!mc) {
       return res.status(404).send('Matériel de chantier introuvable.');
     }
+
+    chantierIdForRedirect = mc.chantierId;
 
     const oldQuantiteRecue = mc.quantite || 0;
     const newQuantiteRecue = oldQuantiteRecue + receptionQty;
@@ -950,10 +1007,21 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       });
     }
 
-    res.redirect('/chantier');
+    res.redirect(buildRefererRedirectUrl({
+      req,
+      chantierId: chantierIdForRedirect,
+      toast: 'success',
+      highlight: mc.id,
+      categorie: categorieForRedirect
+    }));
   } catch (error) {
     console.error('Erreur lors de la réception du matériel chantier :', error);
-    res.status(500).send('Erreur lors de la réception du matériel.');
+    res.redirect(buildRefererRedirectUrl({
+      req,
+      chantierId: chantierIdForRedirect,
+      toast: 'error',
+      categorie: categorieForRedirect
+    }));
   }
 });
 
@@ -1484,6 +1552,8 @@ router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, as
 
 
 router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
+  let chantierIdForRedirect = req.body && req.body.chantierId ? req.body.chantierId : null;
+  const categorieForRedirect = getCategorieForDashboardRedirect(req);
   try {
       const {
         quantite,
@@ -1521,6 +1591,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       ]
     });
     if (!mc) return res.send("Enregistrement non trouvé.");
+    chantierIdForRedirect = mc.chantierId;
 
     const oldQuantiteRecue = mc.quantite != null ? mc.quantite : 0;
     let newQuantiteRecue = oldQuantiteRecue;
@@ -1721,10 +1792,21 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
       });
     }
 
-    res.redirect('/chantier');
+    res.redirect(buildRefererRedirectUrl({
+      req,
+      chantierId: chantierIdForRedirect,
+      toast: 'success',
+      highlight: mc.id,
+      categorie: categorieForRedirect
+    }));
   } catch (err) {
     console.error(err);
-    res.send("Erreur lors de la mise à jour de l'enregistrement.");
+    res.redirect(buildRefererRedirectUrl({
+      req,
+      chantierId: chantierIdForRedirect,
+      toast: 'error',
+      categorie: categorieForRedirect
+    }));
   }
 });
 
