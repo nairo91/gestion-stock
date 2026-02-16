@@ -18,6 +18,7 @@
       --text-primary: #f7f4ff;
       --text-muted: rgba(247, 244, 255, 0.7);
       --navbar-h: 64px;
+      --contextbar-h: 0px;
     }
 
     body {
@@ -666,8 +667,8 @@
 
     .table-materiel thead th {
       position: sticky;
-      top: 0;
-      z-index: 5;
+      top: calc(var(--navbar-h, 64px) + var(--contextbar-h, 0px));
+      z-index: 8;
       background: linear-gradient(135deg, rgba(79, 50, 255, 0.95), rgba(123, 62, 243, 0.85));
       border-bottom: none;
       color: #fff;
@@ -675,6 +676,42 @@
       letter-spacing: 0.05rem;
       font-size: 0.75rem;
       padding: 0.95rem 0.75rem;
+    }
+
+    #scrollContextBar {
+      position: fixed;
+      top: var(--navbar-h, 64px);
+      left: 0;
+      right: 0;
+      z-index: 1025;
+      display: none;
+      align-items: center;
+      min-height: 2.1rem;
+      padding: 0.35rem 1rem;
+      border-top: 1px solid rgba(169, 120, 255, 0.2);
+      border-bottom: 1px solid rgba(169, 120, 255, 0.25);
+      background: rgba(12, 2, 28, 0.92);
+      color: rgba(247, 244, 255, 0.92);
+      font-size: 0.85rem;
+      font-weight: 600;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 22px rgba(8, 2, 22, 0.32);
+      pointer-events: none;
+    }
+
+    #scrollContextBar .label {
+      color: rgba(247, 244, 255, 0.7);
+      margin-right: 0.45rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04rem;
+      font-size: 0.72rem;
+    }
+
+    #scrollContextBar .value {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
     }
 
     .table-materiel tbody tr {
@@ -1105,6 +1142,11 @@
     </div>
   </nav>
 
+  <div id="scrollContextBar" role="status" aria-live="polite" aria-atomic="true">
+    <span class="label">Matériel courant:</span>
+    <span class="value"></span>
+  </div>
+
   <div class="top-shortcuts">
     <button onclick="location.href='https://receptionbr.onrender.com/selection.html'">Gestion Tâches</button>
     <button onclick="location.href='https://receptionbr.onrender.com/'">Réception</button>
@@ -1519,7 +1561,7 @@
                      : 'table-danger stock-low-alert'))
                : '';
         %>
-          <tr class="<%= alertRowClass %>" data-mc-id="<%= mc.id %>">
+          <tr class="<%= alertRowClass %>" data-mc-id="<%= mc.id %>" data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>">
               <td class="d-none" data-label="ID"><%= mc.id %></td>
               <td class="d-none" data-label="Chantier">
                 <%= mc.chantier ? `${mc.chantier.nom} - ${mc.chantier.localisation || ''}` : '' %>
@@ -3776,6 +3818,111 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       window.addEventListener('resize', setNavbarPadding);
       document.addEventListener('readystatechange', setNavbarPadding);
     })();
+  </script>
+
+  <script nonce="<%= nonce %>">
+    document.addEventListener('DOMContentLoaded', function () {
+      const contextBar = document.getElementById('scrollContextBar');
+      if (!contextBar) {
+        return;
+      }
+
+      const contextValue = contextBar.querySelector('.value');
+      const rootStyle = document.documentElement.style;
+      const tableRows = Array.from(document.querySelectorAll('tr[data-mc-id]'));
+      let rafScheduled = false;
+
+      const syncContextBarHeight = () => {
+        if (contextBar.style.display === 'none') {
+          rootStyle.setProperty('--contextbar-h', '0px');
+          return;
+        }
+        rootStyle.setProperty('--contextbar-h', `${contextBar.offsetHeight}px`);
+      };
+
+      const setContextBarVisible = (isVisible) => {
+        const nextDisplay = isVisible ? 'flex' : 'none';
+        if (contextBar.style.display !== nextDisplay) {
+          contextBar.style.display = nextDisplay;
+          syncContextBarHeight();
+          return;
+        }
+
+        if (!isVisible) {
+          syncContextBarHeight();
+        }
+      };
+
+      if (!tableRows.length) {
+        setContextBarVisible(false);
+        return;
+      }
+
+      setContextBarVisible(true);
+
+      const getThreshold = () => {
+        const navbarHeight = document.querySelector('.navbar')?.offsetHeight || 64;
+        const barHeight = contextBar.offsetHeight || 0;
+        return navbarHeight + barHeight;
+      };
+
+      const getRowName = (row) => {
+        const designationCell = row.querySelector('.col-designation');
+        const designationText = designationCell ? designationCell.textContent.trim() : '';
+        if (designationText) {
+          return designationText;
+        }
+        return (row.getAttribute('data-mat-name') || '').trim();
+      };
+
+      const updateContextBar = () => {
+        rafScheduled = false;
+
+        const threshold = getThreshold();
+        let currentRow = null;
+        let fallbackRow = null;
+
+        for (const row of tableRows) {
+          const rect = row.getBoundingClientRect();
+          if (rect.bottom <= threshold) {
+            fallbackRow = row;
+            continue;
+          }
+          if (rect.top >= threshold) {
+            currentRow = row;
+            break;
+          }
+          currentRow = row;
+          break;
+        }
+
+        const targetRow = currentRow || fallbackRow;
+        const nextValue = targetRow ? getRowName(targetRow) : '';
+
+        if (!nextValue) {
+          setContextBarVisible(false);
+          return;
+        }
+
+        setContextBarVisible(true);
+        contextValue.textContent = nextValue;
+      };
+
+      const scheduleUpdate = () => {
+        if (rafScheduled) {
+          return;
+        }
+        rafScheduled = true;
+        window.requestAnimationFrame(updateContextBar);
+      };
+
+      updateContextBar();
+      window.addEventListener('scroll', scheduleUpdate, { passive: true });
+      window.addEventListener('resize', function () {
+        syncContextBarHeight();
+        scheduleUpdate();
+      });
+    });
   </script>
 
   <script nonce="<%= nonce %>">
