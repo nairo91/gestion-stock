@@ -532,9 +532,16 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       { includePhotos: true }
     );
 
+    const {
+      rows: allForAlerts
+    } = await fetchMaterielChantiersWithFilters(
+      { ...activeFilters, page: 1 },
+      { includePhotos: false, disablePagination: true }
+    );
+
     let materielChantiers = pagedMaterielChantiers;
 
-    materielChantiers = materielChantiers.map(mc => {
+    const enrichWithAlertFlags = mc => {
       const totalPrevu = computeTotalPrevu(mc);
       const seuil = totalPrevu * 0.30;
       const qteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : (mc.quantite || 0);
@@ -544,7 +551,11 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       mc.setDataValue('isLowStock', isLowStock);
       mc.setDataValue('quantiteActuelle', qteActuelle);
       return mc;
-    });
+    };
+
+    materielChantiers = materielChantiers.map(enrichWithAlertFlags);
+    const allForAlertsWithFlags = allForAlerts.map(enrichWithAlertFlags);
+    const lowStockItemsAll = allForAlertsWithFlags.filter(mc => mc.isLowStock);
 
     const today = dayjs().startOf('day');
     const now = dayjs();
@@ -646,9 +657,10 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       });
     };
 
-    materielChantiers.forEach(mc => {
+    allForAlertsWithFlags.forEach(mc => {
       slots.forEach(slot => addDeliveryReminder(mc, slot));
     });
+
 
     upcomingDeliveries.sort((a, b) => {
       if (a.priority !== b.priority) {
@@ -709,6 +721,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       fournisseurs,
       marques,
       categories,
+      lowStockItemsAll,
       upcomingDeliveries,
       user: req.user,
       // pour l'upload BDL direct depuis le navigateur vers Cloudinary
