@@ -494,13 +494,15 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     let currentPageRequest = safeRequestedPage;
 
     if (hasQueryFilterKeys) {
-      // Si l'utilisateur touche aux filtres/tri, on repart de la page 1
-      currentPageRequest = 1;
       activeFilters = CHANTIER_FILTER_KEYS.reduce((acc, key) => {
         const value = req.query[key];
         acc[key] = value !== undefined && value !== null ? sanitizeValue(value) : '';
         return acc;
       }, {});
+
+      // Navigation paginée: si ?page=N est présent (ex: Next), on respecte N.
+      // Submit filtres/tri: sans paramètre page, on repart à 1.
+      currentPageRequest = Object.prototype.hasOwnProperty.call(req.query, 'page') ? safeRequestedPage : 1;
 
       const hasMeaningfulValue = CHANTIER_FILTER_KEYS.some(key => {
         const value = activeFilters[key];
