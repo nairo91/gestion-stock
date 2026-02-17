@@ -2886,6 +2886,28 @@
         return selectedRow;
       };
 
+      const isInteractiveTarget = (el) => {
+        if (!el) {
+          return false;
+        }
+
+        return Boolean(el.closest('a, button, input, select, textarea, label, [role="button"], [data-bs-toggle], .btn, .dropdown, .dropdown-menu'));
+      };
+
+      rows.forEach((row) => {
+        row.addEventListener('click', (event) => {
+          if (isInteractiveTarget(event.target)) {
+            return;
+          }
+
+          const visibleRows = getVisibleRows();
+          const idx = visibleRows.indexOf(row);
+          if (idx >= 0) {
+            applySelection(idx, { scroll: false });
+          }
+        });
+      });
+
       const syncSelection = () => {
         const visibleRows = getVisibleRows();
         if (!visibleRows.length) {
