@@ -1330,7 +1330,24 @@
 
  <div class="col-md-3">
    <label for="recherche" class="form-label">Recherche générale</label>
-   <input type="text" class="form-control" name="recherche" id="recherche" value="<%= recherche || '' %>">
+   <div class="d-flex align-items-center gap-2">
+     <input type="text" class="form-control" name="recherche" id="recherche" value="<%= recherche || '' %>">
+     <select id="columnPreset" class="form-select form-select-sm w-auto" title="Preset de colonnes">
+       <option value="standard">Standard</option>
+       <option value="full">Complet</option>
+       <option value="custom" disabled>Personnalisé</option>
+     </select>
+     <button
+       type="button"
+       class="btn btn-outline-light btn-sm"
+       data-bs-toggle="modal"
+       data-bs-target="#shortcutsHelpModal"
+       title="Raccourcis clavier"
+       aria-label="Afficher les raccourcis clavier"
+     >
+       ?
+     </button>
+   </div>
  </div>
 
 
@@ -1960,6 +1977,22 @@
       }
 
       const STORAGE_KEY = 'gs_chantier_columns_v1';
+      const PRESET_KEY = 'gs_chantier_columns_preset_v1';
+      const STANDARD_COLUMNS = [
+        'col-designation',
+        'col-reference',
+        'col-ref-fabricant',
+        'col-categorie',
+        'col-quantite',
+        'col-quantite-actuelle',
+        'col-date-prevue1',
+        'col-quantite-prevue1',
+        'col-date-prevue2',
+        'col-quantite-prevue2',
+        'col-date-prevue3',
+        'col-quantite-prevue3',
+        'col-bon-livraison'
+      ];
 
       const storage = (() => {
         try {
@@ -1996,6 +2029,27 @@
         } catch (_) {}
       };
 
+      const savePreset = (preset) => {
+        if (!storage) {
+          return;
+        }
+        try {
+          storage.setItem(PRESET_KEY, String(preset));
+        } catch (_) {}
+      };
+
+      const loadPreset = () => {
+        if (!storage) {
+          return 'standard';
+        }
+        try {
+          const preset = storage.getItem(PRESET_KEY);
+          return preset === 'full' ? 'full' : 'standard';
+        } catch (_) {
+          return 'standard';
+        }
+      };
+
       const applyState = (colClasses, visible) => {
         const classes = Array.isArray(colClasses)
           ? colClasses
@@ -2011,7 +2065,59 @@
         });
       };
 
+      const getToggleClasses = (toggle) => String(toggle.dataset.columnClass || '')
+        .split(',')
+        .map((cls) => cls.trim())
+        .filter(Boolean);
+
+      const buildPresetState = (presetName) => {
+        const standardSet = new Set(STANDARD_COLUMNS);
+        const nextState = {};
+
+        toggles.forEach((toggle) => {
+          const key = toggle.dataset.columnClass;
+          const classes = getToggleClasses(toggle);
+          if (!key || !classes.length) {
+            return;
+          }
+
+          const visible = presetName === 'full'
+            ? true
+            : classes.some((colClass) => standardSet.has(colClass));
+
+          nextState[key] = visible;
+        });
+
+        return nextState;
+      };
+
+      const detectPreset = (state) => {
+        const values = toggles
+          .map((toggle) => state[toggle.dataset.columnClass])
+          .filter((value) => typeof value === 'boolean');
+
+        if (values.length && values.every(Boolean)) {
+          return 'full';
+        }
+
+        const standardState = buildPresetState('standard');
+        const isStandard = toggles.every((toggle) => {
+          const key = toggle.dataset.columnClass;
+          return Boolean(state[key]) === Boolean(standardState[key]);
+        });
+        return isStandard ? 'standard' : 'custom';
+      };
+
+      const presetSelect = document.getElementById('columnPreset');
+
       const state = loadState();
+      const hasSavedState = Object.keys(state).length > 0;
+
+      if (!hasSavedState) {
+        const initialPreset = loadPreset();
+        Object.assign(state, buildPresetState(initialPreset));
+        saveState(state);
+      }
 
       toggles.forEach((toggle) => {
         const colClass = toggle.dataset.columnClass;
@@ -2019,10 +2125,7 @@
           return;
         }
 
-        const colClasses = colClass
-          .split(',')
-          .map((cls) => cls.trim())
-          .filter(Boolean);
+        const colClasses = getToggleClasses(toggle);
 
         if (!colClasses.length) {
           return;
@@ -2038,14 +2141,59 @@
           state[colClass] = toggle.checked;
           applyState(colClasses, toggle.checked);
           saveState(state);
+
+          if (presetSelect) {
+            presetSelect.value = detectPreset(state);
+          }
         });
       });
+
+      if (presetSelect) {
+        presetSelect.value = detectPreset(state);
+        presetSelect.addEventListener('change', (event) => {
+          const nextPreset = event.target.value === 'full' ? 'full' : 'standard';
+          const nextState = buildPresetState(nextPreset);
+          Object.keys(state).forEach((key) => delete state[key]);
+          Object.assign(state, nextState);
+
+          toggles.forEach((toggle) => {
+            const key = toggle.dataset.columnClass;
+            const colClasses = getToggleClasses(toggle);
+            const visible = Boolean(state[key]);
+            toggle.checked = visible;
+            applyState(colClasses, visible);
+          });
+
+          savePreset(nextPreset);
+          saveState(state);
+          presetSelect.value = nextPreset;
+        });
+      }
 
       document.querySelectorAll('.table-stock .col-actions').forEach((cell) => {
         cell.classList.remove('hidden-column');
       });
     })();
   </script>
+
+  <div class="modal fade" id="shortcutsHelpModal" tabindex="-1" aria-labelledby="shortcutsHelpModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title" id="shortcutsHelpModalTitle">Raccourcis clavier</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body small">
+          <div><strong>R</strong> → Réception</div>
+          <div><strong>M</strong> → Modifier</div>
+          <div><strong>↑ ↓</strong> → Naviguer</div>
+          <div><strong>/</strong> → Recherche</div>
+          <div><strong>?</strong> → Ouvrir l'aide</div>
+          <div><strong>ESC</strong> → Fermer modale</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modales globales -->
   <div class="modal fade" id="globalPhotoModal" tabindex="-1" aria-hidden="true">
@@ -2720,6 +2868,15 @@
         if (event.key === 'Escape') {
           if (closeOpenModal()) {
             event.preventDefault();
+          }
+          return;
+        }
+
+        if (event.key === '?') {
+          const shortcutsModal = document.getElementById('shortcutsHelpModal');
+          if (shortcutsModal && window.bootstrap && bootstrap.Modal) {
+            event.preventDefault();
+            bootstrap.Modal.getOrCreateInstance(shortcutsModal).show();
           }
           return;
         }
