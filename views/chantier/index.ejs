@@ -1857,7 +1857,7 @@
 
                 <hr>
 
-                <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info" data-bs-dismiss="modal">
+                <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info">
                   Info
                 </a>
 
@@ -1899,11 +1899,11 @@
                     data-mc-id="<%= mc.id %>"
                   >
 
-                  <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning" data-action="edit" data-bs-dismiss="modal">
+                  <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning" data-action="edit">
                     Modifier
                   </a>
 
-                  <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary" data-bs-dismiss="modal">
+                  <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary">
                     Dupliquer
                   </a>
 
@@ -2615,7 +2615,28 @@
 
         if (target) {
           target.click();
+          return;
         }
+
+        const openActionsBtn = selectedRow.querySelector('[data-bs-target^="#actionsModal-"]');
+        if (!openActionsBtn) {
+          return;
+        }
+
+        openActionsBtn.click();
+
+        setTimeout(() => {
+          const modalId = openActionsBtn.getAttribute('data-bs-target');
+          const modalEl = modalId ? document.querySelector(modalId) : null;
+          if (!modalEl) {
+            return;
+          }
+
+          const modalBtn = modalEl.querySelector(preferredSelector);
+          if (modalBtn) {
+            modalBtn.click();
+          }
+        }, 250);
       };
 
       const closeOpenModal = () => {
