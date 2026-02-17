@@ -293,6 +293,35 @@
       opacity: 0.85;
     }
 
+    /* Popup "Livraisons à surveiller" : tableau clair avec texte/liens foncés lisibles */
+    #deliveryReminderModal .modal-body,
+    #deliveryReminderModal .table,
+    #deliveryReminderModal .table th,
+    #deliveryReminderModal .table td {
+      color: #1a1a1a;
+    }
+
+    #deliveryReminderModal .table {
+      --bs-table-color: #1a1a1a;
+      --bs-table-striped-color: #1a1a1a;
+    }
+
+    #deliveryReminderModal .modal-body .text-muted,
+    #deliveryReminderModal #deliveryReminderSubtitle {
+      color: #4b5563 !important;
+    }
+
+    #deliveryReminderModal .table a {
+      color: #2d0a52;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    #deliveryReminderModal .table a:hover,
+    #deliveryReminderModal .table a:focus-visible {
+      color: #1a1a1a;
+    }
+
     .dropdown-menu {
       background-color: rgba(17, 6, 32, 0.97);
       border-color: rgba(169, 120, 255, 0.32);
