@@ -25,7 +25,7 @@
       background: radial-gradient(circle at top left, rgba(123, 62, 243, 0.35), transparent 45%),
                   radial-gradient(circle at bottom right, rgba(59, 10, 106, 0.6), transparent 55%),
                   linear-gradient(135deg, #080111 0%, #1a0533 38%, #2d0a52 100%);
-      color: var(--text-primary);
+      color: var(--text-primary, #f7f4ff);
       font-family: 'Inter', 'Segoe UI', sans-serif;
       backdrop-filter: blur(8px);
       margin: 0;
@@ -206,6 +206,115 @@
       padding: 0.65rem 1rem;
     }
 
+    /* Harmonisation sombre Bootstrap: texte, liens, aides et états de formulaire */
+    .glass-card,
+    .table-wrapper,
+    .modal-content {
+      --text-contrast-high: #f7f4ff;
+      --text-contrast-medium: rgba(247, 244, 255, 0.78);
+      --text-contrast-soft: rgba(247, 244, 255, 0.66);
+      --control-bg: rgba(15, 2, 31, 0.72);
+      --control-bg-disabled: rgba(38, 24, 62, 0.72);
+    }
+
+    .glass-card .text-muted,
+    .table-wrapper .text-muted,
+    .modal-content .text-muted,
+    .glass-card .text-secondary,
+    .table-wrapper .text-secondary,
+    .modal-content .text-secondary,
+    .modal-content .form-text {
+      color: var(--text-contrast-soft) !important;
+    }
+
+    .glass-card a:not(.btn),
+    .table-wrapper a:not(.btn),
+    .modal-content a:not(.btn) {
+      color: #d9c8ff;
+      text-decoration-color: rgba(217, 200, 255, 0.5);
+    }
+
+    .glass-card a:not(.btn):hover,
+    .table-wrapper a:not(.btn):hover,
+    .modal-content a:not(.btn):hover,
+    .glass-card a:not(.btn):focus-visible,
+    .table-wrapper a:not(.btn):focus-visible,
+    .modal-content a:not(.btn):focus-visible {
+      color: #f2ebff;
+      text-decoration-color: currentColor;
+    }
+
+    .glass-card .form-control,
+    .glass-card .form-select,
+    .modal-content .form-control,
+    .modal-content .form-select {
+      background: var(--control-bg);
+      color: var(--text-contrast-high);
+    }
+
+    .glass-card .form-control::placeholder,
+    .glass-card .form-select::placeholder,
+    .modal-content .form-control::placeholder,
+    .modal-content .form-select::placeholder {
+      color: var(--text-contrast-soft);
+      opacity: 1;
+    }
+
+    .glass-card .form-control:disabled,
+    .glass-card .form-select:disabled,
+    .modal-content .form-control:disabled,
+    .modal-content .form-select:disabled {
+      background: var(--control-bg-disabled);
+      color: var(--text-contrast-medium);
+      border-color: rgba(169, 120, 255, 0.22);
+      opacity: 1;
+    }
+
+    .modal-content .modal-title,
+    .modal-content .list-group-item,
+    .modal-content .list-group-item strong,
+    .modal-content .alert {
+      color: var(--text-contrast-high);
+    }
+
+    .modal-content .list-group-item {
+      background: rgba(18, 10, 35, 0.85);
+      border-color: rgba(169, 120, 255, 0.25);
+    }
+
+    .modal-content .alert-light {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: var(--text-contrast-medium);
+    }
+
+    .modal-content .btn-close {
+      filter: invert(1) grayscale(1) brightness(200%);
+      opacity: 0.85;
+    }
+
+    .dropdown-menu {
+      background-color: rgba(17, 6, 32, 0.97);
+      border-color: rgba(169, 120, 255, 0.32);
+      color: var(--text-primary, #f7f4ff);
+      box-shadow: 0 12px 30px rgba(8, 1, 24, 0.45);
+    }
+
+    .dropdown-item {
+      color: var(--text-primary, #f7f4ff);
+    }
+
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+      color: #fff;
+      background-color: rgba(123, 62, 243, 0.3);
+    }
+
+    .dropdown-item.disabled,
+    .dropdown-item:disabled {
+      color: rgba(247, 244, 255, 0.45);
+    }
+
     /* Lisibilité des champs libres de filtrage */
     #recherche {
       color: #fff;
@@ -343,7 +452,7 @@
 
     .table-materiel {
       margin-bottom: 0;
-      color: var(--text-primary);
+      color: var(--text-primary, #f7f4ff);
     }
 
     /* --- STOCK TABLE: force one-row, enable horizontal scroll --- */
@@ -727,7 +836,7 @@
 
     .modal-content {
       background: linear-gradient(145deg, rgba(10, 3, 24, 0.95), rgba(35, 9, 63, 0.92));
-      color: var(--text-primary);
+      color: var(--text-primary, #f7f4ff);
       border: 1px solid rgba(169, 120, 255, 0.3);
       box-shadow: 0 16px 40px rgba(8, 1, 24, 0.65);
     }
@@ -743,7 +852,7 @@
     .modal-content .form-control {
       background: rgba(12, 8, 32, 0.92);
       border: 1px solid rgba(169, 120, 255, 0.35);
-      color: var(--text-primary);
+      color: var(--text-primary, #f7f4ff);
     }
 
     .modal-content .form-control:focus {
@@ -789,7 +898,7 @@
       border-radius: 999px;
       border: 1px solid rgba(169, 120, 255, 0.35);
       background: rgba(12, 2, 28, 0.65);
-      color: var(--text-primary);
+      color: var(--text-primary, #f7f4ff);
       padding: 0.55rem 1.2rem;
       font-weight: 600;
       box-shadow: 0 14px 32px rgba(8, 2, 22, 0.4);
@@ -801,7 +910,7 @@
 
     body.mode-sombre {
       background: #05010b;
-      color: var(--text-primary);
+      color: var(--text-primary, #f7f4ff);
     }
 
     body.mode-sombre .navbar {
