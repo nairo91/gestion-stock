@@ -2524,13 +2524,39 @@
           return false;
         }
 
+        const tagName = (element.tagName || '').toLowerCase();
+        if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+          return true;
+        }
+
         if (element.isContentEditable) {
           return true;
         }
 
-        const editableParent = element.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""], [contenteditable]');
-        return Boolean(editableParent);
+        if (element.closest('[contenteditable="true"], [contenteditable=""], [contenteditable]')) {
+          return true;
+        }
+
+        if (element.closest('.select2-container, .ts-wrapper, .tomselect, .dropdown-menu.show')) {
+          return true;
+        }
+
+        if (element.closest('#recherche, input[name="recherche"], #rechercheGenerale, input[name="rechercheGenerale"]')) {
+          return true;
+        }
+
+        const role = element.getAttribute && element.getAttribute('role');
+        if (role === 'textbox' || role === 'combobox' || role === 'searchbox') {
+          return true;
+        }
+
+        return false;
       };
+
+      const isFilterContextActive = () => Boolean(
+        document.querySelector('.dropdown-menu.show')
+        || document.activeElement?.closest?.('.filters-actions, .filters, #filters')
+      );
 
       const normalizeText = (value) => String(value || '')
         .toLowerCase()
@@ -2677,6 +2703,20 @@
       }
 
       document.addEventListener('keydown', (event) => {
+        if (event.isComposing) {
+          return;
+        }
+
+        if (event.key === '/') {
+          const searchInput = document.querySelector('#recherche, input[name="recherche"], #rechercheGenerale, input[name="rechercheGenerale"]');
+          if (searchInput) {
+            event.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+          }
+          return;
+        }
+
         if (event.key === 'Escape') {
           if (closeOpenModal()) {
             event.preventDefault();
@@ -2684,17 +2724,7 @@
           return;
         }
 
-        if (isEditableElement(document.activeElement)) {
-          return;
-        }
-
-        if (event.key === '/') {
-          const searchInput = document.querySelector('#recherche, input[name="recherche"]');
-          if (searchInput) {
-            event.preventDefault();
-            searchInput.focus();
-            searchInput.select();
-          }
+        if (isEditableElement(document.activeElement) || isFilterContextActive()) {
           return;
         }
 
