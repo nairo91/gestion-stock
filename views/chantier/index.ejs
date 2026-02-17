@@ -480,6 +480,11 @@
       white-space: nowrap;
     }
 
+    .modal-body .btn {
+      text-align: left;
+      font-weight: 500;
+    }
+
     .table-stock th.col-actions,
     .table-stock td.col-actions {
       position: relative;
@@ -1509,6 +1514,36 @@
         </tr>
       </thead>
       <tbody>
+      <% const resolveSourceMatForChantier = function (mc) {
+           var chantierCourantId = (chantierCourant && chantierCourant.id) || null;
+           var sourceMat = null;
+
+           if (typeof m !== 'undefined' && m && Number(m.chantierId) === Number(chantierCourantId)) {
+             sourceMat = m;
+           } else if (mc && mc.materiel && Number(mc.materiel.chantierId) === Number(chantierCourantId)) {
+             sourceMat = mc.materiel;
+           } else if (mc && Number(mc.chantierId) === Number(chantierCourantId)) {
+             sourceMat = mc;
+           }
+
+           var sourceMatId = '';
+           if (sourceMat) {
+             sourceMatId = (typeof sourceMat.materielId !== 'undefined' && sourceMat.materielId !== null)
+               ? sourceMat.materielId
+               : sourceMat.id;
+           }
+
+           var sourceMatNom = (sourceMat && sourceMat.nom)
+             || (mc && mc.materiel && mc.materiel.nom)
+             || (mc && mc.nom)
+             || '';
+
+           return {
+             sourceMat: sourceMat,
+             sourceMatId: sourceMatId,
+             sourceMatNom: sourceMatNom
+           };
+         }; %>
       <% if (materielChantiers && materielChantiers.length > 0) { %>
         <% materielChantiers.forEach(function (mc, index) {
              const qRecue = Number(mc.quantite) || 0;
@@ -1732,70 +1767,107 @@
                 <% } %>
               </td>
 
-              <td class="actions col-actions" data-label="Actions">
+              <td class="actions col-actions text-center" data-label="Actions">
                 <%
-                  // Trouve la "ligne source" côté chantier courant (pas d'optional chaining ici)
-                  var chantierCourantId = (chantierCourant && chantierCourant.id) || null;
-                  var sourceMat = null;
-                  if (typeof m !== 'undefined' && m && Number(m.chantierId) === Number(chantierCourantId)) {
-                    sourceMat = m;
-                  } else if (typeof mc !== 'undefined' && mc && mc.materiel && Number(mc.materiel.chantierId) === Number(chantierCourantId)) {
-                    sourceMat = mc.materiel;
-                  } else if (typeof mc !== 'undefined' && mc && Number(mc.chantierId) === Number(chantierCourantId)) {
-                    sourceMat = mc;
-                  }
-                  var sourceMatId = '';
-                  if (sourceMat) {
-                    if (typeof sourceMat.materielId !== 'undefined' && sourceMat.materielId !== null) {
-                      sourceMatId = sourceMat.materielId;
-                    } else {
-                      sourceMatId = sourceMat.id;
-                    }
-                  }
-                  var sourceMatNom = (sourceMat && sourceMat.nom)
-                    || (typeof mc !== 'undefined' && mc && mc.materiel && mc.materiel.nom)
-                    || (typeof mc !== 'undefined' && mc && mc.nom)
-                    || '';
+                  var sourcePayload = resolveSourceMatForChantier(mc);
+                  var sourceMat = sourcePayload.sourceMat;
+                  var sourceMatId = sourcePayload.sourceMatId;
+                  var sourceMatNom = sourcePayload.sourceMatNom;
                 %>
-                <div class="btn-wrap">
+                <button
+                  type="button"
+                  class="btn btn-outline-primary btn-sm"
+                  data-bs-toggle="modal"
+                  data-bs-target="#actionsModal-<%= mc.id %>-<%= index %>"
+                >
+                  ⚙ Actions
+                </button>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="23" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
+          </tr>
+        <% } %>
+      </tbody>
+      
+        </table>
+      </div>
+    </div>
+
+    <% if (materielChantiers && materielChantiers.length > 0) { %>
+      <% materielChantiers.forEach(function (mc, index) {
+          var sourcePayload = resolveSourceMatForChantier(mc);
+          var sourceMat = sourcePayload.sourceMat;
+          var sourceMatId = sourcePayload.sourceMatId;
+          var sourceMatNom = sourcePayload.sourceMatNom;
+      %>
+        <div
+          class="modal fade"
+          id="actionsModal-<%= mc.id %>-<%= index %>"
+          tabindex="-1"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  Actions – <%= mc.materiel ? mc.materiel.nom : '' %>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+
+              <div class="modal-body d-grid gap-2">
+                <button
+                  type="button"
+                  class="btn btn-outline-success transfer-btn"
+                  data-bs-dismiss="modal"
+                  data-bs-toggle="modal"
+                  data-bs-target="#transferModal"
+                  data-action="entree"
+                  data-context-type="CHANTIER"
+                  data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
+                  data-materiel-id="<%= sourceMatId %>"
+                  data-materiel-name="<%= sourceMatNom %>"
+                  <%= sourceMatId ? '' : 'disabled' %>
+                >
+                  Entrée
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-outline-danger transfer-btn"
+                  data-bs-dismiss="modal"
+                  data-bs-toggle="modal"
+                  data-bs-target="#transferModal"
+                  data-action="sortie"
+                  data-context-type="CHANTIER"
+                  data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
+                  data-materiel-id="<%= sourceMatId %>"
+                  data-materiel-name="<%= sourceMatNom %>"
+                  <%= sourceMatId ? '' : 'disabled' %>
+                >
+                  Sortie
+                </button>
+
+                <% if (!sourceMatId) { %>
+                  <span class="badge bg-danger">Source ID manquant</span>
+                <% } %>
+
+                <hr>
+
+                <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info" data-bs-dismiss="modal">
+                  Info
+                </a>
+
+                <% if (user && user.role === 'admin') { %>
                   <button
                     type="button"
-                    class="btn btn-outline-success btn-sm transfer-btn"
-                    data-bs-toggle="modal"
-                    data-bs-target="#transferModal"
-                    data-action="entree"
-                    data-context-type="CHANTIER"
-                    data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
-                    data-materiel-id="<%= sourceMatId %>"
-                    data-materiel-name="<%= sourceMatNom %>"
-                    <%= sourceMat ? '' : 'disabled' %>
-                  >
-                    Entrée
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-outline-danger btn-sm transfer-btn"
-                    data-bs-toggle="modal"
-                    data-bs-target="#transferModal"
-                    data-action="sortie"
-                    data-context-type="CHANTIER"
-                    data-context-chantier-id="<%= chantierCourant ? chantierCourant.id : '' %>"
-                    data-materiel-id="<%= sourceMatId %>"
-                    data-materiel-name="<%= sourceMatNom %>"
-                    <%= sourceMat ? '' : 'disabled' %>
-                  >
-                    Sortie
-                  </button>
-                  <% if (!sourceMat) { %>
-                    <span class="badge bg-danger">Source ID manquant</span>
-                  <% } %>
-                  <a href="/chantier/materielChantier/info/<%= mc.id %>" class="btn btn-info btn-sm">Info</a>
-                  <% if (user && user.role === 'admin') { %>
-                  <button
-                    type="button"
-                    class="btn btn-success btn-sm"
+                    class="btn btn-success"
                     data-action="reception"
-                      data-bs-toggle="modal"
+                    data-bs-dismiss="modal"
+                    data-bs-toggle="modal"
                     data-bs-target="#globalReceptionModal"
                     data-mc-id="<%= mc.id %>"
                     data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
@@ -1811,46 +1883,48 @@
                   >
                     Réceptionner
                   </button>
+
                   <button
                     type="button"
-                    class="btn btn-outline-secondary btn-sm mb-1 btn-add-bdl"
+                    class="btn btn-outline-secondary btn-add-bdl"
                     data-mc-id="<%= mc.id %>"
                   >
                     Ajouter BDL
                   </button>
                   <input
+                    id="bdl-file-<%= mc.id %>-<%= index %>"
                     type="file"
                     accept="image/*,application/pdf"
                     class="d-none bdl-file-input"
                     data-mc-id="<%= mc.id %>"
                   >
-                    <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning btn-sm" data-action="edit">Modifier</a>
-                    <button
-                      type="button"
-                      class="btn btn-danger btn-sm"
-                      data-bs-toggle="modal"
-                      data-bs-target="#globalDeleteModal"
-                      data-delete-action="/chantier/materielChantier/supprimer/<%= mc.id %>"
-                      data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
-                    >
-                      Supprimer
-                    </button>
-                    <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary btn-sm">Dupliquer</a>
-                  <% } %>
-                </div>
-              </td>
-            </tr>
-          <% }); %>
-        <% } else { %>
-          <tr>
-            <td colspan="23" class="text-center">Aucune livraison enregistrée pour les chantiers.</td>
-          </tr>
-        <% } %>
-      </tbody>
-      
-        </table>
-      </div>
-    </div>
+
+                  <a href="/chantier/materielChantier/modifier/<%= mc.id %>" class="btn btn-warning" data-action="edit" data-bs-dismiss="modal">
+                    Modifier
+                  </a>
+
+                  <a href="/chantier/materielChantier/dupliquer/<%= mc.id %>" class="btn btn-outline-primary" data-bs-dismiss="modal">
+                    Dupliquer
+                  </a>
+
+                  <button
+                    type="button"
+                    class="btn btn-danger"
+                    data-bs-dismiss="modal"
+                    data-bs-toggle="modal"
+                    data-bs-target="#globalDeleteModal"
+                    data-delete-action="/chantier/materielChantier/supprimer/<%= mc.id %>"
+                    data-mat-name="<%= mc.materiel ? mc.materiel.nom : '' %>"
+                  >
+                    Supprimer
+                  </button>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    <% } %>
 
     <% const pager = pagination || { currentPage: 1, totalPages: 1, hasPrev: false, hasNext: false, prevPage: 1, nextPage: 1 }; %>
     <% const pagerBaseQuery = new URLSearchParams(paginationQuery || {}); %>
@@ -4271,6 +4345,34 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
             hideSpinner();
             input.value = '';
           }
+        });
+      });
+
+      document.querySelectorAll('[id^="actionsModal-"] [data-bs-toggle="modal"][data-bs-target]').forEach((trigger) => {
+        trigger.addEventListener('click', (event) => {
+          const targetSelector = trigger.getAttribute('data-bs-target');
+          if (!targetSelector || !window.bootstrap) {
+            return;
+          }
+
+          const sourceModalEl = trigger.closest('.modal');
+          const targetModalEl = document.querySelector(targetSelector);
+
+          if (!sourceModalEl || !targetModalEl) {
+            return;
+          }
+
+          event.preventDefault();
+
+          const sourceModal = window.bootstrap.Modal.getOrCreateInstance(sourceModalEl);
+          const openTarget = () => {
+            sourceModalEl.removeEventListener('hidden.bs.modal', openTarget);
+            const targetModal = window.bootstrap.Modal.getOrCreateInstance(targetModalEl);
+            targetModal.show();
+          };
+
+          sourceModalEl.addEventListener('hidden.bs.modal', openTarget, { once: true });
+          sourceModal.hide();
         });
       });
     })();
