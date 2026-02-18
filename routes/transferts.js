@@ -87,7 +87,7 @@ router.post('/:action(entree|sortie)', ensureAuthenticated, ensureTransferAuthor
       userId: req.user?.id ?? null
     });
 
-    const message = `${action === 'entree' ? 'Entrée vers chantier' : 'Sortie vers Chantier'} réalisée avec succès.`;
+    const message = `${action === 'entree' ? 'Entrée' : 'Sortie'} réalisée avec succès.`;
     sendFlash(req, 'success', message);
     res.redirect(redirectUrl);
   } catch (error) {

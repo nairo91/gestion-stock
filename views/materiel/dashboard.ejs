@@ -1001,7 +1001,7 @@
                         data-materiel-id="<%= m.id %>"
                         data-materiel-name="<%= m.nom %>"
                       >
-                        Entrée vers chantier
+                        Entrée
                       </button>
                       <button
                         type="button"
@@ -1012,7 +1012,7 @@
                         data-materiel-id="<%= m.id %>"
                         data-materiel-name="<%= m.nom %>"
                       >
-                        Sortie vers Chantier
+                        Sortie
                       </button>
                       <a href="/materiel/info/<%= m.id %>" class="btn btn-info btn-sm">Info</a>
                       <% if (user && user.role === 'admin') { %>
@@ -1248,7 +1248,7 @@
           transferForm.dataset.transferAction = action;
         }
         if (transferActionLabel) {
-          transferActionLabel.textContent = action === 'entree' ? 'Entrée vers chantier' : 'Sortie vers Chantier';
+          transferActionLabel.textContent = action === 'entree' ? 'Entrée' : 'Sortie';
         }
 
         if (transferModalInstance) {
