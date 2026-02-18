@@ -878,6 +878,27 @@
       border-top-color: rgba(169, 120, 255, 0.25);
     }
 
+    /* Fix ciblé: la modale de réception doit rester entièrement visible sous la navbar fixe */
+    #globalReceptionModal {
+      padding-top: calc(var(--navbar-h, 64px) + 0.5rem);
+    }
+
+    #globalReceptionModal .modal-dialog {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      max-height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
+    }
+
+    #globalReceptionModal .modal-content {
+      max-height: inherit;
+      overflow: hidden;
+    }
+
+    #globalReceptionModal .modal-body {
+      overflow-y: auto;
+      max-height: calc(100dvh - var(--navbar-h, 64px) - 8.5rem);
+    }
+
     .modal-content .form-control {
       background: rgba(12, 8, 32, 0.92);
       border: 1px solid rgba(169, 120, 255, 0.35);
