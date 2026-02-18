@@ -1999,7 +1999,7 @@
                   data-materiel-name="<%= sourceMatNom %>"
                   <%= sourceMatId ? '' : 'disabled' %>
                 >
-                  Entrée
+                  Entrée vers chantier
                 </button>
 
                 <button
@@ -2015,7 +2015,7 @@
                   data-materiel-name="<%= sourceMatNom %>"
                   <%= sourceMatId ? '' : 'disabled' %>
                 >
-                  Sortie
+                  Sortie vers Chantier
                 </button>
 
                 <% if (!sourceMatId) { %>
@@ -4308,7 +4308,7 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         setInputValue('[name="returnTo"]', `${window.location.pathname}${window.location.search}`);
 
         if (transferActionLabel) {
-          transferActionLabel.textContent = action === 'entree' ? 'Entrée' : 'Sortie';
+          transferActionLabel.textContent = action === 'entree' ? 'Entrée vers chantier' : 'Sortie vers Chantier';
         }
         if (transferMaterielLabel) {
           transferMaterielLabel.textContent = triggerButton.dataset.materielName || '';
