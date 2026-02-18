@@ -296,11 +296,12 @@ body.compact-mobile .table-stock .col-actions {
   overflow: visible !important;
 }
 
-.qte-init-prevue {
+/* Fix lisibilité: "Qte init prév" toujours en noir (même si text-muted est forcé ailleurs) */
+.table-wrapper .qte-init-prevue {
   display: block;
   margin-top: 4px;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: #000 !important;
   white-space: normal;
   word-break: break-word;
   line-height: 1.25;
