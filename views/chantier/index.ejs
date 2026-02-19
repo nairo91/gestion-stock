@@ -1321,6 +1321,16 @@
   >
     Ajouter du matériel dans <%= chantierCourant ? `chantier &laquo; ${chantierCourant.nom} &raquo;` : 'un chantier' %>
   </a>
+  <button
+    type="button"
+    class="btn btn-info"
+    id="openVoiceAddModal"
+    data-bs-toggle="modal"
+    data-bs-target="#voiceAddModal"
+    <%= chantierCourant ? '' : 'disabled title="Sélectionnez un chantier pour utiliser l\'ajout vocal"' %>
+  >
+    Ajout matériel oral
+  </button>
   <!-- Supprime le bouton "Modifier" global ici -->
   <a href="/chantier/ajouter-chantier" class="btn btn-success">Créer un nouveau chantier</a>
   <a href="#" id="btnHistoriqueChantier" class="btn btn-warning">Voir l'historique chantier</a>
@@ -1384,6 +1394,72 @@
   <% } %> <!-- fin du bloc admin -->
 
   <a href="/materiel" class="btn btn-secondary">Retour</a>
+</div>
+
+<div class="modal fade" id="voiceAddModal" tabindex="-1" aria-labelledby="voiceAddModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="voiceAddForm" action="/chantier/ajouterMateriel" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title" id="voiceAddModalLabel">Ajout matériel oral</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning d-none" id="voiceUnsupportedMessage" role="alert">
+            Votre navigateur ne supporte pas la saisie vocale. Utilisez l'ajout classique ci-dessous.
+            <div class="mt-2">
+              <a href="/chantier/ajouterMateriel<%= chantierCourant ? `?chantierId=${encodeURIComponent(chantierCourant.id)}` : '' %>" class="btn btn-sm btn-outline-light">Aller à l'ajout classique</a>
+            </div>
+          </div>
+
+          <input type="hidden" name="chantierId" value="<%= chantierCourant ? chantierCourant.id : '' %>">
+
+          <div class="mb-2"><strong>Étape :</strong> <span id="voiceStepLabel">Prêt</span></div>
+          <div class="mb-3 text-muted" id="voicePrompt">Cliquez sur « Démarrer » pour lancer l'assistant vocal.</div>
+          <div class="small text-warning mb-3 d-none" id="voiceError"></div>
+
+          <div class="row g-2">
+            <div class="col-12">
+              <label class="form-label">Catégorie</label>
+              <input type="text" class="form-control" name="categorie" id="voiceCategorie" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Matériel</label>
+              <input type="text" class="form-control" name="nom" id="voiceNom" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Quantité ajoutée au stock</label>
+              <input type="number" class="form-control" name="quantite" id="voiceQuantite" min="0" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Quantité prévue (globale)</label>
+              <input type="number" class="form-control" name="quantitePrevue" id="voiceQuantitePrevue" min="0">
+            </div>
+            <% for (let i = 1; i <= 4; i++) { %>
+              <div class="col-md-6">
+                <label class="form-label">Qte prévue <%= i %></label>
+                <input type="number" class="form-control" name="quantitePrevue<%= i %>" id="voiceQuantitePrevue<%= i %>" min="0">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Date livraison prévue <%= i %></label>
+                <input type="date" class="form-control" name="dateLivraisonPrevue<%= i %>" id="voiceDateLivraisonPrevue<%= i %>">
+              </div>
+            <% } %>
+          </div>
+
+          <div class="mt-3 p-2 rounded" style="background: rgba(255,255,255,0.06);">
+            <strong>Récapitulatif</strong>
+            <pre class="m-0 mt-2 small" id="voiceSummary">Aucune donnée saisie.</pre>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="voiceRetryBtn">Répéter la question</button>
+          <button type="button" class="btn btn-warning" id="voiceStartBtn">Démarrer</button>
+          <button type="submit" class="btn btn-success" id="voiceSubmitBtn" disabled>Confirmer et ajouter</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <form method="GET" action="/chantier" class="row g-3 glass-card">
@@ -3501,7 +3577,7 @@
   <!-- 2) Déplacer les modales SOUS <body> une fois le DOM prêt -->
   <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
-      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','deliveryReminderModal','fournisseurContactModal']
+      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','deliveryReminderModal','fournisseurContactModal','voiceAddModal']
         .forEach(function (id) {
           var el = document.getElementById(id);
           if (el && el.parentNode !== document.body) {
@@ -3509,6 +3585,362 @@
           }
         });
     });
+  </script>
+
+  <script nonce="<%= nonce %>">
+    (function () {
+      const modal = document.getElementById('voiceAddModal');
+      const form = document.getElementById('voiceAddForm');
+      if (!modal || !form) return;
+
+      const stepLabel = document.getElementById('voiceStepLabel');
+      const promptEl = document.getElementById('voicePrompt');
+      const errorEl = document.getElementById('voiceError');
+      const summaryEl = document.getElementById('voiceSummary');
+      const unsupportedEl = document.getElementById('voiceUnsupportedMessage');
+      const startBtn = document.getElementById('voiceStartBtn');
+      const retryBtn = document.getElementById('voiceRetryBtn');
+      const submitBtn = document.getElementById('voiceSubmitBtn');
+
+      const speechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const canUseSpeech = Boolean(window.speechSynthesis && speechRecognitionApi);
+      let recognition = null;
+      let active = false;
+      let currentIndex = 0;
+      let attempts = 0;
+
+      const state = {
+        categorie: '',
+        nom: '',
+        quantite: '',
+        quantitePrevue: '',
+        quantitePrevue1: '',
+        dateLivraisonPrevue1: '',
+        quantitePrevue2: '',
+        dateLivraisonPrevue2: '',
+        quantitePrevue3: '',
+        dateLivraisonPrevue3: '',
+        quantitePrevue4: '',
+        dateLivraisonPrevue4: ''
+      };
+
+      const yesWords = ['oui', 'valider', 'confirmer', 'ok'];
+      const noWords = ['non', 'modifier', 'recommencer'];
+
+      const steps = [
+        { key: 'categorie', label: 'Catégorie', question: 'Quelle est la catégorie du matériel ?', type: 'text' },
+        { key: 'nom', label: 'Matériel', question: 'Quel est le nom du matériel ?', type: 'text' },
+        { key: 'quantite', label: 'Quantité ajoutée', question: 'Quelle quantité ajoutez-vous au stock ?', type: 'number' },
+        { key: 'quantitePrevue', label: 'Quantité prévue globale', question: 'Quelle est la quantité prévue globale ?', type: 'number', optional: true },
+        { key: 'quantitePrevue1', label: 'Quantité prévue 1', question: 'Indiquez la quantité prévue numéro un, ou dites passer.', type: 'number', optional: true },
+        { key: 'dateLivraisonPrevue1', label: 'Date livraison prévue 1', question: 'Indiquez la date de livraison prévue numéro un, ou dites passer.', type: 'date', optional: true },
+        { key: 'quantitePrevue2', label: 'Quantité prévue 2', question: 'Indiquez la quantité prévue numéro deux, ou dites passer.', type: 'number', optional: true },
+        { key: 'dateLivraisonPrevue2', label: 'Date livraison prévue 2', question: 'Indiquez la date de livraison prévue numéro deux, ou dites passer.', type: 'date', optional: true },
+        { key: 'quantitePrevue3', label: 'Quantité prévue 3', question: 'Indiquez la quantité prévue numéro trois, ou dites passer.', type: 'number', optional: true },
+        { key: 'dateLivraisonPrevue3', label: 'Date livraison prévue 3', question: 'Indiquez la date de livraison prévue numéro trois, ou dites passer.', type: 'date', optional: true },
+        { key: 'quantitePrevue4', label: 'Quantité prévue 4', question: 'Indiquez la quantité prévue numéro quatre, ou dites passer.', type: 'number', optional: true },
+        { key: 'dateLivraisonPrevue4', label: 'Date livraison prévue 4', question: 'Indiquez la date de livraison prévue numéro quatre, ou dites passer.', type: 'date', optional: true },
+        { key: 'confirm', label: 'Confirmation', question: 'Souhaitez-vous valider cet ajout ? Dites oui pour confirmer.', type: 'confirm' }
+      ];
+
+      function speak(text, onEnd) {
+        if (!window.speechSynthesis) {
+          if (typeof onEnd === 'function') onEnd();
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'fr-FR';
+        if (typeof onEnd === 'function') {
+          utterance.onend = () => onEnd();
+        }
+        window.speechSynthesis.speak(utterance);
+      }
+
+      function normalizeNumber(input) {
+        if (!input) return null;
+        const cleaned = String(input)
+          .toLowerCase()
+          .replace(/virgule/g, '.')
+          .replace(/[^0-9.\-]/g, ' ')
+          .trim();
+        if (!cleaned) return null;
+        const firstPart = cleaned.split(/\s+/).find(Boolean);
+        const parsed = firstPart ? Number(firstPart) : NaN;
+        return Number.isFinite(parsed) ? String(Math.max(0, Math.round(parsed))) : null;
+      }
+
+      function normalizeDate(input) {
+        if (!input) return null;
+        const value = String(input).toLowerCase().trim();
+        const monthMap = {
+          janvier: '01', fevrier: '02', février: '02', mars: '03', avril: '04', mai: '05', juin: '06',
+          juillet: '07', aout: '08', août: '08', septembre: '09', octobre: '10', novembre: '11', decembre: '12', décembre: '12'
+        };
+        const now = new Date();
+        if (value.includes("aujourd'hui") || value.includes('aujourdhui')) {
+          const y = now.getFullYear();
+          const m = String(now.getMonth() + 1).padStart(2, '0');
+          const d = String(now.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        }
+        if (value.includes('demain')) {
+          const tomorrow = new Date(now);
+          tomorrow.setDate(now.getDate() + 1);
+          const y = tomorrow.getFullYear();
+          const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+          const d = String(tomorrow.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        }
+        const iso = value.match(/(\d{4})[-\/\.](\d{1,2})[-\/\.](\d{1,2})/);
+        if (iso) {
+          const y = iso[1];
+          const m = String(iso[2]).padStart(2, '0');
+          const d = String(iso[3]).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        }
+        const fr = value.match(/(\d{1,2})[-\/\.\s](\d{1,2})[-\/\.\s](\d{2,4})/);
+        if (fr) {
+          const d = String(fr[1]).padStart(2, '0');
+          const m = String(fr[2]).padStart(2, '0');
+          const yRaw = fr[3];
+          const y = yRaw.length === 2 ? `20${yRaw}` : yRaw;
+          return `${y}-${m}-${d}`;
+        }
+        const text = value.match(/(\d{1,2})\s+([a-zéûôîàèùç]+)\s+(\d{2,4})/i);
+        if (text) {
+          const d = String(text[1]).padStart(2, '0');
+          const monthToken = text[2].toLowerCase();
+          const m = monthMap[monthToken];
+          if (!m) return null;
+          const yRaw = text[3];
+          const y = yRaw.length === 2 ? `20${yRaw}` : yRaw;
+          return `${y}-${m}-${d}`;
+        }
+        return null;
+      }
+
+      function isSkipWord(input) {
+        const value = (input || '').toLowerCase();
+        return ['passer', 'skip', 'suivant', 'aucun', 'vide'].some((word) => value.includes(word));
+      }
+
+      function renderSummary() {
+        const lines = [
+          `Catégorie: ${state.categorie || '-'}`,
+          `Matériel: ${state.nom || '-'}`,
+          `Quantité ajoutée: ${state.quantite || '-'}`,
+          `Qte prévue globale: ${state.quantitePrevue || '-'}`
+        ];
+        for (let i = 1; i <= 4; i += 1) {
+          lines.push(`Slot ${i}: qté=${state[`quantitePrevue${i}`] || '-'}, date=${state[`dateLivraisonPrevue${i}`] || '-'}`);
+        }
+        summaryEl.textContent = lines.join('\n');
+      }
+
+      function syncForm() {
+        Object.keys(state).forEach((key) => {
+          const field = form.querySelector(`[name="${key}"]`);
+          if (field) field.value = state[key] || '';
+        });
+      }
+
+      function showError(message) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('d-none');
+      }
+
+      function clearError() {
+        errorEl.classList.add('d-none');
+        errorEl.textContent = '';
+      }
+
+      function applyStepValue(step, rawValue) {
+        const value = (rawValue || '').trim();
+        if (step.type === 'confirm') {
+          const normalized = value.toLowerCase();
+          if (yesWords.some((word) => normalized.includes(word))) {
+            submitBtn.disabled = false;
+            speak('Confirmation reçue. Vous pouvez valider avec le bouton confirmer et ajouter.');
+            promptEl.textContent = 'Confirmation reçue. Cliquez sur "Confirmer et ajouter".';
+            return true;
+          }
+          if (noWords.some((word) => normalized.includes(word))) {
+            currentIndex = 0;
+            showError('Données à modifier, reprise depuis la première étape.');
+            askCurrentStep();
+            return false;
+          }
+          return null;
+        }
+        if (step.optional && isSkipWord(value)) {
+          state[step.key] = '';
+          return true;
+        }
+        if (step.type === 'number') {
+          const normalized = normalizeNumber(value);
+          if (!normalized && !step.optional) return false;
+          if (!normalized && step.optional) {
+            state[step.key] = '';
+            return true;
+          }
+          state[step.key] = normalized;
+          return true;
+        }
+        if (step.type === 'date') {
+          const normalized = normalizeDate(value);
+          if (!normalized && !step.optional) return false;
+          if (!normalized && step.optional) {
+            state[step.key] = '';
+            return true;
+          }
+          state[step.key] = normalized;
+          return true;
+        }
+        if (!value) return false;
+        state[step.key] = value;
+        return true;
+      }
+
+      function nextStep() {
+        attempts = 0;
+        currentIndex += 1;
+        syncForm();
+        renderSummary();
+        if (currentIndex >= steps.length) {
+          submitBtn.disabled = false;
+          promptEl.textContent = 'Assistant terminé. Cliquez sur "Confirmer et ajouter".';
+          return;
+        }
+        askCurrentStep();
+      }
+
+      function askCurrentStep() {
+        if (!active) return;
+        const step = steps[currentIndex];
+        if (!step) return;
+        clearError();
+        stepLabel.textContent = step.label;
+        promptEl.textContent = step.question;
+        speak(step.question, () => {
+          if (active) startListening();
+        });
+      }
+
+      function stopListening() {
+        if (recognition) {
+          recognition.onresult = null;
+          recognition.onerror = null;
+          recognition.onend = null;
+          recognition.stop();
+        }
+      }
+
+      function onRecognitionFailure(message) {
+        attempts += 1;
+        showError(message);
+        if (attempts >= 2) {
+          speak('Je ne comprends pas. Merci de répéter.');
+        }
+        if (attempts >= 3) {
+          showError('Trop d\'erreurs. Vous pouvez continuer via l\'ajout classique.');
+          active = false;
+          return;
+        }
+        askCurrentStep();
+      }
+
+      function startListening() {
+        if (!recognition || !active) return;
+        recognition.start();
+      }
+
+      function initRecognition() {
+        recognition = new speechRecognitionApi();
+        recognition.lang = 'fr-FR';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = (event) => {
+          const transcript = (((event.results || [])[0] || [])[0] || {}).transcript || '';
+          const step = steps[currentIndex];
+          if (!step) return;
+          const ok = applyStepValue(step, transcript);
+          if (ok === true) {
+            nextStep();
+          } else if (ok === null) {
+            onRecognitionFailure('Réponse de confirmation incompréhensible. Dites oui ou non.');
+          } else {
+            onRecognitionFailure('Réponse incompréhensible. Réessayons.');
+          }
+        };
+
+        recognition.onerror = (event) => {
+          if (event.error === 'not-allowed') {
+            showError('Microphone refusé. Utilisez l\'ajout classique.');
+            active = false;
+            return;
+          }
+          if (event.error === 'no-speech') {
+            onRecognitionFailure('Silence détecté.');
+            return;
+          }
+          onRecognitionFailure(`Erreur micro: ${event.error}`);
+        };
+      }
+
+      function resetState() {
+        Object.keys(state).forEach((key) => {
+          state[key] = '';
+        });
+        currentIndex = 0;
+        attempts = 0;
+        active = false;
+        submitBtn.disabled = true;
+        stepLabel.textContent = 'Prêt';
+        promptEl.textContent = 'Cliquez sur « Démarrer » pour lancer l\'assistant vocal.';
+        renderSummary();
+        syncForm();
+        clearError();
+      }
+
+      if (!canUseSpeech) {
+        unsupportedEl.classList.remove('d-none');
+        startBtn.disabled = true;
+        retryBtn.disabled = true;
+      } else {
+        initRecognition();
+      }
+
+      startBtn.addEventListener('click', () => {
+        if (!canUseSpeech) return;
+        active = true;
+        submitBtn.disabled = true;
+        askCurrentStep();
+      });
+
+      retryBtn.addEventListener('click', () => {
+        if (!canUseSpeech || !active) return;
+        askCurrentStep();
+      });
+
+      modal.addEventListener('hidden.bs.modal', () => {
+        stopListening();
+        window.speechSynthesis && window.speechSynthesis.cancel();
+        resetState();
+      });
+
+      form.addEventListener('submit', (event) => {
+        syncForm();
+        if (!state.categorie || !state.nom || !state.quantite) {
+          event.preventDefault();
+          showError('Les champs catégorie, matériel et quantité sont obligatoires.');
+        }
+      });
+
+      renderSummary();
+      syncForm();
+    })();
   </script>
 
   <script nonce="<%= nonce %>">
