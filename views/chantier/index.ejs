@@ -889,7 +889,7 @@
         var(--vv-top, 0px) +
         env(safe-area-inset-top, 0px) +
         var(--navbar-h, 64px) +
-        0.5rem
+        0.25rem
       );
     }
 
@@ -902,18 +902,27 @@
         var(--vv-top, 0px) -
         env(safe-area-inset-top, 0px) -
         var(--navbar-h, 64px) -
-        0.5rem -
+        0.25rem -
         0.75rem
       );
     }
 
-    /* Sécurise le contenu (le scroll est géré par modal-dialog-scrollable) */
+    /* Restaure la structure flex + scroll interne du body */
     #globalReceptionModal .modal-content {
+      display: flex;
+      flex-direction: column;
       max-height: 100%;
       overflow: hidden;
     }
 
+    #globalReceptionModal .modal-header,
+    #globalReceptionModal .modal-footer {
+      flex: 0 0 auto;
+    }
+
     #globalReceptionModal .modal-body {
+      flex: 1 1 auto;
+      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
