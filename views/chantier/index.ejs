@@ -18,6 +18,8 @@
       --text-primary: #f7f4ff;
       --text-muted: rgba(247, 244, 255, 0.7);
       --navbar-h: 64px;
+      --vv-top: 0px;
+      --vv-h: 100vh;
     }
 
     body {
@@ -895,14 +897,33 @@
     }
 
     #globalReceptionModal .modal-dialog {
-      /* Offset sous la navbar fixe */
+      /* Offset sous la navbar fixe + zone visible réelle iOS/iPad */
       margin: 0 auto 0.75rem auto;
-      top: calc(var(--navbar-h, 64px) + 0.5rem);
+      top: calc(
+        var(--vv-top, 0px) +
+        env(safe-area-inset-top, 0px) +
+        var(--navbar-h, 64px) +
+        0.5rem
+      );
       position: relative;
 
-      /* Prend la hauteur utile restante */
-      height: calc(100vh - var(--navbar-h, 64px) - 1.25rem);
-      max-height: calc(100vh - var(--navbar-h, 64px) - 1.25rem);
+      /* Prend la hauteur visible utile (visualViewport sur iPad/iOS) */
+      height: calc(
+        var(--vv-h, 100vh) -
+        var(--vv-top, 0px) -
+        env(safe-area-inset-top, 0px) -
+        var(--navbar-h, 64px) -
+        0.5rem -
+        1.25rem
+      );
+      max-height: calc(
+        var(--vv-h, 100vh) -
+        var(--vv-top, 0px) -
+        env(safe-area-inset-top, 0px) -
+        var(--navbar-h, 64px) -
+        0.5rem -
+        1.25rem
+      );
     }
 
     #globalReceptionModal .modal-content {
@@ -922,13 +943,6 @@
       flex: 1 1 auto;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-    }
-
-    @supports (height: 100dvh) {
-      #globalReceptionModal .modal-dialog {
-        height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
-        max-height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
-      }
     }
 
     .modal-content .form-control {
@@ -4761,18 +4775,30 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
 
   <script nonce="<%= nonce %>">
     (function () {
-      function setNavbarHeightVar() {
+      function setViewportVars() {
         const navbar = document.querySelector('.navbar');
-        const h = navbar ? Math.ceil(navbar.getBoundingClientRect().height) : 64;
-        document.documentElement.style.setProperty('--navbar-h', h + 'px');
+        const navH = navbar ? Math.ceil(navbar.getBoundingClientRect().height) : 64;
+        document.documentElement.style.setProperty('--navbar-h', navH + 'px');
+
+        const vv = window.visualViewport;
+        const vvTop = vv ? Math.round(vv.offsetTop) : 0;
+        const vvH = vv ? Math.round(vv.height) : window.innerHeight;
+
+        document.documentElement.style.setProperty('--vv-top', vvTop + 'px');
+        document.documentElement.style.setProperty('--vv-h', vvH + 'px');
       }
 
-      window.addEventListener('DOMContentLoaded', setNavbarHeightVar);
-      window.addEventListener('load', setNavbarHeightVar);
-      window.addEventListener('resize', setNavbarHeightVar);
-      window.addEventListener('orientationchange', setNavbarHeightVar);
-      document.addEventListener('shown.bs.collapse', setNavbarHeightVar);
-      document.addEventListener('hidden.bs.collapse', setNavbarHeightVar);
+      window.addEventListener('DOMContentLoaded', setViewportVars);
+      window.addEventListener('load', setViewportVars);
+      window.addEventListener('resize', setViewportVars);
+      window.addEventListener('orientationchange', setViewportVars);
+      document.addEventListener('shown.bs.collapse', setViewportVars);
+      document.addEventListener('hidden.bs.collapse', setViewportVars);
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', setViewportVars);
+        window.visualViewport.addEventListener('scroll', setViewportVars);
+      }
     })();
   </script>
 
