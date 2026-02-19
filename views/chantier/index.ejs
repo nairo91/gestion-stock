@@ -1443,10 +1443,6 @@
               <label class="form-label">Quantité ajoutée au stock</label>
               <input type="number" class="form-control" name="quantite" id="voiceQuantite" min="0" required>
             </div>
-            <div class="col-12">
-              <label class="form-label">Quantité prévue (globale)</label>
-              <input type="number" class="form-control" name="quantitePrevue" id="voiceQuantitePrevue" min="0">
-            </div>
             <% for (let i = 1; i <= 4; i++) { %>
               <div class="col-md-6">
                 <label class="form-label">Qte prévue <%= i %></label>
@@ -3625,7 +3621,6 @@
         categorie: '',
         nom: '',
         quantite: '',
-        quantitePrevue: '',
         quantitePrevue1: '',
         dateLivraisonPrevue1: '',
         quantitePrevue2: '',
@@ -3643,7 +3638,6 @@
         { key: 'categorie', label: 'Catégorie', question: 'Quelle est la catégorie du matériel ?', type: 'text' },
         { key: 'nom', label: 'Matériel', question: 'Quel est le nom du matériel ?', type: 'text' },
         { key: 'quantite', label: 'Quantité ajoutée', question: 'Quelle quantité ajoutez-vous au stock ?', type: 'number' },
-        { key: 'quantitePrevue', label: 'Quantité prévue globale', question: 'Quelle est la quantité prévue globale ?', type: 'number', optional: true },
         { key: 'quantitePrevue1', label: 'Quantité prévue 1', question: 'Indiquez la quantité prévue numéro un, ou dites passer.', type: 'number', optional: true },
         { key: 'dateLivraisonPrevue1', label: 'Date livraison prévue 1', question: 'Indiquez la date de livraison prévue numéro un, ou dites passer.', type: 'date', optional: true },
         { key: 'quantitePrevue2', label: 'Quantité prévue 2', question: 'Indiquez la quantité prévue numéro deux, ou dites passer.', type: 'number', optional: true },
@@ -3671,15 +3665,64 @@
 
       function normalizeNumber(input) {
         if (!input) return null;
-        const cleaned = String(input)
-          .toLowerCase()
-          .replace(/virgule/g, '.')
-          .replace(/[^0-9.\-]/g, ' ')
+        // Exemples: "zéro" -> "0", "deux unités" -> "2", "dix-sept" -> "17", "15" -> "15"
+        const source = String(input).toLowerCase();
+        const digitMatch = source.match(/\d+/);
+        if (digitMatch) return String(Math.max(0, parseInt(digitMatch[0], 10)));
+
+        const cleaned = source
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/-/g, ' ')
+          .replace(/[^a-z0-9\s]/g, ' ')
           .trim();
         if (!cleaned) return null;
-        const firstPart = cleaned.split(/\s+/).find(Boolean);
-        const parsed = firstPart ? Number(firstPart) : NaN;
-        return Number.isFinite(parsed) ? String(Math.max(0, Math.round(parsed))) : null;
+
+        const tokens = cleaned.split(/\s+/).filter(Boolean);
+        const numberWords = {
+          zero: 0,
+          un: 1,
+          une: 1,
+          deux: 2,
+          trois: 3,
+          quatre: 4,
+          cinq: 5,
+          six: 6,
+          sept: 7,
+          huit: 8,
+          neuf: 9,
+          dix: 10,
+          onze: 11,
+          douze: 12,
+          treize: 13,
+          quatorze: 14,
+          quinze: 15,
+          seize: 16,
+          dixsept: 17,
+          dixhuit: 18,
+          dixneuf: 19,
+          vingt: 20,
+          vingtetun: 21
+        };
+
+        for (let i = 0; i < tokens.length; i += 1) {
+          const token = tokens[i];
+          if (token === 'vingt' && tokens[i + 1] === 'et' && (tokens[i + 2] === 'un' || tokens[i + 2] === 'une')) {
+            return '21';
+          }
+          if (token === 'vingt' && (tokens[i + 1] === 'un' || tokens[i + 1] === 'une')) {
+            return '21';
+          }
+          if (token === 'dix' && tokens[i + 1] && Object.prototype.hasOwnProperty.call(numberWords, tokens[i + 1])) {
+            const next = numberWords[tokens[i + 1]];
+            if (next >= 0 && next <= 9) return String(10 + next);
+          }
+          if (Object.prototype.hasOwnProperty.call(numberWords, token)) {
+            return String(numberWords[token]);
+          }
+        }
+
+        return null;
       }
 
       function normalizeDate(input) {
@@ -3741,8 +3784,7 @@
         const lines = [
           `Catégorie: ${state.categorie || '-'}`,
           `Matériel: ${state.nom || '-'}`,
-          `Quantité ajoutée: ${state.quantite || '-'}`,
-          `Qte prévue globale: ${state.quantitePrevue || '-'}`
+          `Quantité ajoutée: ${state.quantite || '-'}`
         ];
         for (let i = 1; i <= 4; i += 1) {
           lines.push(`Slot ${i}: qté=${state[`quantitePrevue${i}`] || '-'}, date=${state[`dateLivraisonPrevue${i}`] || '-'}`);
