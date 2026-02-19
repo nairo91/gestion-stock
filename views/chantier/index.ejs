@@ -878,9 +878,15 @@
       border-top-color: rgba(169, 120, 255, 0.25);
     }
 
-    /* Hotfix: la modale de réception doit rester visible sur tablette/mobile */
+    /* Fix iPad/iOS: la transition (transform) Bootstrap peut "tirer" la modale vers le haut.
+       On force un layout stable: header/footer fixes + body scroll, et on neutralise le transform. */
     #globalReceptionModal {
-      padding-top: 0;
+      padding-top: 0; /* on gère l'offset via le dialog */
+    }
+
+    /* IMPORTANT: neutralise le translateY de .modal.fade .modal-dialog sur iOS */
+    #globalReceptionModal .modal-dialog {
+      transform: none !important;
     }
 
     #globalReceptionModal .modal-dialog.modal-dialog-centered {
@@ -889,25 +895,39 @@
     }
 
     #globalReceptionModal .modal-dialog {
-      margin: calc(var(--navbar-h, 64px) + 0.5rem) auto 0.75rem auto;
+      /* Offset sous la navbar fixe */
+      margin: 0 auto 0.75rem auto;
+      top: calc(var(--navbar-h, 64px) + 0.5rem);
+      position: relative;
+
+      /* Prend la hauteur utile restante */
       height: calc(100vh - var(--navbar-h, 64px) - 1.25rem);
+      max-height: calc(100vh - var(--navbar-h, 64px) - 1.25rem);
     }
 
     #globalReceptionModal .modal-content {
       display: flex;
       flex-direction: column;
       height: 100%;
+      max-height: 100%;
       overflow: hidden;
     }
 
+    #globalReceptionModal .modal-header,
+    #globalReceptionModal .modal-footer {
+      flex: 0 0 auto;
+    }
+
     #globalReceptionModal .modal-body {
-      overflow-y: auto;
       flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     @supports (height: 100dvh) {
       #globalReceptionModal .modal-dialog {
         height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
+        max-height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
       }
     }
 
