@@ -878,33 +878,36 @@
       border-top-color: rgba(169, 120, 255, 0.25);
     }
 
-    /* Fix ciblé: la modale de réception doit rester entièrement visible sous la navbar fixe */
+    /* Hotfix: la modale de réception doit rester visible sur tablette/mobile */
     #globalReceptionModal {
-      padding-top: calc(var(--navbar-h, 64px) + 0.5rem);
+      padding-top: 0;
+    }
+
+    #globalReceptionModal .modal-dialog.modal-dialog-centered {
+      align-items: flex-start;
+      min-height: 0;
     }
 
     #globalReceptionModal .modal-dialog {
-      margin: 0 auto 0.75rem auto;
-      max-height: calc(100vh - var(--navbar-h, 64px) - 1.25rem);
+      margin: calc(var(--navbar-h, 64px) + 0.5rem) auto 0.75rem auto;
+      height: calc(100vh - var(--navbar-h, 64px) - 1.25rem);
     }
 
     #globalReceptionModal .modal-content {
-      max-height: inherit;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
       overflow: hidden;
     }
 
     #globalReceptionModal .modal-body {
       overflow-y: auto;
-      max-height: calc(100vh - var(--navbar-h, 64px) - 8.5rem);
+      flex: 1 1 auto;
     }
 
     @supports (height: 100dvh) {
       #globalReceptionModal .modal-dialog {
-        max-height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
-      }
-
-      #globalReceptionModal .modal-body {
-        max-height: calc(100dvh - var(--navbar-h, 64px) - 8.5rem);
+        height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
       }
     }
 
