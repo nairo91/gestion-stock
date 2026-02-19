@@ -897,6 +897,13 @@
       overflow-y: auto;
     }
 
+    /* Sur tablette en mode paysage, on réduit encore la hauteur du dialogue */
+    @media (orientation: landscape) and (max-width: 1024px) {
+      #globalReceptionModal .modal-dialog {
+        max-height: calc(85vh - var(--navbar-h, 64px) - 2rem);
+      }
+    }
+
     .modal-content .form-control {
       background: rgba(12, 8, 32, 0.92);
       border: 1px solid rgba(169, 120, 255, 0.35);
