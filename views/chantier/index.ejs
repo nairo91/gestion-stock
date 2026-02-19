@@ -879,16 +879,21 @@
     }
 
     #globalReceptionModal .modal-dialog {
-      max-height: calc(90vh - var(--navbar-h, 64px));
+      max-height: calc(100vh - var(--navbar-h, 64px) - 2rem);
     }
 
     #globalReceptionModal .modal-content {
       display: flex;
       flex-direction: column;
-      height: 100%;
+    }
+
+    #globalReceptionModal .modal-header,
+    #globalReceptionModal .modal-footer {
+      flex: 0 0 auto;
     }
 
     #globalReceptionModal .modal-body {
+      flex: 1 1 auto;
       overflow-y: auto;
     }
 
