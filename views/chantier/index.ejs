@@ -880,68 +880,40 @@
       border-top-color: rgba(169, 120, 255, 0.25);
     }
 
-    /* Fix iPad/iOS: la transition (transform) Bootstrap peut "tirer" la modale vers le haut.
-       On force un layout stable: header/footer fixes + body scroll, et on neutralise le transform. */
-    #globalReceptionModal {
-      padding-top: 0; /* on gère l'offset via le dialog */
-    }
+    /* ✅ Fix iPad/iOS robuste : on décale le CONTENEUR modal sous la navbar,
+       et on laisse Bootstrap gérer le scroll via modal-dialog-scrollable. */
 
-    /* IMPORTANT: neutralise le translateY de .modal.fade .modal-dialog sur iOS */
-    #globalReceptionModal .modal-dialog {
-      transform: none !important;
-    }
-
-    #globalReceptionModal .modal-dialog.modal-dialog-centered {
-      align-items: flex-start;
-      min-height: 0;
-    }
-
-    #globalReceptionModal .modal-dialog {
-      /* Offset sous la navbar fixe + zone visible réelle iOS/iPad */
-      margin: 0 auto 0.75rem auto;
-      top: calc(
+    /* L'offset se fait ici (pas via top/height sur le dialog) */
+    #globalReceptionModal.modal {
+      padding-top: calc(
         var(--vv-top, 0px) +
         env(safe-area-inset-top, 0px) +
         var(--navbar-h, 64px) +
         0.5rem
       );
-      position: relative;
+    }
 
-      /* Prend la hauteur visible utile (visualViewport sur iPad/iOS) */
-      height: calc(
-        var(--vv-h, 100vh) -
-        var(--vv-top, 0px) -
-        env(safe-area-inset-top, 0px) -
-        var(--navbar-h, 64px) -
-        0.5rem -
-        1.25rem
-      );
+    /* iOS: neutralise la translation Bootstrap qui peut décaler la modale */
+    #globalReceptionModal .modal-dialog {
+      transform: none !important;
+      margin: 0 auto 0.75rem auto;
       max-height: calc(
         var(--vv-h, 100vh) -
         var(--vv-top, 0px) -
         env(safe-area-inset-top, 0px) -
         var(--navbar-h, 64px) -
         0.5rem -
-        1.25rem
+        0.75rem
       );
     }
 
+    /* Sécurise le contenu (le scroll est géré par modal-dialog-scrollable) */
     #globalReceptionModal .modal-content {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
       max-height: 100%;
       overflow: hidden;
     }
 
-    #globalReceptionModal .modal-header,
-    #globalReceptionModal .modal-footer {
-      flex: 0 0 auto;
-    }
-
     #globalReceptionModal .modal-body {
-      flex: 1 1 auto;
-      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
