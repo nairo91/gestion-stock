@@ -884,9 +884,8 @@
     }
 
     #globalReceptionModal .modal-dialog {
-      margin-top: 0;
-      margin-bottom: 0.75rem;
-      max-height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
+      margin: 0 auto 0.75rem auto;
+      max-height: calc(100vh - var(--navbar-h, 64px) - 1.25rem);
     }
 
     #globalReceptionModal .modal-content {
@@ -896,7 +895,17 @@
 
     #globalReceptionModal .modal-body {
       overflow-y: auto;
-      max-height: calc(100dvh - var(--navbar-h, 64px) - 8.5rem);
+      max-height: calc(100vh - var(--navbar-h, 64px) - 8.5rem);
+    }
+
+    @supports (height: 100dvh) {
+      #globalReceptionModal .modal-dialog {
+        max-height: calc(100dvh - var(--navbar-h, 64px) - 1.25rem);
+      }
+
+      #globalReceptionModal .modal-body {
+        max-height: calc(100dvh - var(--navbar-h, 64px) - 8.5rem);
+      }
     }
 
     .modal-content .form-control {
@@ -4255,16 +4264,18 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
 
   <script nonce="<%= nonce %>">
     (function () {
-      function setNavbarPadding() {
-        var nb = document.querySelector('.navbar');
-        if (!nb) return;
-        var h = nb.offsetHeight || 64;
+      function setNavbarHeightVar() {
+        const navbar = document.querySelector('.navbar');
+        const h = navbar ? Math.ceil(navbar.getBoundingClientRect().height) : 64;
         document.documentElement.style.setProperty('--navbar-h', h + 'px');
       }
 
-      window.addEventListener('load', setNavbarPadding);
-      window.addEventListener('resize', setNavbarPadding);
-      document.addEventListener('readystatechange', setNavbarPadding);
+      window.addEventListener('DOMContentLoaded', setNavbarHeightVar);
+      window.addEventListener('load', setNavbarHeightVar);
+      window.addEventListener('resize', setNavbarHeightVar);
+      window.addEventListener('orientationchange', setNavbarHeightVar);
+      document.addEventListener('shown.bs.collapse', setNavbarHeightVar);
+      document.addEventListener('hidden.bs.collapse', setNavbarHeightVar);
     })();
   </script>
 
