@@ -897,10 +897,13 @@
       overflow-y: auto;
     }
 
-    /* Sur tablette en mode paysage, on réduit encore la hauteur du dialogue */
-    @media (orientation: landscape) and (max-width: 1024px) {
+    /* Sur tablette en mode paysage, on réduit la hauteur de la modale
+       pour qu'elle ne remonte pas sous la barre de navigation.
+       On utilise 80 % de la hauteur de la fenêtre et on tient
+       compte de la hauteur de la navbar. */
+    @media (orientation: landscape) {
       #globalReceptionModal .modal-dialog {
-        max-height: calc(85vh - var(--navbar-h, 64px) - 2rem);
+        max-height: calc(80vh - var(--navbar-h, 64px));
       }
     }
 
