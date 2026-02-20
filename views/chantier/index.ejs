@@ -3614,6 +3614,9 @@
       let active = false;
       let currentIndex = 0;
       let attempts = 0;
+      let lastValidationError = '';
+      let existingCategories = [];
+      const skippedDateIndexes = new Set();
 
       const state = {
         categorie: '',
@@ -3631,6 +3634,7 @@
 
       const yesWords = ['oui', 'valider', 'confirmer', 'ok'];
       const noWords = ['non', 'modifier', 'recommencer'];
+      const backWords = ['retour', 'precedent', 'précédent', 'en arriere', 'en arrière'];
 
       const steps = [
         { key: 'categorie', label: 'Catégorie', question: 'Quelle est la catégorie du matériel ?', type: 'text' },
@@ -3778,6 +3782,57 @@
         return ['passer', 'skip', 'suivant', 'aucun', 'vide'].some((word) => value.includes(word));
       }
 
+      function normalizeCategory(input) {
+        return String(input || '')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function collectExistingCategories() {
+        const categories = [];
+        const categorySelect = document.querySelector('select[name="categorie"], select#categorie');
+        const sourceSelects = categorySelect ? [categorySelect] : [];
+
+        sourceSelects.forEach((select) => {
+          Array.from(select.options || []).forEach((option) => {
+            const text = String(option.textContent || option.value || '').trim();
+            if (!text) return;
+            if (/^--/.test(text) || /toutes?/i.test(text)) return;
+            const normalized = normalizeCategory(text);
+            if (!normalized) return;
+            if (!categories.some((item) => item.normalized === normalized)) {
+              categories.push({ normalized, canonical: text });
+            }
+          });
+        });
+
+        existingCategories = categories;
+      }
+
+      function findMatchingCategory(input) {
+        const normalizedInput = normalizeCategory(input);
+        if (!normalizedInput) return null;
+        const exact = existingCategories.find((cat) => cat.normalized === normalizedInput);
+        if (exact) return exact;
+
+        const partials = existingCategories.filter((cat) => (
+          cat.normalized.includes(normalizedInput)
+          || normalizedInput.includes(cat.normalized)
+        ));
+        if (partials.length === 1) return partials[0];
+
+        return null;
+      }
+
+      function isBackCommand(input) {
+        const normalized = normalizeCategory(input);
+        return backWords.some((word) => normalized.includes(word));
+      }
+
       function renderSummary() {
         const lines = [
           `Catégorie: ${state.categorie || '-'}`,
@@ -3808,6 +3863,7 @@
       }
 
       function applyStepValue(step, rawValue) {
+        lastValidationError = '';
         const value = (rawValue || '').trim();
         if (step.type === 'confirm') {
           const normalized = value.toLowerCase();
@@ -3827,6 +3883,12 @@
         }
         if (step.optional && isSkipWord(value)) {
           state[step.key] = '';
+          const qteMatch = step.key.match(/^quantitePrevue(\d)$/);
+          if (qteMatch) {
+            const slot = qteMatch[1];
+            state[`dateLivraisonPrevue${slot}`] = '';
+            skippedDateIndexes.add(slot);
+          }
           return true;
         }
         if (step.type === 'number') {
@@ -3837,6 +3899,10 @@
             return true;
           }
           state[step.key] = normalized;
+          const qteMatch = step.key.match(/^quantitePrevue(\d)$/);
+          if (qteMatch) {
+            skippedDateIndexes.delete(qteMatch[1]);
+          }
           return true;
         }
         if (step.type === 'date') {
@@ -3850,6 +3916,20 @@
           return true;
         }
         if (!value) return false;
+        if (step.key === 'categorie') {
+          if (!existingCategories.length) {
+            state[step.key] = value;
+            return true;
+          }
+          const match = findMatchingCategory(value);
+          if (!match) {
+            lastValidationError = 'Catégorie inconnue. Merci d\'utiliser une catégorie existante.';
+            speak('Catégorie inconnue. Merci de répéter avec une catégorie existante.');
+            return false;
+          }
+          state[step.key] = match.canonical;
+          return true;
+        }
         state[step.key] = value;
         return true;
       }
@@ -3857,6 +3937,12 @@
       function nextStep() {
         attempts = 0;
         currentIndex += 1;
+        while (currentIndex < steps.length) {
+          const next = steps[currentIndex];
+          const dateMatch = next && next.key ? next.key.match(/^dateLivraisonPrevue(\d)$/) : null;
+          if (!dateMatch || !skippedDateIndexes.has(dateMatch[1])) break;
+          currentIndex += 1;
+        }
         syncForm();
         renderSummary();
         if (currentIndex >= steps.length) {
@@ -3917,13 +4003,20 @@
           const transcript = (((event.results || [])[0] || [])[0] || {}).transcript || '';
           const step = steps[currentIndex];
           if (!step) return;
+          if (step.type !== 'confirm' && isBackCommand(transcript)) {
+            attempts = 0;
+            currentIndex = Math.max(0, currentIndex - 1);
+            speak('Retour à l'étape précédente.');
+            askCurrentStep();
+            return;
+          }
           const ok = applyStepValue(step, transcript);
           if (ok === true) {
             nextStep();
           } else if (ok === null) {
             onRecognitionFailure('Réponse de confirmation incompréhensible. Dites oui ou non.');
           } else {
-            onRecognitionFailure('Réponse incompréhensible. Réessayons.');
+            onRecognitionFailure(lastValidationError || 'Réponse incompréhensible. Réessayons.');
           }
         };
 
@@ -3947,6 +4040,9 @@
         });
         currentIndex = 0;
         attempts = 0;
+        skippedDateIndexes.clear();
+        existingCategories = [];
+        lastValidationError = '';
         active = false;
         submitBtn.disabled = true;
         stepLabel.textContent = 'Prêt';
@@ -3966,6 +4062,7 @@
 
       startBtn.addEventListener('click', () => {
         if (!canUseSpeech) return;
+        collectExistingCategories();
         active = true;
         submitBtn.disabled = true;
         askCurrentStep();
