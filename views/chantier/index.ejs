@@ -3297,6 +3297,7 @@
 
       const userId = <%- JSON.stringify(user && user.id ? user.id : null) %>;
       const hideStorageKey = userId ? `hideDeliveryModalUntil_user_${userId}` : 'hideDeliveryModalUntil';
+      const reminderFilterStorageKey = userId ? `deliveryReminderFilters_user_${userId}` : 'deliveryReminderFilters';
       const parseHideUntil = (value) => {
         if (!value) {
           return null;
@@ -3334,6 +3335,31 @@
       const filterFournisseurSelect = document.getElementById('deliveryFilterFournisseur');
       const rows = Array.from(document.querySelectorAll('#deliveryReminderModal tbody tr'));
       const normalizeValue = (value) => String(value || '').trim().toLowerCase();
+      const saveFilterState = () => {
+        if (!filterChantierSelect || !filterFournisseurSelect) {
+          return;
+        }
+        const payload = {
+          chantier: normalizeValue(filterChantierSelect.value),
+          fournisseur: normalizeValue(filterFournisseurSelect.value)
+        };
+        localStorage.setItem(reminderFilterStorageKey, JSON.stringify(payload));
+      };
+      const loadFilterState = () => {
+        try {
+          const raw = localStorage.getItem(reminderFilterStorageKey);
+          if (!raw) {
+            return { chantier: '', fournisseur: '' };
+          }
+          const parsed = JSON.parse(raw);
+          return {
+            chantier: normalizeValue(parsed && parsed.chantier),
+            fournisseur: normalizeValue(parsed && parsed.fournisseur)
+          };
+        } catch (_) {
+          return { chantier: '', fournisseur: '' };
+        }
+      };
       const getVisibleRows = () => rows.filter((row) => !row.classList.contains('d-none'));
       const updateSubtitleCounts = () => {
         if (!subtitle) {
@@ -3559,7 +3585,22 @@
 
       if (filterChantierSelect && filterFournisseurSelect) {
         buildSelectOptions(filterChantierSelect, buildChantierOptions(), 'Tous les chantiers');
-        buildSelectOptions(filterFournisseurSelect, buildFournisseurOptions(''), 'Tous les fournisseurs');
+        const savedState = loadFilterState();
+        const hasSavedChantier = Array.from(filterChantierSelect.options).some((opt) => opt.value === savedState.chantier);
+        if (hasSavedChantier) {
+          filterChantierSelect.value = savedState.chantier;
+        }
+
+        buildSelectOptions(
+          filterFournisseurSelect,
+          buildFournisseurOptions(normalizeValue(filterChantierSelect.value)),
+          'Tous les fournisseurs'
+        );
+
+        const hasSavedFournisseur = Array.from(filterFournisseurSelect.options).some((opt) => opt.value === savedState.fournisseur);
+        if (hasSavedFournisseur) {
+          filterFournisseurSelect.value = savedState.fournisseur;
+        }
 
         filterChantierSelect.addEventListener('change', () => {
           buildSelectOptions(
@@ -3567,11 +3608,19 @@
             buildFournisseurOptions(normalizeValue(filterChantierSelect.value)),
             'Tous les fournisseurs'
           );
-          filterFournisseurSelect.value = '';
+          const state = loadFilterState();
+          if (state.chantier === normalizeValue(filterChantierSelect.value)) {
+            const canRestoreFournisseur = Array.from(filterFournisseurSelect.options).some((opt) => opt.value === state.fournisseur);
+            filterFournisseurSelect.value = canRestoreFournisseur ? state.fournisseur : '';
+          } else {
+            filterFournisseurSelect.value = '';
+          }
+          saveFilterState();
           applyFilters();
         });
 
         filterFournisseurSelect.addEventListener('change', () => {
+          saveFilterState();
           applyFilters();
         });
       }
