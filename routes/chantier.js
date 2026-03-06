@@ -417,9 +417,40 @@ const computeInitialSlots = ({
   };
 };
 
-const buildRefererRedirectUrl = ({ req, chantierId, toast, highlight, categorie, toastMsg }) => {
+const buildRefererRedirectUrl = ({ req, chantierId, toast, highlight, categorie, toastMsg, returnTo }) => {
   const referer = req.get('referer');
   const safeToast = toast || 'info';
+  const safeReturnTo = typeof returnTo === 'string' ? returnTo.trim() : '';
+
+  const applyRedirectParams = targetUrl => {
+    targetUrl.searchParams.set('toast', safeToast);
+
+    if (highlight) {
+      targetUrl.searchParams.set('highlight', String(highlight));
+    } else {
+      targetUrl.searchParams.delete('highlight');
+    }
+
+    if (toastMsg) {
+      targetUrl.searchParams.set('toastMsg', String(toastMsg));
+    } else {
+      targetUrl.searchParams.delete('toastMsg');
+    }
+
+    return `${targetUrl.pathname}${targetUrl.search}`;
+  };
+
+  if (safeReturnTo) {
+    try {
+      const baseOrigin = `${req.protocol}://${req.get('host')}`;
+      const returnToUrl = new URL(safeReturnTo, baseOrigin);
+      if (returnToUrl.host === req.get('host')) {
+        return applyRedirectParams(returnToUrl);
+      }
+    } catch (_) {
+      // fallback handled below
+    }
+  }
 
   if (referer) {
     try {
@@ -427,21 +458,7 @@ const buildRefererRedirectUrl = ({ req, chantierId, toast, highlight, categorie,
       const refererUrl = new URL(referer, baseOrigin);
 
       if (refererUrl.host === req.get('host')) {
-        refererUrl.searchParams.set('toast', safeToast);
-
-        if (highlight) {
-          refererUrl.searchParams.set('highlight', String(highlight));
-        } else {
-          refererUrl.searchParams.delete('highlight');
-        }
-
-        if (toastMsg) {
-          refererUrl.searchParams.set('toastMsg', String(toastMsg));
-        } else {
-          refererUrl.searchParams.delete('toastMsg');
-        }
-
-        return `${refererUrl.pathname}${refererUrl.search}`;
+        return applyRedirectParams(refererUrl);
       }
     } catch (_) {
       // fallback handled below
@@ -1054,6 +1071,7 @@ router.post('/materielChantier/alerteStatut', ensureAuthenticated, checkAdmin, a
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   let chantierIdForRedirect = req.body && req.body.chantierId ? req.body.chantierId : null;
   const categorieForRedirect = getCategorieForDashboardRedirect(req);
+  const returnToForRedirect = req.body && typeof req.body.returnTo === 'string' ? req.body.returnTo : '';
   try {
     const { quantiteReceptionnee, livraisonIndex } = req.body;
     const receptionQty = parseInt(quantiteReceptionnee, 10);
@@ -1134,7 +1152,8 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       toast: 'success',
       highlight: mc.id,
       toastMsg: `✅ +${receptionQty} reçu`,
-      categorie: categorieForRedirect
+      categorie: categorieForRedirect,
+      returnTo: returnToForRedirect
     }));
   } catch (error) {
     console.error('Erreur lors de la réception du matériel chantier :', error);
@@ -1142,7 +1161,8 @@ router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmi
       req,
       chantierId: chantierIdForRedirect,
       toast: 'error',
-      categorie: categorieForRedirect
+      categorie: categorieForRedirect,
+      returnTo: returnToForRedirect
     }));
   }
 });

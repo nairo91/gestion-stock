@@ -2467,6 +2467,7 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <form id="globalReceptionForm" action="" method="POST">
+          <input type="hidden" name="returnTo" id="receptionReturnTo" value="">
           <div class="modal-header bg-success text-white">
             <h5 class="modal-title">Réceptionner du matériel</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
@@ -4830,6 +4831,8 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         if (chantierSpan) chantierSpan.textContent = chantierName;
         const qty = document.getElementById('receptionQty');
         if (qty) qty.value = '';
+        const returnToInput = document.getElementById('receptionReturnTo');
+        if (returnToInput) returnToInput.value = `${window.location.pathname}${window.location.search}`;
         const livraisonSelect = document.getElementById('receptionLivraison');
         if (livraisonSelect) {
           livraisonSelect.innerHTML = '';
