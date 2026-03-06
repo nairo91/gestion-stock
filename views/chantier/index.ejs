@@ -879,7 +879,13 @@
     }
 
     #globalReceptionModal .modal-dialog {
+      margin-top: calc(var(--navbar-h, 64px) + 0.75rem);
+      margin-bottom: 1rem;
       max-height: calc(100vh - var(--navbar-h, 64px) - 2rem);
+    }
+
+    #globalReceptionModal .modal-dialog.modal-dialog-centered {
+      min-height: calc(100% - var(--navbar-h, 64px) - 1.75rem);
     }
 
     #globalReceptionModal .modal-content {
@@ -905,6 +911,7 @@
         padding-top: calc(var(--navbar-h, 64px) + 1rem);
       }
       #globalReceptionModal .modal-dialog {
+        margin-top: 0;
         max-height: calc(90vh - var(--navbar-h, 64px) - 2rem);
       }
     }
