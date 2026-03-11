@@ -117,6 +117,16 @@ function excelColumnName(index) {
   return result;
 }
 
+function normalizeSearchText(value) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 async function fetchMaterielChantiersWithFilters(query, { includePhotos = true, disablePagination = false } = {}) {
   const {
     chantierId,
@@ -248,9 +258,9 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true, 
   if (disablePagination) {
     let rows = await MaterielChantier.findAll(baseFindOptions);
     if (recherche) {
-      const terme = recherche.toLowerCase();
+      const terme = normalizeSearchText(recherche);
       rows = rows.filter(mc => {
-        const contenu = JSON.stringify(mc.get({ plain: true })).toLowerCase();
+        const contenu = normalizeSearchText(JSON.stringify(mc.get({ plain: true })));
         return contenu.includes(terme);
       });
     }
@@ -265,9 +275,9 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true, 
 
   if (recherche) {
     let searchedRows = await MaterielChantier.findAll(baseFindOptions);
-    const terme = recherche.toLowerCase();
+    const terme = normalizeSearchText(recherche);
     searchedRows = searchedRows.filter(mc => {
-      const contenu = JSON.stringify(mc.get({ plain: true })).toLowerCase();
+      const contenu = normalizeSearchText(JSON.stringify(mc.get({ plain: true })));
       return contenu.includes(terme);
     });
 
