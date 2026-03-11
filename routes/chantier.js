@@ -511,11 +511,20 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     let currentPageRequest = safeRequestedPage;
 
     if (hasQueryFilterKeys) {
+      const baseFilters = req.session.chantierFilters
+        ? { ...req.session.chantierFilters }
+        : CHANTIER_FILTER_KEYS.reduce((acc, key) => {
+          acc[key] = '';
+          return acc;
+        }, {});
+
       activeFilters = CHANTIER_FILTER_KEYS.reduce((acc, key) => {
-        const value = req.query[key];
-        acc[key] = value !== undefined && value !== null ? sanitizeValue(value) : '';
+        if (Object.prototype.hasOwnProperty.call(req.query, key)) {
+          const value = req.query[key];
+          acc[key] = value !== undefined && value !== null ? sanitizeValue(value) : '';
+        }
         return acc;
-      }, {});
+      }, baseFilters);
 
       // Navigation paginée: si ?page=N est présent (ex: Next), on respecte N.
       // Submit filtres/tri: sans paramètre page, on repart à 1.
