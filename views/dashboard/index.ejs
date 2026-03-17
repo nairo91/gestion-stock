@@ -55,6 +55,32 @@
       color: #0f172a;
     }
 
+    .brand-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      margin-bottom: .65rem;
+      padding: .3rem .65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(79, 70, 229, .24);
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: .72rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .brand-chip img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      object-fit: contain;
+      background: #ffffff;
+      border: 1px solid #c7d2fe;
+      padding: 2px;
+    }
+
     .dashboard-title-block p {
       margin: 0;
       color: #6b7280;
@@ -281,8 +307,12 @@
       <!-- HEADER -->
       <header class="dashboard-header">
         <div class="dashboard-title-block">
+          <div class="brand-chip">
+            <img src="/5754a6db-0563-4388-aba0-64eba64b2313.gif" alt="Logo GROUPE-BR">
+            <span>GROUPE-BR</span>
+          </div>
           <h1>Dashboard stock & chantiers</h1>
-          <p>Vue synthétique de l’activité du dépôt, des véhicules et des chantiers.</p>
+          <p>Vue synthétique de l’activité GROUPE-BR : dépôt, véhicules et chantiers.</p>
         </div>
         <div class="dashboard-user">
           Bonjour <strong><%= user && user.nom ? user.nom : 'utilisateur' %></strong>
