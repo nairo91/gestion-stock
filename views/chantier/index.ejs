@@ -3255,9 +3255,7 @@
 
         Array.from(searchParams.keys()).forEach((key) => searchParams.delete(key));
         new FormData(form).forEach((value, key) => {
-          if (value !== null && String(value).trim() !== '') {
-            searchParams.append(key, value);
-          }
+          searchParams.append(key, value == null ? '' : String(value));
         });
 
         showSpinner();
