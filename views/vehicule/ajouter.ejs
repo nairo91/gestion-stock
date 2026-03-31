@@ -62,8 +62,8 @@
       </div>
 
       <div class="form-group">
-        <label>Description</label>
-        <textarea name="description" class="form-control"></textarea>
+        <label>Commentaire</label>
+        <textarea name="commentaire" class="form-control"></textarea>
       </div>
 
       <div class="form-group">
@@ -94,7 +94,7 @@
           <option value="">-- Choisir un véhicule --</option>
           <% vehicles.forEach(function(v) { %>
             <option value="<%= v.id %>">
-              <%= v.plaque %> - <%= v.description || '' %>
+              <%= v.plaque %> - <%= v.commentaire || '' %>
             </option>
           <% }); %>
         </select>

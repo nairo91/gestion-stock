@@ -960,7 +960,7 @@
                 <th class="col-quantite">Quantité</th>
                 <th class="col-categorie">Catégorie</th>
                 <th class="col-emplacement">Emplacement stock</th>
-                <th class="col-description">Description</th>
+                <th class="col-description">Commentaire</th>
                 <th class="col-photo">Photos</th>
                 <th class="col-actions">Actions</th>
               </tr>
@@ -978,7 +978,7 @@
                   </td>
                   <td data-label="Catégorie" class="col-categorie"><%= m.categorie %></td>
                   <td data-label="Emplacement stock" class="col-emplacement"><%= formatEmplacement(m) %></td>
-                  <td data-label="Description" class="col-description"><%= m.description %></td>
+                  <td data-label="Commentaire" class="col-description"><%= m.commentaire %></td>
                   <td data-label="Photos" class="col-photo cell-photo">
                       <% if (m.photos && m.photos.length > 0) { %>
                         <% m.photos.forEach(function(photo) { %>

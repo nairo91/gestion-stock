@@ -88,12 +88,12 @@ router.get('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
 // Traitement de l'ajout de matériel dans un véhicule
 router.post('/ajouter', ensureAuthenticated,checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference,quantite, description, prix, categorie, rack, compartiment, niveau, vehiculeId } = req.body;
+    const { nom, reference,quantite, commentaire, prix, categorie, rack, compartiment, niveau, vehiculeId } = req.body;
     const nouveauMateriel = await Materiel.create({
       nom,
       reference, 
       quantite: parseInt(quantite, 10),
-      description,
+      commentaire,
       prix: parseFloat(prix),
       categorie,
       rack,
@@ -145,13 +145,13 @@ router.get('/ajouter-vehicule', ensureAuthenticated,checkAdmin, async (req, res)
 // Traitement de l'ajout d'un véhicule
 router.post('/ajouter-vehicule', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
-    const { plaque, description } = req.body;
+    const { plaque, commentaire } = req.body;
     if (!plaque || plaque.trim() === '') {
       return res.send("La plaque du véhicule est requise.");
     }
     const nouveauVehicule = await Vehicule.create({
       plaque: plaque.trim(),
-      description: description ? description.trim() : null
+      commentaire: commentaire ? commentaire.trim() : null
     });
     // Enregistrement dans l'historique pour la création d'un véhicule
     await Historique.create({
@@ -214,14 +214,14 @@ router.get('/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) =>
 // Traitement de la modification du matériel dans un véhicule
 router.post('/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
-    const { nom, quantite, description, prix, categorie, vehiculeId } = req.body;
+    const { nom, quantite, commentaire, prix, categorie, vehiculeId } = req.body;
     const materiel = await Materiel.findByPk(req.params.id);
     if (!materiel) return res.send("Matériel non trouvé.");
 
     const oldQte = materiel.quantite;
     materiel.nom = nom;
     materiel.quantite = parseInt(quantite, 10);
-    materiel.description = description;
+    materiel.commentaire = commentaire;
     materiel.prix = parseFloat(prix);
     materiel.categorie = categorie;
     materiel.vehiculeId = vehiculeId ? parseInt(vehiculeId, 10) : null;

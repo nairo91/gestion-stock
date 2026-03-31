@@ -143,7 +143,7 @@ router.get('/export/csv', ensureAuthenticated, async (req, res) => {
         { id: 'id', title: 'ID' },
         { id: 'nom', title: 'Nom' },
         { id: 'quantite', title: 'Quantité' },
-        { id: 'description', title: 'Description' },
+        { id: 'commentaire', title: 'Commentaire' },
         { id: 'prix', title: 'Prix' },
         { id: 'emplacement', title: 'Emplacement stock' },
         { id: 'photos', title: 'Photos' }
@@ -153,7 +153,7 @@ router.get('/export/csv', ensureAuthenticated, async (req, res) => {
       id: m.id,
       nom: m.nom,
       quantite: formatQuantity(m.quantite),
-      description: m.description,
+      commentaire: m.commentaire,
       prix: m.prix,
       emplacement: buildEmplacement(m),
       photos: (m.photos && m.photos.length > 0)
@@ -187,7 +187,7 @@ router.get('/export/excel', ensureAuthenticated, async (req, res) => {
       { header: 'ID', key: 'id', width: 10 },
       { header: 'Nom', key: 'nom', width: 20 },
       { header: 'Quantité', key: 'quantite', width: 10 },
-      { header: 'Description', key: 'description', width: 30 },
+      { header: 'Commentaire', key: 'commentaire', width: 30 },
       { header: 'Prix', key: 'prix', width: 10 },
       { header: 'Emplacement stock', key: 'emplacement', width: 20 },
       { header: 'Photos', key: 'photos', width: 30 }
@@ -197,7 +197,7 @@ router.get('/export/excel', ensureAuthenticated, async (req, res) => {
         id: m.id,
         nom: m.nom,
         quantite: formatQuantity(m.quantite),
-        description: m.description,
+        commentaire: m.commentaire,
         prix: m.prix,
         emplacement: buildEmplacement(m),
         photos: (m.photos && m.photos.length > 0)
@@ -236,7 +236,7 @@ router.get('/export/pdf', ensureAuthenticated, async (req, res) => {
     materiels.forEach(m => {
       doc.fontSize(14).text(`ID: ${m.id} - ${m.nom}`, { underline: true });
       doc.fontSize(12).text(`Quantité: ${formatQuantity(m.quantite)}`);
-      doc.fontSize(12).text(`Description: ${m.description}`);
+      doc.fontSize(12).text(`Commentaire: ${m.commentaire || '-'}`);
       doc.fontSize(12).text(`Prix: ${m.prix} €`);
       const emplacement = buildEmplacement(m) || 'Non défini';
       doc.fontSize(12).text(`Emplacement: ${emplacement}`);

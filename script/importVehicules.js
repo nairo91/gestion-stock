@@ -1,57 +1,94 @@
 // script/importVehicules.js
-const fs        = require('fs');
-const readline  = require('readline');
+const fs = require('fs');
+const readline = require('readline');
 const { sequelize } = require('../models');
-const Vehicule  = require('../models/Vehicule');
+const Vehicule = require('../models/Vehicule');
 
-async function importVehicules (filePath) {
+function normalizeHeader(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/^"|"$/g, '')
+    .trim()
+    .toUpperCase();
+}
+
+function parseCsvLine(raw) {
+  return raw.split(';').map(cell =>
+    cell
+      .replace(/^"|"$/g, '')
+      .replace(/""/g, '"')
+      .trim()
+  );
+}
+
+async function importVehicules(filePath) {
   const rl = readline.createInterface({
     input: fs.createReadStream(filePath, { encoding: 'utf8' }),
     crlfDelay: Infinity
   });
 
   let lineNo = 0;
+  let plaqueIndex = 0;
+  let commentaireIndex = 1;
 
   for await (const raw of rl) {
     lineNo++;
 
-    // ignore l’en-tête
-    if (lineNo === 1) continue;
-    if (!raw.trim())     continue;                // ligne vide
+    if (!raw.trim()) continue;
 
-    // découpe ;  puis enlève les guillemets éventuels
-    const [plaqueRaw, descRaw] = raw.split(';');
-    const plaque = plaqueRaw.replace(/"/g, '').trim().toUpperCase();
-    const description = (descRaw || '').replace(/"/g, '').trim();
+    const values = parseCsvLine(raw);
+
+    if (lineNo === 1) {
+      const headers = values.map(normalizeHeader);
+      const detectedPlaqueIndex = headers.findIndex(header => header === 'PLAQUE');
+      const detectedCommentaireIndex = headers.findIndex(
+        header => header === 'COMMENTAIRE' || header === 'DESCRIPTION'
+      );
+
+      if (detectedPlaqueIndex !== -1) {
+        plaqueIndex = detectedPlaqueIndex;
+      }
+
+      if (detectedCommentaireIndex !== -1) {
+        commentaireIndex = detectedCommentaireIndex;
+      }
+
+      continue;
+    }
+
+    const plaque = String(values[plaqueIndex] || '').trim().toUpperCase();
+    const commentaire = String(values[commentaireIndex] || '').trim();
 
     if (!plaque) {
-      console.log(`Ligne ${lineNo} : plaque vide, ignorée`);
+      console.log(`Ligne ${lineNo} : plaque vide, ignoree`);
       continue;
     }
 
-    // évite les doublons
     const exists = await Vehicule.findOne({ where: { plaque } });
     if (exists) {
-      console.log(`Ligne ${lineNo} : ${plaque} déjà présent, ignoré`);
+      console.log(`Ligne ${lineNo} : ${plaque} deja present, ignore`);
       continue;
     }
 
-    await Vehicule.create({ plaque, description });
-    console.log(`✓ ${plaque} – ${description}`);
+    await Vehicule.create({
+      plaque,
+      commentaire: commentaire || null
+    });
+    console.log(`OK ${plaque} - ${commentaire}`);
   }
 
-  console.log('Import terminé 🎉');
+  console.log('Import termine');
   process.exit(0);
 }
 
-// --- exécution ---
 const file = process.argv[2];
 if (!file) {
   console.error('Usage : node script/importVehicules.js /chemin/fichier.csv');
   process.exit(1);
 }
 
-sequelize.sync()                 // au cas où le modèle n’existe pas encore
+sequelize.sync()
   .then(() => importVehicules(file))
   .catch(err => {
     console.error(err);

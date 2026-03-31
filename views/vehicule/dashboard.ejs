@@ -61,7 +61,7 @@
             <th>Quantité</th>
             <th>Catégorie</th>
             <th>Véhicule (Plaque)</th>
-            <th>Description</th>
+            <th>Commentaire</th>
             <th>Prix</th>
             <th>Photos</th>
             <th>Actions</th>
@@ -86,7 +86,7 @@
                   Aucun
                 <% } %>
               </td>
-              <td><%= m.description %></td>
+              <td><%= m.commentaire %></td>
               <td><%= m.prix %> €</td>
                 <td>
                   <% if (m.photos && m.photos.length > 0) { %>

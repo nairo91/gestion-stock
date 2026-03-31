@@ -121,7 +121,7 @@ router.post('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
               await Materiel.create({
                 nom: materiel.nom,
                 quantite: deliveredQuantity,
-                description: materiel.description,
+                commentaire: materiel.commentaire,
                 prix: materiel.prix,
                 categorie: materiel.categorie,
                 rack: null,

@@ -17,7 +17,7 @@ const Vehicule = sequelize.define(
       unique   : true,
     },
 
-    description: {
+    commentaire: {
       type     : DataTypes.TEXT,
       allowNull: true,
     },

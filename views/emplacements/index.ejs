@@ -36,7 +36,7 @@
     <table class="table table-bordered table-striped">
       <thead>
         <tr>
-          <th>ID</th><th>Nom</th><th>Chantier</th><th>Description</th><th>Actions</th>
+          <th>ID</th><th>Nom</th><th>Chantier</th><th>Commentaire</th><th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -48,7 +48,7 @@
 
 
               <td><%= emp.chantier?.nom || 'N/A' %></td>
-              <td><%= emp.description || '' %></td>
+              <td><%= emp.commentaire || '' %></td>
               <td>
                 <a href="/emplacements/modifier/<%= emp.id %>" class="btn btn-sm btn-warning">Modifier</a>
                 <form action="/emplacements/supprimer/<%= emp.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Confirmer ?');">

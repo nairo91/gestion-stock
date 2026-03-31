@@ -24,7 +24,7 @@ const Materiel = sequelize.define(
         return Number.isNaN(parsed) ? 0 : parsed;
       }
     },
-    description: { type: DataTypes.TEXT },
+    commentaire: { type: DataTypes.TEXT, allowNull: true },
     marque: { type: DataTypes.STRING, allowNull: true },
     prix: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
     categorie: { type: DataTypes.TEXT },

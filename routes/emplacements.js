@@ -48,10 +48,10 @@
 
   // Traitement ajout
   router.post('/ajouter', ensureAuthenticated, checkAdmin, async (req, res) => {
-  const { nom, description, chantierId, parentId } = req.body;
+  const { nom, commentaire, chantierId, parentId } = req.body;
   await Emplacement.create({
     nom,
-    description,
+    commentaire,
     chantierId,
     parentId: parentId || null
   });
@@ -77,10 +77,10 @@
 
   // Traitement modification
   router.post('/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
-  const { nom, description, chantierId, parentId } = req.body;
+  const { nom, commentaire, chantierId, parentId } = req.body;
   const emp = await Emplacement.findByPk(req.params.id);
   emp.nom         = nom;
-  emp.description = description;
+  emp.commentaire = commentaire;
   emp.chantierId  = chantierId;
   emp.parentId    = parentId || null;
   await emp.save();

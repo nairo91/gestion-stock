@@ -193,7 +193,7 @@
               <% if (vehicules && vehicules.length > 0) { %>
                 <% vehicules.forEach(function(v) { %>
                   <option value="<%= v.id %>">
-                    <%= v.plaque %> (<%= v.description || '' %>)
+                    <%= v.plaque %> (<%= v.commentaire || '' %>)
                   </option>
                 <% }); %>
               <% } %>

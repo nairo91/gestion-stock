@@ -18,8 +18,8 @@
         <input type="number" name="quantite" class="form-control" value="<%= materiel.quantite %>" required>
       </div>
       <div class="mb-3">
-        <label>Description</label>
-        <textarea name="description" class="form-control"><%= materiel.description || '' %></textarea>
+        <label>Commentaire</label>
+        <textarea name="commentaire" class="form-control"><%= materiel.commentaire || '' %></textarea>
       </div>
       <div class="mb-3">
         <label>Prix</label>
@@ -35,7 +35,7 @@
           <option value="">Aucun</option>
           <% vehicles.forEach(function(v) { %>
             <option value="<%= v.id %>" <%= (materiel.vehiculeId == v.id) ? 'selected' : '' %>>
-              <%= v.plaque %> (<%= v.description || '' %>)
+              <%= v.plaque %> (<%= v.commentaire || '' %>)
             </option>
           <% }); %>
         </select>

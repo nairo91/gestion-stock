@@ -11,7 +11,7 @@ const Emplacement = sequelize.define('Emplacement', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  description: {
+  commentaire: {
     type: DataTypes.TEXT,
     allowNull: true,
   },

@@ -1373,7 +1373,7 @@ router.post('/supprimer-designation', ensureAuthenticated, checkAdmin, async (re
 
 router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('photos', 5), async (req, res) => {
   try {
-    const { nom, reference, refFournisseur, refFabricant, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, marque, chantierId, emplacementId, rack, compartiment, niveau, remarque, quantitePrevue1, quantitePrevue2, quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3, dateLivraisonPrevue4 } = req.body;
+    const { nom, reference, refFournisseur, refFabricant, quantite, quantitePrevue, dateLivraisonPrevue, commentaire, prix, categorie, fournisseur, marque, chantierId, emplacementId, rack, compartiment, niveau, remarque, quantitePrevue1, quantitePrevue2, quantitePrevue3, quantitePrevue4, dateLivraisonPrevue1, dateLivraisonPrevue2, dateLivraisonPrevue3, dateLivraisonPrevue4 } = req.body;
     const refFournisseurValue = refFournisseur ?? reference ?? null;
     const prixNumber = prix ? parseFloat(prix) : null;
     const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
@@ -1410,7 +1410,7 @@ router.post('/ajouterMateriel', ensureAuthenticated, checkAdmin, upload.array('p
       reference: refFournisseurValue,
       refFabricant: refFabricant || null,
       quantite: 0,
-      description,
+      commentaire,
       prix: prixNumber,
       categorie,
       fournisseur,
@@ -1731,7 +1731,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
         reference,
         refFournisseur,
         refFabricant,
-        description,
+        commentaire,
         prix,
         remarque,
         marque,
@@ -1813,7 +1813,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldNiveau = mc.materiel.niveau;
     const oldReference = mc.materiel.reference;
     const oldRefFabricant = mc.materiel.refFabricant;
-    const oldDescription = mc.materiel.description;
+    const oldCommentaire = mc.materiel.commentaire;
       const oldPrix = mc.materiel.prix;
       const oldRemarque = mc.remarque;
     const oldQtePrevue = mc.quantitePrevue;
@@ -1835,7 +1835,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const newNiveau = niveau ? parseInt(niveau) : null;
     const newReference = refFournisseurValue;
     const newRefFabricant = refFabricant || null;
-    const newDescription = description;
+    const newCommentaire = commentaire;
       const newPrix = prix ? parseFloat(prix) : null;
     const newRemarque = remarque && remarque.trim() ? remarque.trim() : null;
 
@@ -1873,7 +1873,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (oldNiveau !== newNiveau) changementsDetail.push(`Niveau: ${oldNiveau || '-'} ➔ ${newNiveau || '-'}`);
     if (oldReference !== newReference) changementsDetail.push(`Ref Fournisseur: ${oldReference || '-'} ➔ ${newReference || '-'}`);
     if (oldRefFabricant !== newRefFabricant) changementsDetail.push(`Ref Fabricant: ${oldRefFabricant || '-'} ➔ ${newRefFabricant || '-'}`);
-    if (oldDescription !== newDescription) changementsDetail.push(`Description: ${oldDescription || '-'} ➔ ${newDescription || '-'}`);
+    if (oldCommentaire !== newCommentaire) changementsDetail.push(`Commentaire: ${oldCommentaire || '-'} ➔ ${newCommentaire || '-'}`);
       if (oldPrix !== newPrix) changementsDetail.push(`Prix: ${oldPrix || '-'} ➔ ${newPrix || '-'}`);
       if (oldRemarque !== newRemarque) changementsDetail.push(`Remarque: ${oldRemarque || '-'} ➔ ${newRemarque || '-'}`);
     if (oldQtePrevue !== newQtePrevue) changementsDetail.push(`Quantité prévue: ${oldQtePrevue || '-'} ➔ ${newQtePrevue || '-'}`);
@@ -1921,7 +1921,7 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     mc.materiel.niveau = newNiveau;
     mc.materiel.reference = newReference;
     mc.materiel.refFabricant = newRefFabricant;
-    mc.materiel.description = newDescription;
+    mc.materiel.commentaire = newCommentaire;
       mc.materiel.prix = newPrix;
       mc.remarque = newRemarque;
 
@@ -2020,7 +2020,7 @@ router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, a
 
 router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, upload.single('photo'), async (req, res) => {
   try {
-      const { nom, reference, refFournisseur, refFabricant, quantite, quantitePrevue, dateLivraisonPrevue, description, prix, categorie, fournisseur, marque, chantierId, emplacementId, remarque } = req.body;
+      const { nom, reference, refFournisseur, refFabricant, quantite, quantitePrevue, dateLivraisonPrevue, commentaire, prix, categorie, fournisseur, marque, chantierId, emplacementId, remarque } = req.body;
       const refFournisseurValue = refFournisseur ?? reference ?? null;
     const prixNumber = prix ? parseFloat(prix) : null;
     const qtePrevue = quantitePrevue ? parseInt(quantitePrevue, 10) : null;
@@ -2033,7 +2033,7 @@ router.post('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, 
       nom,
       reference: refFournisseurValue,
       refFabricant: refFabricant || null,
-      description,
+      commentaire,
       prix: prixNumber,
       categorie,
       fournisseur,
@@ -2148,6 +2148,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           if (val === 'CATEGORIE' || val === 'LOT') headerMap.categorie = idx;
           if (val === 'DESIGNATION') headerMap.designation = idx;
           if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
+          if (val === 'COMMENTAIRE' || val === 'DESCRIPTION') headerMap.commentaire = idx;
           if (val === 'REF FOURNISSEUR' || val === 'REF_FOURNISSEUR') {
             referencePreferredIdx = idx;
           } else if (val === 'REF' || val === 'REFERENCE') {
@@ -2218,6 +2219,10 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
       const categorieStr = getCellString(row.getCell(headerMap.categorie)).trim();
       const designationStr = getCellString(row.getCell(headerMap.designation)).trim();
       const fournisseurStr = headerMap.fournisseur ? getCellString(row.getCell(headerMap.fournisseur)).trim() : '';
+      const commentaireStr =
+        headerMap.commentaire != null
+          ? getCellString(row.getCell(headerMap.commentaire)).trim()
+          : '';
       const referenceFournisseurStr =
         headerMap.referenceFournisseur != null
           ? getCellString(row.getCell(headerMap.referenceFournisseur)).trim()
@@ -2241,6 +2246,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         !categorieStr &&
         !designationStr &&
         !fournisseurStr &&
+        !commentaireStr &&
         !referenceFournisseurStr &&
         !refFabricantStr &&
         !hasAnyQte &&
@@ -2252,6 +2258,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           categorie: '',
           designation: '',
           fournisseur: null,
+          commentaire: null,
           referenceFournisseur: null,
           refFabricant: null,
           qtePrevue: null,
@@ -2352,6 +2359,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
           categorie: categorieStr,
           designation: designationStr,
           fournisseur: fournisseurStr || null,
+          commentaire: commentaireStr || null,
           referenceFournisseur: referenceFournisseurStr || null,
           referenceFournisseurKey: refKey(referenceFournisseurStr),
           refFabricant: refFabricantStr || null,
@@ -2392,6 +2400,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
             categorie: categorieStr,
             designation: designationStr,
             fournisseur: fournisseurStr || null,
+            commentaire: commentaireStr || null,
             referenceFournisseur: referenceFournisseurStr || null,
             referenceFournisseurKey: refKey(referenceFournisseurStr),
             refFabricant: refFabricantStr || null,
@@ -2419,6 +2428,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         const qtePrevue2 = qteSlots[1].value ?? null;
         const qtePrevue3 = qteSlots[2].value ?? null;
         const qtePrevue4 = qteSlots[3].value ?? null;
+        const commentaireValue = commentaireStr || null;
         const datePrevue1 = toDateOrNull(dateSlots[0].value);
         const datePrevue2 = toDateOrNull(dateSlots[1].value);
         const datePrevue3 = toDateOrNull(dateSlots[2].value);
@@ -2439,7 +2449,8 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
               normalizeDateOnly(existingLink.dateLivraisonPrevue2) === normalizeDateOnly(datePrevue2) &&
               normalizeDateOnly(existingLink.dateLivraisonPrevue3) === normalizeDateOnly(datePrevue3) &&
               normalizeDateOnly(existingLink.dateLivraisonPrevue4) === normalizeDateOnly(datePrevue4);
-            operation = sameQuantities && sameDates ? 'unchanged' : 'update';
+            const sameCommentaire = (existingMat.commentaire || null) === commentaireValue;
+            operation = sameQuantities && sameDates && sameCommentaire ? 'unchanged' : 'update';
             if (operation === 'update') {
               const diffParts = [];
               const qtyPairs = [
@@ -2468,6 +2479,9 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
                   diffParts.push(`${item.label}: ${before || '—'} → ${after || '—'}`);
                 }
               });
+              if (!sameCommentaire) {
+                diffParts.push(`Commentaire: ${existingMat.commentaire || 'â€”'} â†’ ${commentaireValue || 'â€”'}`);
+              }
               diffDetails = diffParts.join(' | ');
             }
           }
@@ -2480,6 +2494,7 @@ router.post('/import-excel/dry-run', ensureAuthenticated, checkAdmin, excelUploa
         categorie: categorieStr,
         designation: designationStr,
         fournisseur: fournisseurStr || null,
+        commentaire: commentaireStr || null,
         referenceFournisseur: referenceFournisseurStr || null,
         referenceFournisseurKey: refKey(referenceFournisseurStr),
         refFabricant: refFabricantStr || null,
@@ -2600,6 +2615,10 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           const refLabel = refKey(r.referenceFournisseur);
           const refFabricantLabel =
             typeof r.refFabricant === 'string' ? r.refFabricant.trim() : r.refFabricant;
+          const commentaireLabel =
+            typeof r.commentaire === 'string' && r.commentaire.trim() !== ''
+              ? r.commentaire.trim()
+              : null;
 
           let materiel = null;
           const matchingMaterials = await Materiel.findAll({
@@ -2632,6 +2651,7 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
                 categorie: categorieLabel,
                 reference: refLabel,
                 refFabricant: refFabricantLabel || null,
+                commentaire: commentaireLabel,
                 nomKey,
                 categorieKey: catKey,
                 quantite: 0,
@@ -2652,6 +2672,10 @@ router.post('/import-excel/confirm', ensureAuthenticated, checkAdmin, async (req
           }
           if (refFabricantLabel && materiel.refFabricant !== refFabricantLabel) {
             materiel.refFabricant = refFabricantLabel;
+            await materiel.save({ transaction });
+          }
+          if (materiel.commentaire !== commentaireLabel) {
+            materiel.commentaire = commentaireLabel;
             await materiel.save({ transaction });
           }
 
@@ -2839,6 +2863,7 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
           if (val === 'CATEGORIE' || val === 'LOT') headerMap.categorie = idx;
           if (val === 'DESIGNATION') headerMap.designation = idx;
           if (val === 'FOURNISSEUR' || val === 'FOURNISSEURS') headerMap.fournisseur = idx;
+          if (val === 'COMMENTAIRE' || val === 'DESCRIPTION') headerMap.commentaire = idx;
           if (val === 'REF FOURNISSEUR' || val === 'REF_FOURNISSEUR') {
             referencePreferredIdx = idx;
           } else if (val === 'REF' || val === 'REFERENCE') {
@@ -2879,6 +2904,9 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
       const fournisseurStr = headerMap.fournisseur
         ? getCellString(row.getCell(headerMap.fournisseur)).trim()
         : '';
+      const commentaireStr = headerMap.commentaire != null
+        ? getCellString(row.getCell(headerMap.commentaire)).trim()
+        : '';
       const referenceFournisseurStr = headerMap.referenceFournisseur != null
         ? getCellString(row.getCell(headerMap.referenceFournisseur)).trim()
         : '';
@@ -2914,7 +2942,7 @@ router.post('/import-excel', ensureAuthenticated, checkAdmin, excelUpload.single
         reference: referenceFournisseurStr || null,
         refFabricant: refFabricantStr || null,
         quantite: 0,
-        description: null,
+        commentaire: commentaireStr || null,
         prix: null,
         categorie: categorieStr,
         fournisseur: fournisseurStr || null,
@@ -3028,7 +3056,7 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
       { header: 'Ref Fournisseur', key: 'refFournisseur', width: 18 },
       { header: 'Ref Fabricant', key: 'refFabricant', width: 18 },
       { header: 'Catégorie', key: 'categorie', width: 18 },
-      { header: 'Description', key: 'description', width: 40 },
+      { header: 'Commentaire', key: 'commentaire', width: 40 },
       { header: 'Emplacement', key: 'emplacement', width: 30 },
       { header: 'Rack', key: 'rack', width: 12 },
       { header: 'Compartiment', key: 'compartiment', width: 18 },
@@ -3087,7 +3115,7 @@ router.get('/export-excel', ensureAuthenticated, checkAdmin, async (req, res) =>
         refFournisseur: mat.reference || '-',
         refFabricant: mat.refFabricant || '-',
         categorie: mat.categorie || '-',
-        description: mat.description || '-',
+        commentaire: mat.commentaire || '-',
         emplacement: emplacement ? construireCheminEmplacement(emplacement) : '-',
         rack: mat.rack || '-',
         compartiment: mat.compartiment || '-',
@@ -3239,7 +3267,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
 
     const headers = [
       'Chantier', 'Matériel', 'Ref Fournisseur', 'Ref Fabricant', 'Catégorie',
-      'Description', 'Emplacement', 'Rack', 'Compartiment', 'Niveau', 'Quantité'
+      'Commentaire', 'Emplacement', 'Rack', 'Compartiment', 'Niveau', 'Quantité'
     ];
 
     const tableLeft = doc.page.margins.left;
@@ -3342,7 +3370,7 @@ router.get('/export-pdf', ensureAuthenticated, checkAdmin, async (req, res) => {
         mat?.reference || '-',
         mat?.refFabricant || '-',
         mat?.categorie || '-',
-        mat?.description || '-',
+        mat?.commentaire || '-',
         chemin.join(' > ') || '-',
         mat?.rack || '-',
         mat?.compartiment || '-',

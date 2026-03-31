@@ -17,7 +17,7 @@
             <option value="">-- Choisir un véhicule --</option>
             <% vehicles.forEach(function(v) { %>
               <option value="<%= v.id %>">
-                <%= v.plaque %> - <%= v.description || '' %>
+                <%= v.plaque %> - <%= v.commentaire || '' %>
               </option>
             <% }); %>
           </select>

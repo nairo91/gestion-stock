@@ -1643,7 +1643,7 @@
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-description" data-column-class="col-description" checked>
-        <label class="form-check-label" for="toggle-col-description">Description</label>
+        <label class="form-check-label" for="toggle-col-description">Commentaire</label>
       </div>
       <div class="form-check">
         <input class="form-check-input column-toggle" type="checkbox" id="toggle-col-fournisseur" data-column-class="col-fournisseur" checked>
@@ -1765,7 +1765,7 @@
           <th class="col-ref-fabricant">Ref Fabricant</th>
           <th class="col-marque">Marque</th>
           <th class="col-categorie">Categorie</th>
-          <th class="col-description">Description</th>
+          <th class="col-description">Commentaire</th>
           <th class="col-fournisseur">Fournisseur</th>
           <th class="col-emplacement">Emplacement</th>
           <th class="col-rack">Rack</th>
@@ -1904,8 +1904,8 @@
                 <%= mc.materiel && mc.materiel.categorie ? (mc.materiel.categorie.nom || mc.materiel.categorie) : '-' %>
               </td>
 
-              <td class="col-description" data-label="Description">
-                <%= mc.materiel && mc.materiel.description ? mc.materiel.description : '-' %>
+              <td class="col-description" data-label="Commentaire">
+                <%= mc.materiel && mc.materiel.commentaire ? mc.materiel.commentaire : '-' %>
               </td>
 
               <td class="col-fournisseur" data-label="Fournisseur">
