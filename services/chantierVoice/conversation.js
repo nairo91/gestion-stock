@@ -1,4 +1,4 @@
-const { compactText, normalizeText, toInt } = require('./utils');
+const { compactText, extractSpokenQuantity, normalizeText } = require('./utils');
 
 const MODIFY_FIELD_META = {
   quantiteActuelle: {
@@ -29,8 +29,7 @@ function cloneInterpretation(interpretation) {
 }
 
 function extractFirstNumber(value) {
-  const match = normalizeText(value).match(/\b(\d+)\b/);
-  return match ? toInt(match[1]) : null;
+  return extractSpokenQuantity(value);
 }
 
 function detectModifyFieldFromAnswer(transcript) {

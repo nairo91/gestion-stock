@@ -1,8 +1,7 @@
-const { compactText, normalizeText, toInt } = require('./utils');
+const { compactText, extractSpokenQuantity, normalizeText } = require('./utils');
 
 function extractFirstNumber(value) {
-  const match = normalizeText(value).match(/\b(\d+)\b/);
-  return match ? toInt(match[1]) : null;
+  return extractSpokenQuantity(value);
 }
 
 function extractChantierText(normalizedTranscript) {
