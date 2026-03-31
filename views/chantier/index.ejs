@@ -1290,6 +1290,66 @@
       100% { background-color: transparent; }
     }
 
+    #voiceAssistantModal .modal-content {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: linear-gradient(180deg, rgba(12,18,30,0.96), rgba(16,24,42,0.98));
+      backdrop-filter: blur(18px);
+    }
+
+    .voice-assistant-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    }
+
+    .voice-assistant-panel {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      padding: 1rem;
+    }
+
+    .voice-assistant-transcript {
+      min-height: 92px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.03);
+      padding: 0.9rem 1rem;
+      white-space: pre-wrap;
+    }
+
+    .voice-assistant-transcript.is-interim {
+      opacity: 0.75;
+    }
+
+    .voice-assistant-preview-card ul {
+      padding-left: 1rem;
+    }
+
+    .voice-assistant-match {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    .voice-assistant-match:hover,
+    .voice-assistant-match:focus {
+      background: rgba(96, 165, 250, 0.16);
+      color: #fff;
+    }
+
+    tr.voice-assistant-highlight {
+      outline: 2px solid rgba(59,130,246,0.9);
+      outline-offset: -2px;
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.18);
+    }
+
+    @media (max-width: 991.98px) {
+      .voice-assistant-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1342,6 +1402,15 @@
     <%= chantierCourant ? '' : 'disabled title="Sélectionnez un chantier pour utiliser l\'ajout vocal"' %>
   >
     Ajout matériel oral
+  </button>
+  <button
+    type="button"
+    class="btn btn-outline-light"
+    id="openVoiceAssistantModal"
+    data-bs-toggle="modal"
+    data-bs-target="#voiceAssistantModal"
+  >
+    Assistant vocal
   </button>
   <!-- Supprime le bouton "Modifier" global ici -->
   <a href="/chantier/ajouter-chantier" class="btn btn-success">Créer un nouveau chantier</a>
@@ -1469,6 +1538,8 @@
     </div>
   </div>
 </div>
+
+<%- include('partials/voiceAssistantModal') %>
 
 <form method="GET" action="/chantier" class="row g-3 glass-card">
   <div class="col-md-3">
@@ -3633,7 +3704,7 @@
   <!-- 2) Déplacer les modales SOUS <body> une fois le DOM prêt -->
   <script nonce="<%= nonce %>">
     document.addEventListener('DOMContentLoaded', function () {
-      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','deliveryReminderModal','fournisseurContactModal','voiceAddModal']
+      ['globalPhotoModal','globalReceptionModal','globalDeleteModal','transferModal','globalBdlModal','deliveryReminderModal','fournisseurContactModal','voiceAddModal','voiceAssistantModal']
         .forEach(function (id) {
           var el = document.getElementById(id);
           if (el && el.parentNode !== document.body) {
@@ -5568,6 +5639,8 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
       });
     })();
   </script>
+
+  <script type="module" src="/js/chantier-voice-assistant/index.js"></script>
 
 </body>
 </html>

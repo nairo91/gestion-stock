@@ -2,6 +2,7 @@
 const Emplacement = require('../models/Emplacement');
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
@@ -20,7 +21,18 @@ const { ensureAuthenticated, checkAdmin } = require('./materiel');
 const Categorie = require('../models/Categorie');
 const Designation = require('../models/Designation');
 const { sequelize } = require('../config/database');
-const { sendLowStockNotification, sendReceptionGapNotification } = require('../utils/mailer');
+const {
+  createHttpError,
+  computeTotalPrevu,
+  executeDelete,
+  executeReception,
+  getCurrentQuantity,
+  resolveReceivedQuantityUpdate
+} = require('../services/chantierStockActionService');
+const { parseVoiceTranscript } = require('../services/chantierVoice/parser');
+const { matchVoiceTarget } = require('../services/chantierVoice/matcher');
+const { buildPreviewFromMatch } = require('../services/chantierVoice/preview');
+const { executeVoiceAction } = require('../services/chantierVoice/executor');
 
 const CHANTIER_FILTER_KEYS = [
   'chantierId',
@@ -334,6 +346,33 @@ async function loadCategories() {
   return cats.map(c => c.nom);
 }
 
+function isAdminUser(user) {
+  return !!(user && (user.isAdmin || user.role === 'admin'));
+}
+
+function sanitizeVoiceFilters(rawFilters) {
+  const filters = {};
+  if (!rawFilters || typeof rawFilters !== 'object') {
+    return filters;
+  }
+
+  CHANTIER_FILTER_KEYS.forEach(key => {
+    const value = rawFilters[key];
+    if (value !== undefined && value !== null && value !== '') {
+      filters[key] = typeof value === 'string' ? value.trim() : value;
+    }
+  });
+
+  return filters;
+}
+
+function generateVoicePreviewToken() {
+  if (typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return crypto.randomBytes(16).toString('hex');
+}
+
 // Configuration Multer pour les uploads de photos sur Cloudinary
 const upload = multer({ storage });
 
@@ -377,16 +416,6 @@ const normalizeDateOnly = value => {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-};
-
-const computeTotalPrevu = mc => {
-  const plannedBySlot = [1, 2, 3, 4].reduce((sum, idx) => {
-    const key = `quantitePrevue${idx}`;
-    const val = mc[key];
-    return sum + (val ? Number(val) : 0);
-  }, 0);
-  const legacy = mc.quantitePrevue ? Number(mc.quantitePrevue) : 0;
-  return plannedBySlot + legacy;
 };
 
 const computeTotalPrevuFromValues = ({
@@ -1086,97 +1115,233 @@ router.post('/materielChantier/alerteStatut', ensureAuthenticated, checkAdmin, a
   }
 });
 
+router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
+  try {
+    const transcript = typeof req.body.transcript === 'string' ? req.body.transcript.trim() : '';
+    const speechConfidenceRaw = req.body.speechConfidence;
+    const speechConfidence = typeof speechConfidenceRaw === 'number'
+      ? speechConfidenceRaw
+      : Number.parseFloat(speechConfidenceRaw);
+    const filters = sanitizeVoiceFilters(req.body.filters);
+    const selectedTargetId = req.body.selectedTargetId ? Number.parseInt(req.body.selectedTargetId, 10) : null;
+    const rawContext = req.body.context && typeof req.body.context === 'object' ? req.body.context : {};
+    const previousInterpretation = rawContext.interpretation && typeof rawContext.interpretation === 'object'
+      ? rawContext.interpretation
+      : null;
+    const candidateIds = Array.isArray(rawContext.candidateIds) ? rawContext.candidateIds : [];
+    const parsedInterpretation = parseVoiceTranscript(transcript, {
+      speechConfidence: Number.isFinite(speechConfidence) ? speechConfidence : null
+    });
+    req.session.chantierVoicePreview = null;
+
+    const usePreviousInterpretation = previousInterpretation && (
+      selectedTargetId ||
+      (candidateIds.length > 0 && (
+        parsedInterpretation.intent === 'inconnue' ||
+        parsedInterpretation.confidence < 0.45
+      ))
+    );
+
+    const interpretation = usePreviousInterpretation
+      ? {
+          ...previousInterpretation,
+          speechConfidence: parsedInterpretation.speechConfidence != null
+            ? parsedInterpretation.speechConfidence
+            : previousInterpretation.speechConfidence
+        }
+      : parsedInterpretation;
+
+    if (!interpretation.rawTranscript && previousInterpretation && previousInterpretation.rawTranscript) {
+      interpretation.rawTranscript = previousInterpretation.rawTranscript;
+    }
+
+    if (interpretation.intent === 'inconnue') {
+      throw createHttpError('Je n ai pas compris l action demandee. Dites par exemple receptionner 8 rails placo.', 400);
+    }
+
+    if (!isAdminUser(req.user) && !['info', 'ouvrir'].includes(interpretation.intent)) {
+      return res.status(403).json({
+        ok: false,
+        message: 'Seuls les administrateurs peuvent lancer une action vocale modifiant le stock.'
+      });
+    }
+
+    const { rows } = await fetchMaterielChantiersWithFilters(filters, {
+      includePhotos: false,
+      disablePagination: true
+    });
+
+    const matchResult = matchVoiceTarget({
+      rows,
+      interpretation,
+      selectedTargetId,
+      candidateIds,
+      clarificationText: usePreviousInterpretation ? transcript : ''
+    });
+
+    if (matchResult.status !== 'matched') {
+      return res.json({
+        ok: true,
+        stage: 'clarify',
+        assistantMessage: matchResult.message,
+        interpretation,
+        matches: Array.isArray(matchResult.matches) ? matchResult.matches : [],
+        context: {
+          interpretation,
+          candidateIds: Array.isArray(matchResult.candidateIds) && matchResult.candidateIds.length
+            ? matchResult.candidateIds
+            : candidateIds
+        }
+      });
+    }
+
+    const previewResult = buildPreviewFromMatch({
+      interpretation,
+      candidate: matchResult.selected
+    });
+
+    const token = generateVoicePreviewToken();
+    const returnTo = typeof req.body.returnTo === 'string' && req.body.returnTo.trim()
+      ? req.body.returnTo.trim()
+      : '/chantier';
+
+    req.session.chantierVoicePreview = {
+      token,
+      action: previewResult.action,
+      createdAt: new Date().toISOString(),
+      returnTo
+    };
+
+    return res.json({
+      ok: true,
+      stage: 'preview',
+      assistantMessage: previewResult.assistantMessage,
+      token,
+      interpretation,
+      match: matchResult.matches[0] || {
+        id: matchResult.selected.id,
+        label: matchResult.selected.label,
+        chantierNom: matchResult.selected.chantierNom,
+        categorie: matchResult.selected.categorie,
+        fournisseur: matchResult.selected.fournisseur,
+        quantiteActuelle: matchResult.selected.quantiteActuelle,
+        quantiteRecue: matchResult.selected.quantiteRecue
+      },
+      matches: matchResult.matches,
+      preview: previewResult.preview,
+      confirmationLabel: previewResult.confirmationLabel,
+      requiresStrongConfirmation: previewResult.requiresStrongConfirmation,
+      context: {
+        interpretation,
+        candidateIds: [matchResult.selected.id]
+      }
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    console.error('Erreur preview assistant vocal chantier :', error);
+    return res.status(statusCode).json({
+      ok: false,
+      message: error.message || 'Impossible d analyser la commande vocale.'
+    });
+  }
+});
+
+router.post('/voice/execute', ensureAuthenticated, async (req, res) => {
+  try {
+    const previewState = req.session.chantierVoicePreview;
+    const token = typeof req.body.token === 'string' ? req.body.token.trim() : '';
+    const strongConfirmation = req.body.strongConfirmation === true || req.body.strongConfirmation === 'true';
+
+    if (!previewState || !previewState.token || previewState.token !== token) {
+      throw createHttpError('La previsualisation a expire. Recommencez la commande vocale.', 400);
+    }
+
+    const createdAt = previewState.createdAt ? new Date(previewState.createdAt) : null;
+    if (!createdAt || Number.isNaN(createdAt.getTime()) || (Date.now() - createdAt.getTime()) > 10 * 60 * 1000) {
+      req.session.chantierVoicePreview = null;
+      throw createHttpError('La previsualisation a expire. Recommencez la commande vocale.', 400);
+    }
+
+    if (!isAdminUser(req.user) && !['info', 'ouvrir'].includes(previewState.action.type)) {
+      return res.status(403).json({
+        ok: false,
+        message: 'Vous n etes pas autorise a executer cette action.'
+      });
+    }
+
+    if (previewState.action.type === 'supprimer' && !strongConfirmation) {
+      throw createHttpError('La suppression demande une confirmation renforcee.', 400);
+    }
+
+    const executionResult = await executeVoiceAction(previewState.action, {
+      userId: req.user ? req.user.id : null
+    });
+    const returnTo = typeof req.body.returnTo === 'string' && req.body.returnTo.trim()
+      ? req.body.returnTo.trim()
+      : previewState.returnTo;
+    req.session.chantierVoicePreview = null;
+
+    if (executionResult.type === 'navigation') {
+      return res.json({
+        ok: true,
+        status: 'success',
+        message: executionResult.message,
+        redirectUrl: executionResult.redirectUrl
+      });
+    }
+
+    const redirectUrl = buildRefererRedirectUrl({
+      req,
+      toast: 'success',
+      highlight: executionResult.highlightId,
+      toastMsg: executionResult.message,
+      returnTo
+    });
+
+    return res.json({
+      ok: true,
+      status: 'success',
+      message: executionResult.message,
+      redirectUrl
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    console.error('Erreur execution assistant vocal chantier :', error);
+    return res.status(statusCode).json({
+      ok: false,
+      message: error.message || 'Impossible d executer la commande vocale.'
+    });
+  }
+});
+
 
 router.post('/materielChantier/receptionner/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   let chantierIdForRedirect = req.body && req.body.chantierId ? req.body.chantierId : null;
   const categorieForRedirect = getCategorieForDashboardRedirect(req);
   const returnToForRedirect = req.body && typeof req.body.returnTo === 'string' ? req.body.returnTo : '';
   try {
-    const { quantiteReceptionnee, livraisonIndex } = req.body;
-    const receptionQty = parseInt(quantiteReceptionnee, 10);
-    const livraisonIdx = livraisonIndex ? parseInt(livraisonIndex, 10) : null;
-
-    if (Number.isNaN(receptionQty) || receptionQty <= 0) {
-      return res.status(400).send('Quantité de réception invalide.');
-    }
-
-    const mc = await MaterielChantier.findByPk(req.params.id, {
-      include: [
-        { model: Materiel, as: 'materiel' },
-        { model: Chantier, as: 'chantier' }
-      ]
-    });
-
-    if (!mc) {
-      return res.status(404).send('Matériel de chantier introuvable.');
-    }
-
-    chantierIdForRedirect = mc.chantierId;
-
-    const oldQuantiteRecue = mc.quantite || 0;
-    const newQuantiteRecue = oldQuantiteRecue + receptionQty;
-    const oldQuantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : oldQuantiteRecue;
-    const newQuantiteActuelle = oldQuantiteActuelle + receptionQty;
-    const totalPrevuAvantReception = computeTotalPrevu(mc);
-    const seuil = totalPrevuAvantReception * 0.30;
-
-    if (livraisonIdx && livraisonIdx >= 1 && livraisonIdx <= 4) {
-      const prop = `quantitePrevue${livraisonIdx}`;
-      const prevueActuelle = mc[prop] || 0;
-      mc[prop] = Math.max(prevueActuelle - receptionQty, 0);
-    } else if (mc.quantitePrevue !== null && mc.quantitePrevue !== undefined) {
-      const prevueActuelle = mc.quantitePrevue || 0;
-      mc.quantitePrevue = Math.max(prevueActuelle - receptionQty, 0);
-    }
-
-    mc.quantite = newQuantiteRecue;
-    mc.quantiteActuelle = newQuantiteActuelle;
-    mc.lastReceptionAt = new Date();
-    await mc.save();
-
-    await Historique.create({
-      materielId: mc.materiel ? mc.materiel.id : null,
-      oldQuantite: oldQuantiteActuelle,
-      newQuantite: newQuantiteActuelle,
+    const serviceResult = await executeReception({
+      mcId: req.params.id,
+      receptionQty: req.body ? req.body.quantiteReceptionnee : null,
+      livraisonIndex: req.body ? req.body.livraisonIndex : null,
       userId: req.user ? req.user.id : null,
-      action: `Réception chantier de ${receptionQty}`,
-      materielNom: mc.materiel
-        ? `${mc.materiel.nom} (Chantier : ${mc.chantier ? mc.chantier.nom : 'N/A'})`
-        : 'Matériel chantier',
-      stockType: 'chantier'
+      source: 'manual',
+      allocationMode: 'selectedOnly'
     });
+    chantierIdForRedirect = serviceResult.mc.chantierId;
 
-    if (oldQuantiteActuelle > seuil && newQuantiteActuelle <= seuil && mc.materiel) {
-      await sendLowStockNotification({
-        nom: mc.materiel.nom,
-        quantite: newQuantiteActuelle
-      });
-    }
-
-    const difference = newQuantiteActuelle - (oldQuantiteRecue + totalPrevuAvantReception);
-
-    if (difference !== 0 && mc.materiel && mc.chantier) {
-      await sendReceptionGapNotification({
-        difference,
-        materielNom: mc.materiel.nom,
-        chantierNom: mc.chantier.nom,
-        quantitePrevue: oldQuantiteRecue + totalPrevuAvantReception,
-        quantiteReelle: newQuantiteActuelle
-      });
-    }
-
-    res.redirect(buildRefererRedirectUrl({
+    return res.redirect(buildRefererRedirectUrl({
       req,
       chantierId: chantierIdForRedirect,
       toast: 'success',
-      highlight: mc.id,
-      toastMsg: `✅ +${receptionQty} reçu`,
+      highlight: serviceResult.mc.id,
+      toastMsg: `Reception enregistree (+${serviceResult.preview.quantity})`,
       categorie: categorieForRedirect,
       returnTo: returnToForRedirect
     }));
   } catch (error) {
-    console.error('Erreur lors de la réception du matériel chantier :', error);
-    res.redirect(buildRefererRedirectUrl({
+    console.error('Erreur lors de la reception du materiel chantier :', error);
+    return res.redirect(buildRefererRedirectUrl({
       req,
       chantierId: chantierIdForRedirect,
       toast: 'error',
@@ -1685,7 +1850,6 @@ router.post('/ajouter-chantier', ensureAuthenticated, checkAdmin, async (req, re
 });
 
 /* ===== MODIFIER / SUPPRIMER LES ENREGISTREMENTS DU STOCK CHANTIER ===== */
-// Remplacer la route POST /materielChantier/modifier/:id existante dans routes/chantier.js par ceci :
 router.get('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
     const mc = await MaterielChantier.findByPk(req.params.id, {
@@ -1754,22 +1918,17 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     if (!mc) return res.send("Enregistrement non trouvé.");
     chantierIdForRedirect = mc.chantierId;
 
-    const oldQuantiteRecue = mc.quantite != null ? mc.quantite : 0;
-    let newQuantiteRecue = oldQuantiteRecue;
-    if (quantiteRecue !== undefined && quantiteRecue !== null && String(quantiteRecue).trim() !== '') {
-      const parsed = parseInt(quantiteRecue, 10);
-      if (Number.isNaN(parsed) || parsed < 0) {
-        return res.status(400).send('Quantité reçue invalide.');
-      }
-      newQuantiteRecue = parsed;
-    }
-    const deltaQuantiteRecue = newQuantiteRecue - oldQuantiteRecue;
+    const {
+      oldQuantiteRecue,
+      newQuantiteRecue,
+      deltaQuantiteRecue
+    } = resolveReceivedQuantityUpdate(mc, quantiteRecue);
 
     const deltaQuantite = (quantite === undefined || quantite === '')
       ? 0
       : parseInt(quantite, 10);
     const variationValide = Number.isNaN(deltaQuantite) ? 0 : deltaQuantite;
-    const baseQuantiteActuelle = mc.quantiteActuelle != null ? mc.quantiteActuelle : (mc.quantite || 0);
+    const baseQuantiteActuelle = getCurrentQuantity(mc);
     const newQteActuelle = Math.max(0, baseQuantiteActuelle + variationValide + deltaQuantiteRecue);
     const newQtePrevue = (quantitePrevue === undefined || quantitePrevue === '')
       ? mc.quantitePrevue
@@ -1821,9 +1980,6 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
     const oldDatePrevue = mc.dateLivraisonPrevue;
     const oldQuantitesPrevues = [mc.quantitePrevue1, mc.quantitePrevue2, mc.quantitePrevue3, mc.quantitePrevue4];
     const oldDatesPrevues = [mc.dateLivraisonPrevue1, mc.dateLivraisonPrevue2, mc.dateLivraisonPrevue3, mc.dateLivraisonPrevue4];
-    const hasOldPlannedValues = [mc.quantitePrevue, ...oldQuantitesPrevues].some(v => v != null);
-    const oldTotalPrevu = hasOldPlannedValues ? computeTotalPrevu(mc) : null;
-
     const newNom = nomMateriel.trim();
     const newCategorie = categorie;
     await Categorie.findOrCreate({ where: { nom: newCategorie } });
@@ -1978,29 +2134,15 @@ router.post('/materielChantier/modifier/:id', ensureAuthenticated, checkAdmin, u
 // Supprimer un enregistrement de MaterielChantier
 router.post('/materielChantier/supprimer/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   try {
-    const mc = await MaterielChantier.findByPk(req.params.id, {
-      include: [{ model: Materiel, as: 'materiel' }, { model: Chantier, as: 'chantier' }]
-    });
-    if (!mc) return res.send("Enregistrement non trouvé.");
-
-    // AJOUT : Historique pour la suppression
-    await Historique.create({
-      materielId: mc.materiel ? mc.materiel.id : null,
-      oldQuantite: mc.quantite,
-      newQuantite: null,
+    await executeDelete({
+      mcId: req.params.id,
       userId: req.user ? req.user.id : null,
-      action: 'Supprimé',
-      materielNom: mc.materiel
-        ? `${mc.materiel.nom} (Chantier : ${mc.chantier ? mc.chantier.nom : 'N/A'})`
-        : 'Matériel inconnu',
-      stockType: 'chantier'
+      source: 'manual'
     });
-
-    await mc.destroy();
-    res.redirect('/chantier');
+    return res.redirect('/chantier');
   } catch (err) {
     console.error(err);
-    res.send("Erreur lors de la suppression de l'enregistrement.");
+    return res.send("Erreur lors de la suppression de l'enregistrement.");
   }
 });
 

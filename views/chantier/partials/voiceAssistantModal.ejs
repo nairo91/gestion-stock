@@ -1,0 +1,86 @@
+<div class="modal fade" id="voiceAssistantModal" tabindex="-1" aria-labelledby="voiceAssistantModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-fullscreen-sm-down modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <div>
+          <h5 class="modal-title" id="voiceAssistantModalLabel">Assistant vocal</h5>
+          <div class="small text-muted">Commandes vocales pour les actions déjà disponibles sur le stock chantier.</div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body pt-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <span class="badge bg-secondary" data-role="state-badge">Inactif</span>
+          <div class="text-muted small" data-role="assistant-message">Que voulez-vous faire ?</div>
+        </div>
+
+        <div class="alert alert-warning d-none" data-role="support-warning"></div>
+
+        <div class="voice-assistant-grid">
+          <div class="voice-assistant-panel">
+            <div class="small text-uppercase text-muted mb-2">Transcription live</div>
+            <div class="voice-assistant-transcript mb-3" data-role="transcript">Aucune transcription pour le moment.</div>
+
+            <label class="form-label" for="voiceAssistantTextInput">Saisie texte de secours</label>
+            <div class="input-group mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="voiceAssistantTextInput"
+                data-role="text-input"
+                placeholder="Exemple : réceptionner 8 rails placo chantier A"
+                autocomplete="off"
+              >
+              <button type="button" class="btn btn-outline-light" data-role="analyze-button">Analyser</button>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <button type="button" class="btn btn-danger" data-role="listen-button">Écouter</button>
+              <button type="button" class="btn btn-outline-light" data-role="stop-button">Arrêter</button>
+            </div>
+
+            <div class="voice-assistant-panel p-3">
+              <div class="small text-uppercase text-muted mb-2">Commande interprétée</div>
+              <div class="mb-2" data-role="intent">
+                <div><strong>Action détectée :</strong> -</div>
+                <div><strong>Confiance :</strong> -</div>
+              </div>
+              <div data-role="target">
+                <div><strong>Cible demandée :</strong> -</div>
+                <div><strong>Chantier :</strong> -</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="voice-assistant-panel">
+            <div class="small text-uppercase text-muted mb-2">Ligne(s) cible(s)</div>
+            <div class="list-group mb-3" data-role="matches">
+              <div class="text-muted small">Aucune désambiguïsation requise.</div>
+            </div>
+
+            <div class="small text-uppercase text-muted mb-2">Prévisualisation obligatoire</div>
+            <div data-role="preview">
+              <div class="text-muted">La prévisualisation apparaîtra ici.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0 d-flex flex-wrap justify-content-between gap-2">
+        <div>
+          <div class="small text-warning d-none mb-2" data-role="confirmation-hint"></div>
+          <div class="form-check d-none" data-role="strong-confirm-wrap">
+            <input class="form-check-input" type="checkbox" value="1" id="voiceAssistantStrongConfirm" data-role="strong-confirm-input">
+            <label class="form-check-label" for="voiceAssistantStrongConfirm">
+              Je confirme explicitement la suppression
+            </label>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 ms-auto">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-outline-info" data-role="restart-button">Recommencer</button>
+          <button type="button" class="btn btn-success d-none" data-role="confirm-button">Confirmer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
