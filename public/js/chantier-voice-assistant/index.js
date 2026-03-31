@@ -1,9 +1,7 @@
 import { executeVoiceCommand, previewVoiceCommand } from './api.js';
-import {
-  createRecognitionController,
-  isRecognitionSupported,
-  speakText
-} from './recognition.js';
+import { createRecognitionController, isRecognitionSupported } from './recognition.js';
+import { createSpeechController, isSpeechSynthesisSupported } from './speech.js';
+import { createVoiceAssistantStateMachine } from './stateMachine.js';
 import { createVoiceAssistantUI } from './ui.js';
 
 const FILTER_KEYS = [
@@ -21,6 +19,14 @@ const FILTER_KEYS = [
   'limit',
   'page'
 ];
+
+function logVoice(message, extra) {
+  if (extra === undefined) {
+    console.info(`[voice] ${message}`);
+    return;
+  }
+  console.info(`[voice] ${message}`, extra);
+}
 
 function collectFilters() {
   const params = new URLSearchParams(window.location.search);
@@ -65,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const ui = createVoiceAssistantUI(modal);
   const recognitionSupported = isRecognitionSupported();
+  const speechSupported = isSpeechSynthesisSupported();
 
   const state = {
     context: null,
@@ -74,34 +81,119 @@ document.addEventListener('DOMContentLoaded', () => {
     requiresStrongConfirmation: false,
     strongConfirmationChecked: false,
     pendingRedirectUrl: '',
-    shouldRefreshOnClose: false
+    shouldRefreshOnClose: false,
+    lastQuestion: '',
+    lastAssistantMessage: 'Que voulez-vous faire ?'
   };
+
+  const stateMachine = createVoiceAssistantStateMachine({
+    onTransition({ previousState, nextState }) {
+      logVoice(`state ${previousState} -> ${nextState}`);
+    }
+  });
+
+  const speech = createSpeechController({
+    onStart(text) {
+      setAssistantState('speaking', text);
+    }
+  });
 
   const recognition = recognitionSupported
     ? createRecognitionController({
         onStateChange(status) {
           if (status === 'listening') {
-            ui.setState('listening', 'Parlez maintenant. Je vous écoute.');
+            setAssistantState('listening', state.lastAssistantMessage || 'Je vous ecoute.');
+            syncControls();
+            return;
+          }
+
+          if (status === 'stopped') {
+            const currentState = stateMachine.getState();
+            if (!['processing', 'speaking', 'preview_ready', 'executing', 'success', 'error'].includes(currentState)) {
+              if (isAwaitingAnswer()) {
+                setAssistantState('awaiting_user_answer', state.lastQuestion || state.lastAssistantMessage || 'Je vous ecoute.');
+              } else {
+                setAssistantState('idle', state.lastAssistantMessage || 'Que voulez-vous faire ?');
+              }
+            }
+            syncControls();
           }
         },
         onTranscript({ transcript, isFinal, confidence }) {
           state.transcript = transcript;
           state.speechConfidence = confidence;
           ui.setTranscript(transcript, { interim: !isFinal });
-          if (isFinal) {
-            void analyzeCommand({ transcript, speechConfidence: confidence });
+          if (!isFinal) {
+            return;
           }
+          logVoice('user input received', transcript);
+          void analyzeCommand({ transcript, speechConfidence: confidence });
         },
         onError(errorCode) {
+          const waitingForAnswer = isAwaitingAnswer();
           const message = errorCode === 'not-allowed'
-            ? 'Accès au micro refusé. Utilisez la saisie texte.'
+            ? 'Acces au micro refuse. Utilisez la saisie texte.'
             : errorCode === 'no-speech'
-              ? 'Aucune voix détectée. Réessayez.'
+              ? 'Aucune voix detectee. Vous pouvez repondre a nouveau.'
               : `Erreur micro : ${errorCode}`;
-          ui.setState('error', message);
+
+          if (waitingForAnswer && errorCode === 'no-speech') {
+            setAssistantState('awaiting_user_answer', message);
+            syncControls();
+            return;
+          }
+
+          setAssistantState('error', message);
+          syncControls();
         }
       })
     : null;
+
+  function isAwaitingAnswer() {
+    return Boolean(
+      state.context &&
+      (
+        state.context.pendingQuestion ||
+        (Array.isArray(state.context.candidateIds) && state.context.candidateIds.length > 0)
+      )
+    );
+  }
+
+  function setAssistantState(nextState, message = '') {
+    stateMachine.transition(nextState, { message });
+    if (message) {
+      state.lastAssistantMessage = message;
+    }
+    ui.setState(nextState, message || state.lastAssistantMessage || 'Que voulez-vous faire ?');
+  }
+
+  function syncControls() {
+    const currentState = stateMachine.getState();
+    const listening = Boolean(recognition && recognition.isListening());
+    const blockedBySpeech = speechSupported && speech.isSpeaking();
+    const canManualListen = recognitionSupported && !blockedBySpeech && currentState !== 'executing';
+    const canRespond = recognitionSupported && !blockedBySpeech && isAwaitingAnswer() && currentState !== 'executing';
+    const canRepeat = Boolean(state.lastQuestion) && currentState !== 'executing';
+
+    if (ui.elements.listenButton) {
+      ui.elements.listenButton.disabled = !canManualListen;
+    }
+    if (ui.elements.stopButton) {
+      ui.elements.stopButton.disabled = !(listening || blockedBySpeech);
+    }
+    if (ui.elements.analyzeButton) {
+      ui.elements.analyzeButton.disabled = currentState === 'executing';
+    }
+    if (ui.elements.textInput) {
+      ui.elements.textInput.disabled = currentState === 'executing';
+    }
+
+    ui.setConversationActions({
+      canRespond,
+      canRepeat
+    });
+    ui.setSupportWarning(!recognitionSupported);
+  }
 
   function resetAssistantState({ clearRefresh = false } = {}) {
     state.context = null;
@@ -110,35 +202,151 @@ document.addEventListener('DOMContentLoaded', () => {
     state.speechConfidence = null;
     state.requiresStrongConfirmation = false;
     state.strongConfirmationChecked = false;
+    state.lastQuestion = '';
+    state.lastAssistantMessage = 'Que voulez-vous faire ?';
     if (clearRefresh) {
       state.pendingRedirectUrl = '';
       state.shouldRefreshOnClose = false;
     }
 
     ui.clear();
-    ui.setSupportWarning(!recognitionSupported);
-    if (ui.elements.listenButton) {
-      ui.elements.listenButton.disabled = !recognitionSupported;
-    }
-    if (ui.elements.stopButton) {
-      ui.elements.stopButton.disabled = !recognitionSupported;
-    }
     clearHighlightedRows();
+    setAssistantState('idle', 'Que voulez-vous faire ?');
+    syncControls();
   }
 
-  async function promptListening(message = 'Que voulez-vous faire ?') {
+  function stopInteractiveAudio() {
+    if (recognition) {
+      recognition.stop();
+    }
+    speech.cancel();
+    syncControls();
+  }
+
+  function startListening({ message = state.lastQuestion || state.lastAssistantMessage || 'Que voulez-vous faire ?' } = {}) {
     if (!recognition) {
-      ui.setState('inactive', message);
+      setAssistantState('idle', message);
+      syncControls();
+      return false;
+    }
+
+    if (speech.isSpeaking()) {
+      return false;
+    }
+
+    const started = recognition.start();
+    if (!started) {
+      syncControls();
+      return false;
+    }
+
+    setAssistantState('listening', message);
+    syncControls();
+    return true;
+  }
+
+  async function speakAssistantMessage(message, {
+    afterState = 'idle',
+    autoListen = false,
+    rememberQuestion = false
+  } = {}) {
+    const finalMessage = message || 'Que voulez-vous faire ?';
+    if (rememberQuestion) {
+      state.lastQuestion = finalMessage;
+    }
+    state.lastAssistantMessage = finalMessage;
+
+    if (recognition && recognition.isListening()) {
+      recognition.stop();
+    }
+
+    if (!speechSupported) {
+      if (autoListen) {
+        setAssistantState('awaiting_user_answer', finalMessage);
+        logVoice('awaiting answer');
+        startListening({ message: finalMessage });
+        return;
+      }
+      setAssistantState(afterState, finalMessage);
+      syncControls();
       return;
     }
 
-    ui.setState('listening', message);
-    await speakText(message);
-    try {
-      recognition.start();
-    } catch (_) {
-      ui.setState('error', 'Le micro est déjà en cours d’utilisation.');
+    setAssistantState('speaking', finalMessage);
+    syncControls();
+    await speech.speak(finalMessage);
+
+    if (autoListen) {
+      setAssistantState('awaiting_user_answer', finalMessage);
+      logVoice('awaiting answer');
+      startListening({ message: finalMessage });
+      return;
     }
+
+    setAssistantState(afterState, finalMessage);
+    syncControls();
+  }
+
+  async function handleAssistantStep(data) {
+    state.context = data.context || null;
+    if (data.interpretation) {
+      ui.renderInterpretation(data.interpretation);
+    }
+
+    if (data.stage === 'clarify') {
+      state.token = '';
+      state.requiresStrongConfirmation = false;
+      ui.renderPreview(null);
+      ui.setConfirmState({ visible: false });
+      ui.renderMatches(data.matches || []);
+      highlightRow(null);
+      await speakAssistantMessage(
+        data.assistantMessage || 'J ai besoin d une precision.',
+        {
+          afterState: 'awaiting_user_answer',
+          autoListen: recognitionSupported,
+          rememberQuestion: true
+        }
+      );
+      return;
+    }
+
+    if (data.stage === 'question') {
+      state.token = '';
+      state.requiresStrongConfirmation = false;
+      ui.renderPreview(null);
+      ui.setConfirmState({ visible: false });
+      ui.renderMatches(data.match ? [data.match] : (data.matches || []));
+      highlightRow(data.match ? data.match.id : null);
+      await speakAssistantMessage(
+        data.assistantMessage || (data.question ? data.question.prompt : 'Je vous ecoute.'),
+        {
+          afterState: 'awaiting_user_answer',
+          autoListen: recognitionSupported,
+          rememberQuestion: true
+        }
+      );
+      return;
+    }
+
+    state.token = data.token;
+    state.requiresStrongConfirmation = Boolean(data.requiresStrongConfirmation);
+    state.strongConfirmationChecked = false;
+    ui.renderMatches(data.match ? [data.match] : []);
+    ui.renderPreview(data.preview || null);
+    ui.setConfirmState({
+      visible: true,
+      label: data.confirmationLabel || 'Confirmer',
+      strong: state.requiresStrongConfirmation
+    });
+    highlightRow(data.match ? data.match.id : null);
+    logVoice('preview ready');
+    await speakAssistantMessage(
+      data.assistantMessage || 'Previsualisation prete.',
+      {
+        afterState: 'preview_ready'
+      }
+    );
   }
 
   async function analyzeCommand({ transcript, speechConfidence = null, selectedTargetId = null } = {}) {
@@ -149,12 +357,14 @@ document.addEventListener('DOMContentLoaded', () => {
         : (ui.elements.textInput ? ui.elements.textInput.value.trim() : ''));
 
     if (!effectiveTranscript && !selectedTargetId) {
-      ui.setState('error', 'Dictez ou saisissez une commande avant de lancer l’analyse.');
+      setAssistantState('error', 'Dictez ou saisissez une commande avant de lancer l analyse.');
+      syncControls();
       return;
     }
 
-    ui.setState('analyzing', 'Analyse de la commande en cours…');
+    setAssistantState('processing', 'Analyse de la commande en cours...');
     ui.setConfirmState({ visible: false });
+    syncControls();
 
     try {
       const data = await previewVoiceCommand({
@@ -166,49 +376,30 @@ document.addEventListener('DOMContentLoaded', () => {
         returnTo: currentReturnTo()
       });
 
-      state.context = data.context || null;
-      if (data.interpretation) {
-        ui.renderInterpretation(data.interpretation);
-      }
-
-      if (data.stage === 'clarify') {
-        state.token = '';
-        state.requiresStrongConfirmation = false;
-        ui.renderPreview(null);
-        ui.renderMatches(data.matches || []);
-        ui.setState('need_precision', data.assistantMessage || 'J’ai besoin d’une précision.');
-        await speakText(data.assistantMessage || 'J’ai besoin d’une précision.');
-        return;
-      }
-
-      state.token = data.token;
-      state.requiresStrongConfirmation = Boolean(data.requiresStrongConfirmation);
-      state.strongConfirmationChecked = false;
-      ui.renderMatches(data.match ? [data.match] : []);
-      ui.renderPreview(data.preview || null);
-      ui.setConfirmState({
-        visible: true,
-        label: data.confirmationLabel || 'Confirmer',
-        strong: state.requiresStrongConfirmation
-      });
-      ui.setState('preview_ready', data.assistantMessage || 'Prévisualisation prête.');
-      highlightRow(data.match ? data.match.id : null);
-      await speakText(data.assistantMessage || 'Prévisualisation prête.');
+      await handleAssistantStep(data);
     } catch (error) {
-      ui.setState('error', error.message || 'Impossible d’analyser la commande.');
       ui.renderPreview(null);
       ui.setConfirmState({ visible: false });
-      await speakText(error.message || 'Impossible d’analyser la commande.');
+      setAssistantState('error', error.message || 'Impossible d analyser la commande.');
+      syncControls();
     }
   }
 
   async function confirmCommand() {
     if (!state.token) {
-      ui.setState('error', 'Aucune prévisualisation prête à confirmer.');
+      setAssistantState('error', 'Aucune previsualisation prete a confirmer.');
+      syncControls();
       return;
     }
 
-    ui.setState('confirming', 'Confirmation en cours…');
+    logVoice('execute confirmed');
+    if (recognition) {
+      recognition.stop();
+    }
+    speech.cancel();
+    setAssistantState('executing', 'Execution en cours...');
+    syncControls();
+
     try {
       const data = await executeVoiceCommand({
         token: state.token,
@@ -224,14 +415,18 @@ document.addEventListener('DOMContentLoaded', () => {
       state.token = '';
       state.context = null;
       state.requiresStrongConfirmation = false;
+      state.strongConfirmationChecked = false;
       state.pendingRedirectUrl = data.redirectUrl || currentReturnTo();
       state.shouldRefreshOnClose = Boolean(data.redirectUrl);
       ui.setConfirmState({ visible: false });
-      ui.setState('success', `${data.message} Vous pouvez recommencer ou fermer l’assistant.`);
-      await speakText(data.message || 'Action exécutée.');
+
+      await speakAssistantMessage(
+        `${data.message} Vous pouvez recommencer ou fermer l assistant.`,
+        { afterState: 'success' }
+      );
     } catch (error) {
-      ui.setState('error', error.message || 'Impossible d’exécuter la commande.');
-      await speakText(error.message || 'Impossible d’exécuter la commande.');
+      setAssistantState('error', error.message || 'Impossible d executer la commande.');
+      syncControls();
     }
   }
 
@@ -245,21 +440,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (ui.elements.listenButton) {
     ui.elements.listenButton.addEventListener('click', () => {
-      void promptListening();
+      startListening({ message: state.lastAssistantMessage || 'Que voulez-vous faire ?' });
+    });
+  }
+
+  if (ui.elements.respondButton) {
+    ui.elements.respondButton.addEventListener('click', () => {
+      startListening({ message: state.lastQuestion || state.lastAssistantMessage || 'Je vous ecoute.' });
+    });
+  }
+
+  if (ui.elements.repeatButton) {
+    ui.elements.repeatButton.addEventListener('click', () => {
+      if (!state.lastQuestion) {
+        return;
+      }
+      void speakAssistantMessage(state.lastQuestion, {
+        afterState: isAwaitingAnswer() ? 'awaiting_user_answer' : 'idle',
+        autoListen: recognitionSupported && isAwaitingAnswer(),
+        rememberQuestion: true
+      });
     });
   }
 
   if (ui.elements.stopButton) {
     ui.elements.stopButton.addEventListener('click', () => {
-      if (recognition) {
-        recognition.stop();
-      }
-      ui.setState('inactive', 'Écoute stoppée. Vous pouvez reprendre ou saisir votre commande.');
+      stopInteractiveAudio();
+      setAssistantState('idle', 'Ecoute stoppee. Vous pouvez reprendre ou saisir votre commande.');
+      syncControls();
     });
   }
 
   if (ui.elements.analyzeButton) {
     ui.elements.analyzeButton.addEventListener('click', () => {
+      if (ui.elements.textInput) {
+        logVoice('user input received', ui.elements.textInput.value.trim());
+      }
       void analyzeCommand({});
     });
   }
@@ -270,14 +486,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       event.preventDefault();
+      logVoice('user input received', ui.elements.textInput.value.trim());
       void analyzeCommand({});
     });
   }
 
   if (ui.elements.restartButton) {
     ui.elements.restartButton.addEventListener('click', () => {
+      stopInteractiveAudio();
       resetAssistantState();
-      void promptListening();
+      void speakAssistantMessage('Que voulez-vous faire ?', {
+        afterState: recognitionSupported ? 'awaiting_user_answer' : 'idle',
+        autoListen: recognitionSupported,
+        rememberQuestion: true
+      });
     });
   }
 
@@ -289,16 +511,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   modal.addEventListener('shown.bs.modal', () => {
     resetAssistantState();
-    void promptListening();
+    void speakAssistantMessage('Que voulez-vous faire ?', {
+      afterState: recognitionSupported ? 'awaiting_user_answer' : 'idle',
+      autoListen: recognitionSupported,
+      rememberQuestion: true
+    });
   });
 
   modal.addEventListener('hidden.bs.modal', () => {
-    if (recognition) {
-      recognition.stop();
-    }
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    stopInteractiveAudio();
     clearHighlightedRows();
 
     if (state.shouldRefreshOnClose && state.pendingRedirectUrl) {

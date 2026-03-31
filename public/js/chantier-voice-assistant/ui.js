@@ -8,12 +8,13 @@ function escapeHtml(value) {
 }
 
 const STATE_META = {
-  inactive: { label: 'Inactif', className: 'bg-secondary' },
-  listening: { label: 'Écoute', className: 'bg-danger' },
-  analyzing: { label: 'Analyse', className: 'bg-warning text-dark' },
-  need_precision: { label: 'Précision requise', className: 'bg-info text-dark' },
-  preview_ready: { label: 'Preview prête', className: 'bg-primary' },
-  confirming: { label: 'Confirmation', className: 'bg-warning text-dark' },
+  idle: { label: 'Inactif', className: 'bg-secondary' },
+  listening: { label: 'Ecoute', className: 'bg-danger' },
+  speaking: { label: 'Parle', className: 'bg-info text-dark' },
+  processing: { label: 'Analyse', className: 'bg-warning text-dark' },
+  awaiting_user_answer: { label: 'Reponse attendue', className: 'bg-info text-dark' },
+  preview_ready: { label: 'Preview prete', className: 'bg-primary' },
+  executing: { label: 'Execution', className: 'bg-warning text-dark' },
   success: { label: 'Succès', className: 'bg-success' },
   error: { label: 'Erreur', className: 'bg-danger' }
 };
@@ -27,6 +28,8 @@ export function createVoiceAssistantUI(root) {
     textInput: root.querySelector('[data-role="text-input"]'),
     listenButton: root.querySelector('[data-role="listen-button"]'),
     stopButton: root.querySelector('[data-role="stop-button"]'),
+    respondButton: root.querySelector('[data-role="respond-button"]'),
+    repeatButton: root.querySelector('[data-role="repeat-button"]'),
     analyzeButton: root.querySelector('[data-role="analyze-button"]'),
     restartButton: root.querySelector('[data-role="restart-button"]'),
     confirmButton: root.querySelector('[data-role="confirm-button"]'),
@@ -40,7 +43,7 @@ export function createVoiceAssistantUI(root) {
   };
 
   function setState(stateKey, message = '') {
-    const meta = STATE_META[stateKey] || STATE_META.inactive;
+    const meta = STATE_META[stateKey] || STATE_META.idle;
     if (elements.stateBadge) {
       elements.stateBadge.className = `badge ${meta.className}`;
       elements.stateBadge.textContent = meta.label;
@@ -56,6 +59,15 @@ export function createVoiceAssistantUI(root) {
     }
     elements.supportWarning.classList.toggle('d-none', !visible);
     elements.supportWarning.textContent = message || 'La reconnaissance vocale n’est pas disponible sur ce navigateur. Utilisez la saisie texte.';
+  }
+
+  function setConversationActions({ canRespond = false, canRepeat = false } = {}) {
+    if (elements.respondButton) {
+      elements.respondButton.disabled = !canRespond;
+    }
+    if (elements.repeatButton) {
+      elements.repeatButton.disabled = !canRepeat;
+    }
   }
 
   function setTranscript(text, { interim = false } = {}) {
@@ -189,12 +201,13 @@ export function createVoiceAssistantUI(root) {
   }
 
   function clear() {
-    setState('inactive', 'Que voulez-vous faire ?');
+    setState('idle', 'Que voulez-vous faire ?');
     setTranscript('');
     renderInterpretation(null);
     renderMatches([]);
     renderPreview(null);
     setConfirmState({ visible: false });
+    setConversationActions({ canRespond: false, canRepeat: false });
     if (elements.textInput) {
       elements.textInput.value = '';
     }
@@ -222,6 +235,7 @@ export function createVoiceAssistantUI(root) {
     renderMatches,
     renderPreview,
     setConfirmState,
+    setConversationActions,
     setState,
     setSupportWarning,
     setTranscript,

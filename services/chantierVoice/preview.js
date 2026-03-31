@@ -3,6 +3,7 @@ const {
   buildReceptionPreview,
   createHttpError
 } = require('../chantierStockActionService');
+const { buildQuestionStepFromInterpretation } = require('./conversation');
 
 function buildTargetLine(candidate) {
   return `${candidate.nom} • ${candidate.chantierNom}`;
@@ -196,6 +197,22 @@ function buildPreviewFromMatch({ interpretation, candidate }) {
   throw createHttpError('Intention vocale non supportée.', 400);
 }
 
+function buildAssistantStepFromMatch({ interpretation, candidate }) {
+  const questionStep = buildQuestionStepFromInterpretation(interpretation);
+  if (questionStep) {
+    return {
+      stage: 'question',
+      ...questionStep
+    };
+  }
+
+  return {
+    stage: 'preview',
+    ...buildPreviewFromMatch({ interpretation, candidate })
+  };
+}
+
 module.exports = {
+  buildAssistantStepFromMatch,
   buildPreviewFromMatch
 };

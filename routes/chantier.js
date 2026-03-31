@@ -31,7 +31,8 @@ const {
 } = require('../services/chantierStockActionService');
 const { parseVoiceTranscript } = require('../services/chantierVoice/parser');
 const { matchVoiceTarget } = require('../services/chantierVoice/matcher');
-const { buildPreviewFromMatch } = require('../services/chantierVoice/preview');
+const { applyPendingQuestionAnswer } = require('../services/chantierVoice/conversation');
+const { buildAssistantStepFromMatch } = require('../services/chantierVoice/preview');
 const { executeVoiceAction } = require('../services/chantierVoice/executor');
 
 const CHANTIER_FILTER_KEYS = [
@@ -1129,12 +1130,16 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
       ? rawContext.interpretation
       : null;
     const candidateIds = Array.isArray(rawContext.candidateIds) ? rawContext.candidateIds : [];
+    const pendingQuestion = rawContext.pendingQuestion && typeof rawContext.pendingQuestion === 'object'
+      ? rawContext.pendingQuestion
+      : null;
     const parsedInterpretation = parseVoiceTranscript(transcript, {
       speechConfidence: Number.isFinite(speechConfidence) ? speechConfidence : null
     });
     req.session.chantierVoicePreview = null;
 
     const usePreviousInterpretation = previousInterpretation && (
+      pendingQuestion ||
       selectedTargetId ||
       (candidateIds.length > 0 && (
         parsedInterpretation.intent === 'inconnue' ||
@@ -1142,9 +1147,12 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
       ))
     );
 
-    const interpretation = usePreviousInterpretation
+    let interpretation = usePreviousInterpretation
       ? {
           ...previousInterpretation,
+          fields: {
+            ...(previousInterpretation && previousInterpretation.fields ? previousInterpretation.fields : {})
+          },
           speechConfidence: parsedInterpretation.speechConfidence != null
             ? parsedInterpretation.speechConfidence
             : previousInterpretation.speechConfidence
@@ -1153,6 +1161,30 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
 
     if (!interpretation.rawTranscript && previousInterpretation && previousInterpretation.rawTranscript) {
       interpretation.rawTranscript = previousInterpretation.rawTranscript;
+    }
+
+    if (pendingQuestion) {
+      const answerResult = applyPendingQuestionAnswer({
+        interpretation,
+        pendingQuestion,
+        transcript
+      });
+      interpretation = answerResult.interpretation;
+
+      if (!answerResult.answered) {
+        return res.json({
+          ok: true,
+          stage: 'question',
+          assistantMessage: answerResult.message,
+          interpretation,
+          matches: [],
+          context: {
+            interpretation,
+            candidateIds,
+            pendingQuestion
+          }
+        });
+      }
     }
 
     if (interpretation.intent === 'inconnue') {
@@ -1190,15 +1222,41 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
           interpretation,
           candidateIds: Array.isArray(matchResult.candidateIds) && matchResult.candidateIds.length
             ? matchResult.candidateIds
-            : candidateIds
+            : candidateIds,
+          pendingQuestion: null
         }
       });
     }
 
-    const previewResult = buildPreviewFromMatch({
+    const assistantStep = buildAssistantStepFromMatch({
       interpretation,
       candidate: matchResult.selected
     });
+
+    if (assistantStep.stage === 'question') {
+      return res.json({
+        ok: true,
+        stage: 'question',
+        assistantMessage: assistantStep.assistantMessage,
+        interpretation,
+        match: matchResult.matches[0] || {
+          id: matchResult.selected.id,
+          label: matchResult.selected.label,
+          chantierNom: matchResult.selected.chantierNom,
+          categorie: matchResult.selected.categorie,
+          fournisseur: matchResult.selected.fournisseur,
+          quantiteActuelle: matchResult.selected.quantiteActuelle,
+          quantiteRecue: matchResult.selected.quantiteRecue
+        },
+        matches: matchResult.matches,
+        question: assistantStep.question,
+        context: {
+          interpretation,
+          candidateIds: [matchResult.selected.id],
+          pendingQuestion: assistantStep.question
+        }
+      });
+    }
 
     const token = generateVoicePreviewToken();
     const returnTo = typeof req.body.returnTo === 'string' && req.body.returnTo.trim()
@@ -1207,7 +1265,7 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
 
     req.session.chantierVoicePreview = {
       token,
-      action: previewResult.action,
+      action: assistantStep.action,
       createdAt: new Date().toISOString(),
       returnTo
     };
@@ -1215,7 +1273,7 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
     return res.json({
       ok: true,
       stage: 'preview',
-      assistantMessage: previewResult.assistantMessage,
+      assistantMessage: assistantStep.assistantMessage,
       token,
       interpretation,
       match: matchResult.matches[0] || {
@@ -1228,12 +1286,13 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
         quantiteRecue: matchResult.selected.quantiteRecue
       },
       matches: matchResult.matches,
-      preview: previewResult.preview,
-      confirmationLabel: previewResult.confirmationLabel,
-      requiresStrongConfirmation: previewResult.requiresStrongConfirmation,
+      preview: assistantStep.preview,
+      confirmationLabel: assistantStep.confirmationLabel,
+      requiresStrongConfirmation: assistantStep.requiresStrongConfirmation,
       context: {
         interpretation,
-        candidateIds: [matchResult.selected.id]
+        candidateIds: [matchResult.selected.id],
+        pendingQuestion: null
       }
     });
   } catch (error) {

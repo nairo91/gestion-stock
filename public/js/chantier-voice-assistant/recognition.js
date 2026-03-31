@@ -4,25 +4,6 @@ export function isRecognitionSupported() {
   return Boolean(SpeechRecognitionApi);
 }
 
-export function isSpeechSynthesisSupported() {
-  return Boolean(window.speechSynthesis && window.SpeechSynthesisUtterance);
-}
-
-export function speakText(text, { lang = 'fr-FR' } = {}) {
-  if (!text || !isSpeechSynthesisSupported()) {
-    return Promise.resolve();
-  }
-
-  return new Promise(resolve => {
-    window.speechSynthesis.cancel();
-    const utterance = new window.SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.onend = () => resolve();
-    utterance.onerror = () => resolve();
-    window.speechSynthesis.speak(utterance);
-  });
-}
-
 export function createRecognitionController({
   lang = 'fr-FR',
   onStateChange = () => {},
@@ -39,9 +20,32 @@ export function createRecognitionController({
   recognition.interimResults = true;
   recognition.maxAlternatives = 3;
 
-  recognition.onstart = () => onStateChange('listening');
-  recognition.onend = () => onStateChange('stopped');
-  recognition.onerror = event => onError(event.error || 'Erreur micro');
+  let listening = false;
+  let starting = false;
+  let stopRequested = false;
+
+  recognition.onstart = () => {
+    starting = false;
+    listening = true;
+    console.info('[voice] start listening');
+    onStateChange('listening');
+  };
+  recognition.onend = () => {
+    const wasListening = listening || starting;
+    listening = false;
+    starting = false;
+    stopRequested = false;
+    if (wasListening) {
+      console.info('[voice] stop listening');
+    }
+    onStateChange('stopped');
+  };
+  recognition.onerror = event => {
+    listening = false;
+    starting = false;
+    stopRequested = false;
+    onError(event.error || 'Erreur micro');
+  };
   recognition.onresult = event => {
     let interimTranscript = '';
     let finalTranscript = '';
@@ -78,17 +82,43 @@ export function createRecognitionController({
 
   return {
     start() {
-      recognition.start();
+      if (listening || starting) {
+        return false;
+      }
+      starting = true;
+      stopRequested = false;
+      try {
+        recognition.start();
+      } catch (_) {
+        starting = false;
+        return false;
+      }
+      return true;
     },
     stop() {
-      recognition.stop();
+      if (!listening && !starting) {
+        return false;
+      }
+      stopRequested = true;
+      try {
+        recognition.stop();
+      } catch (_) {
+        stopRequested = false;
+        return false;
+      }
+      return true;
+    },
+    isListening() {
+      return listening || starting;
     },
     destroy() {
       recognition.onstart = null;
       recognition.onend = null;
       recognition.onerror = null;
       recognition.onresult = null;
-      recognition.stop();
+      if (listening || starting || stopRequested) {
+        recognition.stop();
+      }
     }
   };
 }
