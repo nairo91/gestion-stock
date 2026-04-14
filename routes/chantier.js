@@ -170,7 +170,12 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true, 
   const whereChantier = chantierIdInt ? { chantierId: chantierIdInt } : {};
   const whereMateriel = {};
 
-  if (categorie) {
+  if (categorie === '__vide__') {
+    whereMateriel[Op.or] = [
+      { categorie: { [Op.is]: null } },
+      { categorie: '' }
+    ];
+  } else if (categorie) {
     whereMateriel.categorie = { [Op.iLike]: `%${categorie}%` };
   }
   if (fournisseur) {
@@ -771,7 +776,41 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     const marques = Array.from(
       new Set(marquesRaw.map(item => item.marque).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-    const categories = await loadCategories();
+
+    // Charger uniquement les catégories des matériels du chantier actif (ou tous si aucun chantier sélectionné)
+    const activeChantierId = activeFilters.chantierId ? parseInt(activeFilters.chantierId, 10) : null;
+    const mcWhereForCats = activeChantierId ? { chantierId: activeChantierId } : {};
+    const catsRaw = await Materiel.findAll({
+      attributes: [[sequelize.fn('DISTINCT', sequelize.col('Materiel.categorie')), 'categorie']],
+      include: [{
+        model: MaterielChantier,
+        as: 'materielChantiers',
+        where: mcWhereForCats,
+        attributes: [],
+        required: true
+      }],
+      where: {
+        categorie: { [Op.and]: [{ [Op.not]: null }, { [Op.ne]: '' }] }
+      },
+      raw: true
+    });
+    const categories = catsRaw
+      .map(c => c.categorie)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+
+    // Vérifier s'il existe des matériels sans catégorie dans le chantier actif
+    const emptyCategCount = await MaterielChantier.count({
+      where: mcWhereForCats,
+      include: [{
+        model: Materiel,
+        as: 'materiel',
+        where: { [Op.or]: [{ categorie: { [Op.is]: null } }, { categorie: '' }] },
+        required: true,
+        attributes: []
+      }]
+    });
+    const hasEmptyCategorie = emptyCategCount > 0;
 
     const paginationQuery = CHANTIER_FILTER_KEYS.reduce((acc, key) => {
       if (key === 'page') return acc;
@@ -789,6 +828,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
       fournisseurs,
       marques,
       categories,
+      hasEmptyCategorie,
       lowStockItemsAll,
       upcomingDeliveries,
       user: req.user,

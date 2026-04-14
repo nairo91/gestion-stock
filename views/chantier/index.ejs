@@ -1604,6 +1604,9 @@
   <label for="categorieSelect" class="form-label">Catégorie</label>
   <select class="form-select" name="categorie" id="categorieSelect">
     <option value="">-- Toutes les catégories --</option>
+    <% if (hasEmptyCategorie) { %>
+      <option value="__vide__" <%= categorie === '__vide__' ? 'selected' : '' %>>-- Sans catégorie --</option>
+    <% } %>
     <% (categories || []).forEach(function(cat){ %>
       <option value="<%= cat %>" <%= categorie === cat ? 'selected' : '' %>><%= cat %></option>
     <% }); %>
