@@ -161,8 +161,8 @@ function matchVoiceTarget({
 
   if (!targetQuery && !chantierTokens.length) {
     return {
-      status: 'clarify',
-      message: 'Je n’ai pas identifié le matériel ou la ligne à cibler.'
+      status: ‘clarify’,
+      message: ‘Je n\’ai pas identifié le matériel concerné. Pouvez-vous préciser le nom du matériel ou le chantier ?’
     };
   }
 
@@ -177,7 +177,7 @@ function matchVoiceTarget({
   if (!scoredCandidates.length) {
     return {
       status: 'clarify',
-      message: 'Aucune ligne correspondante trouvée. Reformulez en précisant le matériel ou le chantier.'
+      message: 'Aucune ligne correspondante trouvée. Essayez en précisant davantage le nom du matériel ou le chantier concerné.'
     };
   }
 
@@ -187,8 +187,8 @@ function matchVoiceTarget({
 
   if (needsDisambiguation) {
     return {
-      status: 'clarify',
-      message: `J’ai trouvé ${topMatches.length} résultat${topMatches.length > 1 ? 's' : ''}. Sélectionnez explicitement la bonne ligne ou précisez le chantier.`,
+      status: ‘clarify’,
+      message: `J’ai trouvé ${topMatches.length} lignes correspondantes. Laquelle souhaitez-vous ? Cliquez sur la bonne ligne dans la liste ci-dessous.`,
       matches: topMatches.map(item => buildMatchResult(item.candidate, item.score)),
       candidateIds: topMatches.map(item => item.candidate.id)
     };

@@ -88,27 +88,37 @@ function extractModifyPayload(rawTranscript, normalizedTranscript) {
 }
 
 function detectIntent(normalizedTranscript) {
-  if (/\b(?:dupliquer|duplique|copie|clone)\b/.test(normalizedTranscript)) {
+  // Confirmation verbale (oui, ok, confirmer …)
+  if (/\b(?:oui|ok|confirmer|confirme|valider|valide|c est bon|c est ca|d accord|allez|parfait|exactement|je confirme|correct|absolument)\b/.test(normalizedTranscript)) {
+    return { intent: 'confirmer', confidence: 0.95 };
+  }
+
+  // Annulation verbale (non, annuler, stop …)
+  if (/\b(?:non|annuler|annule|stop|arrete|arreter|recommencer|recommence|quitter|quitte|pas ca|autre chose|changer|change|refaire|reprendre)\b/.test(normalizedTranscript)) {
+    return { intent: 'annuler', confidence: 0.95 };
+  }
+
+  if (/\b(?:dupliquer|duplique|copier|copie|clone|cloner)\b/.test(normalizedTranscript)) {
     return { intent: 'dupliquer', confidence: 0.88 };
   }
 
-  if (/\b(?:supprimer|supprime|efface|retire|enleve)\b/.test(normalizedTranscript)) {
+  if (/\b(?:supprimer|supprime|efface|effacer|retire|retirer|enleve|enlever|supprression|suppression|delete)\b/.test(normalizedTranscript)) {
     return { intent: 'supprimer', confidence: 0.92 };
   }
 
-  if (/\b(?:receptionner|receptionne|recevoir|recois|recoit|livraison recue|livrer)\b/.test(normalizedTranscript)) {
+  if (/\b(?:receptionner|receptionne|recevoir|recois|recoit|livraison recue|livrer|livre|livraison|j ai recu|ai recu|on a recu|a ete livre|livres|recus|on a livr|vient d arriver|vient d etre livre)\b/.test(normalizedTranscript)) {
     return { intent: 'receptionner', confidence: 0.9 };
   }
 
-  if (/\b(?:modifier|modifie|change|ajuste|mets a jour|met a jour|actualise)\b/.test(normalizedTranscript)) {
+  if (/\b(?:modifier|modifie|change|changer|ajuste|ajuster|mets a jour|met a jour|mettre a jour|actualise|actualiser|corriger|corrige|editer|edite|update|mise a jour)\b/.test(normalizedTranscript)) {
     return { intent: 'modifier', confidence: 0.8 };
   }
 
-  if (/\b(?:ouvrir|ouvre|fiche)\b/.test(normalizedTranscript)) {
+  if (/\b(?:ouvrir|ouvre|fiche|consulter|consulte|afficher|affiche|voir|montre|montrer|naviguer|navigate)\b/.test(normalizedTranscript)) {
     return { intent: 'ouvrir', confidence: 0.84 };
   }
 
-  if (/\b(?:info|infos|information|informations|detail|details|montre|affiche|voir)\b/.test(normalizedTranscript)) {
+  if (/\b(?:info|infos|information|informations|detail|details|renseignement|renseignements)\b/.test(normalizedTranscript)) {
     return { intent: 'info', confidence: 0.72 };
   }
 
@@ -188,6 +198,12 @@ function parseVoiceTranscript(transcript, { speechConfidence = null } = {}) {
         .replace(/\b(?:supprimer|supprime|efface|retire|enleve)\b/g, ' ')
     );
     result.fields.requiresStrongConfirmation = true;
+  }
+
+  // Pour confirmer/annuler, pas besoin de targetText ni de needsConfirmation supplémentaire
+  if (result.intent === 'confirmer' || result.intent === 'annuler') {
+    result.needsConfirmation = false;
+    result.targetText = '';
   }
 
   if (result.speechConfidence != null && result.speechConfidence < 0.65) {

@@ -127,6 +127,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           logVoice('user input received', transcript);
+
+          // Interception dans l'état preview_ready : confirmation ou annulation verbale
+          const currentState = stateMachine.getState();
+          if (currentState === 'preview_ready' && state.token) {
+            if (isConfirmationPhrase(transcript)) {
+              logVoice('verbal confirmation detected');
+              void confirmCommand();
+              return;
+            }
+            if (isCancellationPhrase(transcript)) {
+              logVoice('verbal cancellation detected');
+              stopInteractiveAudio();
+              resetAssistantState();
+              void speakAssistantMessage('D\'accord, j\'annule. Que voulez-vous faire ?', {
+                afterState: recognitionSupported ? 'awaiting_user_answer' : 'idle',
+                autoListen: recognitionSupported,
+                rememberQuestion: true
+              });
+              return;
+            }
+          }
+
           void analyzeCommand({ transcript, speechConfidence: confidence });
         },
         onError(errorCode) {
@@ -157,6 +179,27 @@ document.addEventListener('DOMContentLoaded', () => {
         (Array.isArray(state.context.candidateIds) && state.context.candidateIds.length > 0)
       )
     );
+  }
+
+  function normalizeTranscriptForIntent(text) {
+    return (text || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/['']/g, ' ')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function isConfirmationPhrase(transcript) {
+    const n = normalizeTranscriptForIntent(transcript);
+    return /\b(?:oui|ok|confirmer|confirme|valider|valide|c est bon|c est ca|d accord|allez|parfait|exactement|je confirme|correct|absolument)\b/.test(n);
+  }
+
+  function isCancellationPhrase(transcript) {
+    const n = normalizeTranscriptForIntent(transcript);
+    return /\b(?:non|annuler|annule|stop|arrete|arreter|recommencer|recommence|quitter|quitte|pas ca|autre chose|changer|change|refaire|reprendre)\b/.test(n);
   }
 
   function setAssistantState(nextState, message = '') {
@@ -341,10 +384,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     highlightRow(data.match ? data.match.id : null);
     logVoice('preview ready');
+
+    // Pour la suppression (confirmation forte requise), ne pas auto-écouter : l'utilisateur doit cocher la case
+    const canAutoListen = recognitionSupported && !state.requiresStrongConfirmation;
     await speakAssistantMessage(
-      data.assistantMessage || 'Previsualisation prete.',
+      data.assistantMessage || 'Prévisualisation prête.',
       {
-        afterState: 'preview_ready'
+        afterState: canAutoListen ? 'awaiting_user_answer' : 'preview_ready',
+        autoListen: canAutoListen,
+        rememberQuestion: canAutoListen
       }
     );
   }
@@ -421,8 +469,12 @@ document.addEventListener('DOMContentLoaded', () => {
       ui.setConfirmState({ visible: false });
 
       await speakAssistantMessage(
-        `${data.message} Vous pouvez recommencer ou fermer l assistant.`,
-        { afterState: 'success' }
+        `${data.message} Souhaitez-vous faire autre chose ?`,
+        {
+          afterState: recognitionSupported ? 'awaiting_user_answer' : 'success',
+          autoListen: recognitionSupported,
+          rememberQuestion: true
+        }
       );
     } catch (error) {
       setAssistantState('error', error.message || 'Impossible d executer la commande.');
