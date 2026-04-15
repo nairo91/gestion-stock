@@ -485,9 +485,11 @@
       color: var(--text-primary, #f7f4ff);
     }
 
-    /* --- STOCK TABLE: scroll horizontal uniquement, la page défile verticalement --- */
+    /* --- STOCK TABLE: scroll horizontal + vertical dans le conteneur, en-tête fixe --- */
     .stock-table-wrap {
       overflow-x: auto;
+      overflow-y: auto;
+      max-height: calc(100vh - var(--navbar-h) - 1rem);
       -webkit-overflow-scrolling: touch;
       position: relative;
     }
@@ -870,7 +872,7 @@
 
     .table-materiel thead th {
       position: sticky;
-      top: var(--navbar-h);
+      top: 0;
       z-index: 1100;
       background: linear-gradient(135deg, rgba(79, 50, 255, 0.95), rgba(123, 62, 243, 0.85));
       border-bottom: none;
