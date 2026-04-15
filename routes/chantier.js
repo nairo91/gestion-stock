@@ -188,26 +188,22 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true, 
   const order = [];
   const shouldFilterDuplicates = doublons === '1';
   const andConditions = [];
-  let normalizedCategoryExpr = null;
   let normalizedNameExpr = null;
   if (shouldFilterDuplicates && chantierIdInt) {
-    normalizedCategoryExpr = `regexp_replace(upper(unaccent(trim("materiel"."categorie"))), '[^A-Z0-9]+', '', 'g')`;
     normalizedNameExpr = `regexp_replace(upper(unaccent(trim("materiel"."nom"))), '[^A-Z0-9]+', '', 'g')`;
     const chantierIdSql = sequelize.escape(chantierIdInt);
     const duplicateFilterSql = `
-      (${normalizedCategoryExpr}, ${normalizedNameExpr}) IN (
+      ${normalizedNameExpr} IN (
         SELECT
-          regexp_replace(upper(unaccent(trim(m.categorie))), '[^A-Z0-9]+', '', 'g') AS cat_norm,
           regexp_replace(upper(unaccent(trim(m.nom))), '[^A-Z0-9]+', '', 'g') AS nom_norm
         FROM materiel_chantiers mc
         JOIN materiels m ON m.id = mc."materielId"
         WHERE mc."chantierId" = ${chantierIdSql}
-        GROUP BY cat_norm, nom_norm
+        GROUP BY nom_norm
         HAVING COUNT(*) > 1
       )
     `;
     andConditions.push(sequelize.literal(duplicateFilterSql));
-    order.push([sequelize.literal(normalizedCategoryExpr), 'ASC']);
     order.push([sequelize.literal(normalizedNameExpr), 'ASC']);
     order.push([{ model: Materiel, as: 'materiel' }, 'nom', 'ASC']);
   }
