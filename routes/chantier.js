@@ -1178,13 +1178,14 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
     });
     req.session.chantierVoicePreview = null;
 
+    const userInputIsUnclear = parsedInterpretation.intent === 'inconnue' || parsedInterpretation.confidence < 0.45;
     const usePreviousInterpretation = previousInterpretation && (
       pendingQuestion ||
       selectedTargetId ||
-      (candidateIds.length > 0 && (
-        parsedInterpretation.intent === 'inconnue' ||
-        parsedInterpretation.confidence < 0.45
-      ))
+      (candidateIds.length > 0 && userInputIsUnclear) ||
+      // L'utilisateur précise le matériel (ex: "applique murale" après "receptionner")
+      // sans candidats connus mais avec une intention précédente claire
+      (previousInterpretation.intent !== 'inconnue' && userInputIsUnclear)
     );
 
     let interpretation = usePreviousInterpretation

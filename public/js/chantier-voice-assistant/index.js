@@ -128,9 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           logVoice('user input received', transcript);
 
-          // Interception dans l'état preview_ready : confirmation ou annulation verbale
+          // Interception dans preview_ready ou awaiting_user_answer (après lecture auto)
+          // quand un token de prévisualisation est présent : confirmation ou annulation verbale
           const currentState = stateMachine.getState();
-          if (currentState === 'preview_ready' && state.token) {
+          if (state.token && (currentState === 'preview_ready' || currentState === 'awaiting_user_answer')) {
             if (isConfirmationPhrase(transcript)) {
               logVoice('verbal confirmation detected');
               void confirmCommand();
