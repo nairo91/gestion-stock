@@ -193,13 +193,17 @@ async function fetchMaterielChantiersWithFilters(query, { includePhotos = true, 
     normalizedNameExpr = `regexp_replace(upper(unaccent(trim("materiel"."nom"))), '[^A-Z0-9]+', '', 'g')`;
     const chantierIdSql = sequelize.escape(chantierIdInt);
     const duplicateFilterSql = `
-      ${normalizedNameExpr} IN (
+      (
+        regexp_replace(upper(unaccent(trim("materiel"."nom"))), '[^A-Z0-9]+', '', 'g'),
+        coalesce(regexp_replace(upper(unaccent(trim("materiel"."reference"))), '[^A-Z0-9]+', '', 'g'), '')
+      ) IN (
         SELECT
-          regexp_replace(upper(unaccent(trim(m.nom))), '[^A-Z0-9]+', '', 'g') AS nom_norm
+          regexp_replace(upper(unaccent(trim(m.nom))), '[^A-Z0-9]+', '', 'g') AS nom_norm,
+          coalesce(regexp_replace(upper(unaccent(trim(m.reference))), '[^A-Z0-9]+', '', 'g'), '') AS ref_norm
         FROM materiel_chantiers mc
         JOIN materiels m ON m.id = mc."materielId"
         WHERE mc."chantierId" = ${chantierIdSql}
-        GROUP BY nom_norm
+        GROUP BY nom_norm, ref_norm
         HAVING COUNT(*) > 1
       )
     `;
