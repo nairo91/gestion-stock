@@ -1248,7 +1248,8 @@ router.post('/voice/preview', ensureAuthenticated, async (req, res) => {
       interpretation,
       selectedTargetId,
       candidateIds,
-      clarificationText: usePreviousInterpretation ? transcript : ''
+      clarificationText: usePreviousInterpretation ? transcript : '',
+      filters
     });
 
     if (matchResult.status !== 'matched') {

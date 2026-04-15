@@ -126,8 +126,10 @@ function matchVoiceTarget({
   interpretation,
   selectedTargetId = null,
   candidateIds = [],
-  clarificationText = ''
+  clarificationText = ‘’,
+  filters = {}
 }) {
+  const chantierFiltered = Boolean(filters && filters.chantierId);
   const serializedCandidates = rows.map(serializeCandidate);
   const candidateIdSet = Array.isArray(candidateIds) && candidateIds.length
     ? new Set(candidateIds.map(value => String(value)))
@@ -141,13 +143,13 @@ function matchVoiceTarget({
     const selected = availableCandidates.find(candidate => String(candidate.id) === String(selectedTargetId));
     if (!selected) {
       return {
-        status: 'error',
-        message: 'La ligne choisie n’est plus disponible.'
+        status: ‘error’,
+        message: ‘La ligne choisie n’est plus disponible.’
       };
     }
 
     return {
-      status: 'matched',
+      status: ‘matched’,
       selected,
       matches: [buildMatchResult(selected, 999)]
     };
@@ -160,9 +162,12 @@ function matchVoiceTarget({
   const chantierTokens = tokenize(interpretation.chantierText);
 
   if (!targetQuery && !chantierTokens.length) {
+    const clarifyMsg = chantierFiltered
+      ? ‘Je n\’ai pas identifié le matériel concerné. Pouvez-vous préciser le nom du matériel ?’
+      : ‘Je n\’ai pas identifié le matériel concerné. Pouvez-vous préciser le nom du matériel ou le chantier ?’;
     return {
-      status: 'clarify',
-      message: 'Je n\'ai pas identifié le matériel concerné. Pouvez-vous préciser le nom du matériel ou le chantier ?'
+      status: ‘clarify’,
+      message: clarifyMsg
     };
   }
 
@@ -175,19 +180,29 @@ function matchVoiceTarget({
     .sort((left, right) => right.score - left.score);
 
   if (!scoredCandidates.length) {
+    const noMatchMsg = chantierFiltered
+      ? ‘Aucune ligne correspondante trouvée. Essayez en précisant davantage le nom du matériel.’
+      : ‘Aucune ligne correspondante trouvée. Essayez en précisant davantage le nom du matériel ou le chantier concerné.’;
     return {
-      status: 'clarify',
-      message: 'Aucune ligne correspondante trouvée. Essayez en précisant davantage le nom du matériel ou le chantier concerné.'
+      status: ‘clarify’,
+      message: noMatchMsg
     };
   }
 
   const best = scoredCandidates[0];
   const topMatches = scoredCandidates.slice(0, 5);
-  const needsDisambiguation = topMatches.length > 1;
+  const secondScore = scoredCandidates.length > 1 ? scoredCandidates[1].score : 0;
 
-  if (needsDisambiguation) {
+  // Auto-select when there is a single candidate, or when the best score
+  // clearly dominates (at least twice the second-best score), avoiding
+  // unnecessary disambiguation when a name matches precisely.
+  const isClearMatch =
+    scoredCandidates.length === 1 ||
+    (best.score > secondScore && best.score >= secondScore * 2);
+
+  if (!isClearMatch) {
     return {
-      status: 'clarify',
+      status: ‘clarify’,
       message: `J’ai trouvé ${topMatches.length} lignes correspondantes. Laquelle souhaitez-vous ? Cliquez sur la bonne ligne dans la liste ci-dessous.`,
       matches: topMatches.map(item => buildMatchResult(item.candidate, item.score)),
       candidateIds: topMatches.map(item => item.candidate.id)
@@ -195,7 +210,7 @@ function matchVoiceTarget({
   }
 
   return {
-    status: 'matched',
+    status: ‘matched’,
     selected: best.candidate,
     matches: topMatches.map(item => buildMatchResult(item.candidate, item.score))
   };
