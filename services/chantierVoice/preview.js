@@ -55,7 +55,7 @@ function buildPreviewFromMatch({ interpretation, candidate }) {
     });
 
     return {
-      assistantMessage: `Prévisualisation prête pour la réception de ${quantity} unité${quantity > 1 ? 's' : ''}.`,
+      assistantMessage: `J'ai préparé la réception de ${quantity} unité${quantity > 1 ? 's' : ''}. Dites « oui » pour confirmer ou « non » pour annuler.`,
       confirmationLabel: 'Confirmer la réception',
       requiresStrongConfirmation: false,
       preview: {
@@ -91,7 +91,7 @@ function buildPreviewFromMatch({ interpretation, candidate }) {
     const preview = buildQuickEditPreview(candidate.raw, field, value);
 
     return {
-      assistantMessage: 'Prévisualisation prête pour la modification demandée.',
+      assistantMessage: 'Modification prête. Dites « oui » pour confirmer ou « non » pour annuler.',
       confirmationLabel: 'Confirmer la modification',
       requiresStrongConfirmation: false,
       preview: {
@@ -118,7 +118,7 @@ function buildPreviewFromMatch({ interpretation, candidate }) {
 
   if (interpretation.intent === 'dupliquer') {
     return {
-      assistantMessage: 'Prévisualisation prête pour la duplication.',
+      assistantMessage: 'Duplication prête. Dites « oui » pour confirmer ou « non » pour annuler.',
       confirmationLabel: 'Confirmer la duplication',
       requiresStrongConfirmation: false,
       preview: {
@@ -143,7 +143,7 @@ function buildPreviewFromMatch({ interpretation, candidate }) {
 
   if (interpretation.intent === 'supprimer') {
     return {
-      assistantMessage: 'Prévisualisation prête. Vérifiez bien avant de supprimer.',
+      assistantMessage: 'Attention, cette action est irréversible. Cochez la case de confirmation pour supprimer.',
       confirmationLabel: 'Confirmer la suppression',
       requiresStrongConfirmation: true,
       preview: {
@@ -168,7 +168,7 @@ function buildPreviewFromMatch({ interpretation, candidate }) {
 
   if (interpretation.intent === 'ouvrir' || interpretation.intent === 'info') {
     return {
-      assistantMessage: 'La fiche est prête à être ouverte.',
+      assistantMessage: 'Voici la fiche trouvée. Dites « oui » pour l\'ouvrir.',
       confirmationLabel: interpretation.intent === 'ouvrir' ? 'Ouvrir la fiche' : 'Voir les infos',
       requiresStrongConfirmation: false,
       preview: {

@@ -61,10 +61,10 @@ function buildQuestionStepFromInterpretation(interpretation) {
 
   if (interpretation.intent === 'receptionner' && !interpretation.fields.quantiteReceptionnee) {
     return {
-      assistantMessage: 'Combien ?',
+      assistantMessage: 'Quelle quantité souhaitez-vous réceptionner ?',
       question: {
         type: 'quantite_reception',
-        prompt: 'Combien ?',
+        prompt: 'Quelle quantité souhaitez-vous réceptionner ?',
         expected: 'number'
       }
     };
@@ -77,10 +77,10 @@ function buildQuestionStepFromInterpretation(interpretation) {
   const field = interpretation.fields.field;
   if (!field) {
     return {
-      assistantMessage: 'Quel champ voulez-vous modifier ? Quantite actuelle, quantite recue, remarque ou commentaire ?',
+      assistantMessage: 'Quel champ souhaitez-vous modifier ? La quantité actuelle, la quantité reçue, la remarque ou le commentaire ?',
       question: {
         type: 'modify_field',
-        prompt: 'Quel champ voulez-vous modifier ? Quantite actuelle, quantite recue, remarque ou commentaire ?',
+        prompt: 'Quel champ souhaitez-vous modifier ? La quantité actuelle, la quantité reçue, la remarque ou le commentaire ?',
         expected: 'field'
       }
     };
@@ -99,11 +99,12 @@ function buildQuestionStepFromInterpretation(interpretation) {
     return null;
   }
 
+  const fieldLabel = meta ? meta.label : 'ce champ';
   return {
-    assistantMessage: `Quelle valeur pour ${meta ? meta.label : 'ce champ'} ?`,
+    assistantMessage: `Quelle est la nouvelle valeur pour ${fieldLabel} ?`,
     question: {
       type: 'modify_value',
-      prompt: `Quelle valeur pour ${meta ? meta.label : 'ce champ'} ?`,
+      prompt: `Quelle est la nouvelle valeur pour ${fieldLabel} ?`,
       expected: meta ? meta.expected : 'text',
       field
     }
@@ -125,7 +126,7 @@ function applyPendingQuestionAnswer({ interpretation, pendingQuestion, transcrip
     return {
       answered: false,
       interpretation: nextInterpretation,
-      message: pendingQuestion.prompt || 'Je n ai pas entendu votre reponse.'
+      message: pendingQuestion.prompt || 'Je n\'ai pas entendu votre réponse, pouvez-vous répéter ?'
     };
   }
 
@@ -135,7 +136,7 @@ function applyPendingQuestionAnswer({ interpretation, pendingQuestion, transcrip
       return {
         answered: false,
         interpretation: nextInterpretation,
-        message: 'Je n ai pas compris la quantite. Dites simplement un nombre, par exemple 3.'
+        message: 'Je n\'ai pas compris la quantité. Dites simplement un nombre, par exemple « cinq » ou « 12 ».'
       };
     }
 
@@ -152,7 +153,7 @@ function applyPendingQuestionAnswer({ interpretation, pendingQuestion, transcrip
       return {
         answered: false,
         interpretation: nextInterpretation,
-        message: 'Je n ai pas compris le champ. Dites quantite actuelle, quantite recue, remarque ou commentaire.'
+        message: 'Je n\'ai pas reconnu ce champ. Dites : quantité actuelle, quantité reçue, remarque ou commentaire.'
       };
     }
 
@@ -169,7 +170,7 @@ function applyPendingQuestionAnswer({ interpretation, pendingQuestion, transcrip
       return {
         answered: false,
         interpretation: nextInterpretation,
-        message: 'Je ne sais plus quel champ modifier. Recommencez la commande.'
+        message: 'Je ne sais plus quel champ modifier. Veuillez recommencer la commande.'
       };
     }
 
@@ -180,7 +181,7 @@ function applyPendingQuestionAnswer({ interpretation, pendingQuestion, transcrip
         return {
           answered: false,
           interpretation: nextInterpretation,
-          message: 'Je n ai pas compris la valeur. Dites simplement un nombre.'
+          message: 'Je n\'ai pas compris la valeur. Dites simplement un nombre, par exemple « dix » ou « 25 ».'
         };
       }
 
@@ -205,7 +206,7 @@ function applyPendingQuestionAnswer({ interpretation, pendingQuestion, transcrip
   return {
     answered: false,
     interpretation: nextInterpretation,
-    message: pendingQuestion.prompt || 'Je n ai pas compris votre reponse.'
+    message: pendingQuestion.prompt || 'Je n\'ai pas compris votre réponse, pouvez-vous reformuler ?'
   };
 }
 

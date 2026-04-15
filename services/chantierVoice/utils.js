@@ -43,7 +43,10 @@ const SPOKEN_NUMBER_TENS = {
   trente: 30,
   quarante: 40,
   cinquante: 50,
-  soixante: 60
+  soixante: 60,
+  septante: 70,
+  huitante: 80,
+  nonante: 90
 };
 
 const STOP_WORDS = new Set([
@@ -106,40 +109,96 @@ function parseFrenchSpokenNumber(value) {
     return toInt(normalized);
   }
 
-  const tokens = normalized.split(' ').filter(Boolean);
+  // Remove 'et' connector (vingt et un → vingt un) to simplify pattern matching
+  const tokens = normalized.split(' ').filter(t => t && t !== 'et');
   if (!tokens.length) {
     return null;
   }
 
+  function isUnit(t) {
+    return Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_UNITS, t);
+  }
+  function isTens(t) {
+    return Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_TENS, t);
+  }
+
+  // Single token: 0-16, tens (20-90), cent, mille
   if (tokens.length === 1) {
-    if (Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_UNITS, tokens[0])) {
-      return SPOKEN_NUMBER_UNITS[tokens[0]];
+    const t = tokens[0];
+    if (isUnit(t)) return SPOKEN_NUMBER_UNITS[t];
+    if (isTens(t)) return SPOKEN_NUMBER_TENS[t];
+    if (t === 'cent') return 100;
+    if (t === 'mille') return 1000;
+    return null;
+  }
+
+  // Two tokens
+  if (tokens.length === 2) {
+    // quatre-vingts (80)
+    if (tokens[0] === 'quatre' && (tokens[1] === 'vingt' || tokens[1] === 'vingts')) return 80;
+    // dix-sept / dix-huit / dix-neuf (17-19)
+    if (tokens[0] === 'dix' && isUnit(tokens[1])) return 10 + SPOKEN_NUMBER_UNITS[tokens[1]];
+    // tens + unit: vingt-deux (22), soixante-dix (70) …
+    if (isTens(tokens[0]) && isUnit(tokens[1])) return SPOKEN_NUMBER_TENS[tokens[0]] + SPOKEN_NUMBER_UNITS[tokens[1]];
+    // cent + unit (101-116) or cent + tens (120-190)
+    if (tokens[0] === 'cent') {
+      if (isUnit(tokens[1])) return 100 + SPOKEN_NUMBER_UNITS[tokens[1]];
+      if (isTens(tokens[1])) return 100 + SPOKEN_NUMBER_TENS[tokens[1]];
     }
-    if (Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_TENS, tokens[0])) {
-      return SPOKEN_NUMBER_TENS[tokens[0]];
+    // X cent(s) (200, 300 … 900)
+    if ((tokens[1] === 'cent' || tokens[1] === 'cents') && isUnit(tokens[0])) {
+      return SPOKEN_NUMBER_UNITS[tokens[0]] * 100;
     }
     return null;
   }
 
-  if (tokens[0] === 'dix' && tokens.length === 2 && Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_UNITS, tokens[1])) {
-    return 10 + SPOKEN_NUMBER_UNITS[tokens[1]];
-  }
-
-  if (!Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_TENS, tokens[0])) {
+  // Three tokens
+  if (tokens.length === 3) {
+    // quatre-vingt-X (81-89) and quatre-vingt-dix (90)
+    if (tokens[0] === 'quatre' && (tokens[1] === 'vingt' || tokens[1] === 'vingts')) {
+      if (tokens[2] === 'dix') return 90;
+      if (isUnit(tokens[2])) return 80 + SPOKEN_NUMBER_UNITS[tokens[2]];
+      return null;
+    }
+    // soixante-dix-sept / huit / neuf (77-79)
+    if (tokens[0] === 'soixante' && tokens[1] === 'dix' && isUnit(tokens[2])) {
+      return 70 + SPOKEN_NUMBER_UNITS[tokens[2]];
+    }
+    // cent + tens + unit (cent vingt trois = 123)
+    if (tokens[0] === 'cent' && isTens(tokens[1]) && isUnit(tokens[2])) {
+      return 100 + SPOKEN_NUMBER_TENS[tokens[1]] + SPOKEN_NUMBER_UNITS[tokens[2]];
+    }
+    // X cent(s) + unit or tens (deux cent cinq = 205, deux cent vingt = 220)
+    if ((tokens[1] === 'cent' || tokens[1] === 'cents') && isUnit(tokens[0])) {
+      const base = SPOKEN_NUMBER_UNITS[tokens[0]] * 100;
+      if (isUnit(tokens[2])) return base + SPOKEN_NUMBER_UNITS[tokens[2]];
+      if (isTens(tokens[2])) return base + SPOKEN_NUMBER_TENS[tokens[2]];
+      return null;
+    }
     return null;
   }
 
-  const base = SPOKEN_NUMBER_TENS[tokens[0]];
-  if (tokens.length === 2 && Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_UNITS, tokens[1])) {
-    return base + SPOKEN_NUMBER_UNITS[tokens[1]];
-  }
-
-  if (
-    tokens.length === 3 &&
-    tokens[1] === 'et' &&
-    Object.prototype.hasOwnProperty.call(SPOKEN_NUMBER_UNITS, tokens[2])
-  ) {
-    return base + SPOKEN_NUMBER_UNITS[tokens[2]];
+  // Four tokens
+  if (tokens.length === 4) {
+    // quatre-vingt-dix-X (91-99)
+    if (
+      tokens[0] === 'quatre' &&
+      (tokens[1] === 'vingt' || tokens[1] === 'vingts') &&
+      tokens[2] === 'dix' &&
+      isUnit(tokens[3])
+    ) {
+      return 90 + SPOKEN_NUMBER_UNITS[tokens[3]];
+    }
+    // X cent(s) + tens + unit (deux cent vingt trois = 223)
+    if (
+      (tokens[1] === 'cent' || tokens[1] === 'cents') &&
+      isUnit(tokens[0]) &&
+      isTens(tokens[2]) &&
+      isUnit(tokens[3])
+    ) {
+      return SPOKEN_NUMBER_UNITS[tokens[0]] * 100 + SPOKEN_NUMBER_TENS[tokens[2]] + SPOKEN_NUMBER_UNITS[tokens[3]];
+    }
+    return null;
   }
 
   return null;
