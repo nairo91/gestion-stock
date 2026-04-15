@@ -161,8 +161,8 @@ function matchVoiceTarget({
 
   if (!targetQuery && !chantierTokens.length) {
     return {
-      status: ‘clarify’,
-      message: ‘Je n\’ai pas identifié le matériel concerné. Pouvez-vous préciser le nom du matériel ou le chantier ?’
+      status: 'clarify',
+      message: 'Je n\'ai pas identifié le matériel concerné. Pouvez-vous préciser le nom du matériel ou le chantier ?'
     };
   }
 
@@ -187,7 +187,7 @@ function matchVoiceTarget({
 
   if (needsDisambiguation) {
     return {
-      status: ‘clarify’,
+      status: 'clarify',
       message: `J’ai trouvé ${topMatches.length} lignes correspondantes. Laquelle souhaitez-vous ? Cliquez sur la bonne ligne dans la liste ci-dessous.`,
       matches: topMatches.map(item => buildMatchResult(item.candidate, item.score)),
       candidateIds: topMatches.map(item => item.candidate.id)
