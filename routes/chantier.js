@@ -2247,6 +2247,24 @@ router.post('/materielChantier/supprimer/:id', ensureAuthenticated, checkAdmin, 
   }
 });
 
+// Suppression en masse de MaterielChantier
+router.post('/materielChantier/supprimer-masse', ensureAuthenticated, checkAdmin, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Aucun identifiant fourni.' });
+    }
+    const userId = req.user ? req.user.id : null;
+    const results = await Promise.all(
+      ids.map(id => executeDelete({ mcId: id, userId, source: 'manual' }))
+    );
+    return res.json({ deleted: results.length });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erreur lors de la suppression en masse." });
+  }
+});
+
 router.get('/materielChantier/dupliquer/:id', ensureAuthenticated, checkAdmin, async (req, res) => {
   const mc = await MaterielChantier.findByPk(req.params.id, {
     include: [
