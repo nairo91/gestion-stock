@@ -1870,6 +1870,14 @@
         >
           Mettre à jour l'alerte
         </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          id="openBulkDelete"
+          disabled
+        >
+          Supprimer la sélection
+        </button>
       </div>
     <% } %>
 
@@ -2807,6 +2815,25 @@
             <button type="submit" class="btn btn-danger">Supprimer</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Confirmer la suppression en masse</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+        <div class="modal-body">
+          <p>Vous êtes sur le point de supprimer <strong id="bulkDeleteCount"></strong> du chantier.</p>
+          <p class="mb-0"><em>Cette action est irréversible.</em></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" id="confirmBulkDelete">Supprimer</button>
+        </div>
       </div>
     </div>
   </div>
@@ -5327,6 +5354,9 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
         const alertForm = document.getElementById('alertStatusForm');
         const alertSubmit = document.getElementById('confirmAlertStatus');
         const alertSelectionInfo = document.getElementById('alertSelectionInfo');
+        const bulkDeleteBtn = document.getElementById('openBulkDelete');
+        const confirmBulkDeleteBtn = document.getElementById('confirmBulkDelete');
+        const bulkDeleteCountSpan = document.getElementById('bulkDeleteCount');
 
         const CLOUD_NAME = '<%= cloudinaryCloudName || "" %>';
         const UPLOAD_PRESET = '<%= cloudinaryUploadPresetBdl || "" %>';
@@ -5385,6 +5415,7 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           if (submitBtn) submitBtn.disabled = !hasSelection;
           if (alertBtn) alertBtn.disabled = !hasLowSelection;
           if (alertSubmit) alertSubmit.disabled = !hasLowSelection;
+          if (bulkDeleteBtn) bulkDeleteBtn.disabled = !hasSelection;
           if (selectAll) {
             selectAll.checked = hasSelection && rowCheckboxes.every(cb => cb.checked);
             selectAll.indeterminate = !selectAll.checked && hasSelection;
@@ -5546,6 +5577,44 @@ FOURNISSEUR_CONTACTS["JM EXIM"] = FOURNISSEUR_CONTACTS["JM EXIM MENUISERIE PVC"]
           alertModal.addEventListener('hidden.bs.modal', () => {
             const selected = alertForm ? alertForm.querySelectorAll('input[name="alertStatusChoice"]') : [];
             selected.forEach(input => { input.checked = false; });
+          });
+        }
+
+        if (bulkDeleteBtn) {
+          bulkDeleteBtn.addEventListener('click', () => {
+            const ids = getSelectedIds();
+            if (!ids.length) return;
+            if (bulkDeleteCountSpan) {
+              bulkDeleteCountSpan.textContent = ids.length === 1
+                ? '1 matériel'
+                : `${ids.length} matériels`;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('bulkDeleteModal'));
+            modal.show();
+          });
+        }
+
+        if (confirmBulkDeleteBtn) {
+          confirmBulkDeleteBtn.addEventListener('click', async () => {
+            const ids = getSelectedIds();
+            if (!ids.length) return;
+            confirmBulkDeleteBtn.disabled = true;
+            try {
+              const resp = await fetch('/chantier/materielChantier/supprimer-masse', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids })
+              });
+              if (!resp.ok) {
+                const txt = await resp.text();
+                throw new Error(txt || 'Erreur serveur');
+              }
+              window.location.reload();
+            } catch (err) {
+              console.error('Erreur suppression en masse :', err);
+              alert('Impossible de supprimer les lignes sélectionnées : ' + err.message);
+              confirmBulkDeleteBtn.disabled = false;
+            }
           });
         }
 
